@@ -7,10 +7,10 @@
     {
       "name": "Hako",
       "author": "Hữu Trí",
-      "path": "https://raw.githubusercontent.com/Darkrai9x/vbook-extensions/master/bachngocsach/plugin.zip",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/hako.zip",
       "version": 1,
       "source": "https://docln.sbs",
-      "icon": "https://raw.githubusercontent.com/Darkrai9x/vbook-extensions/master/bachngocsach/icon.png",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/icon.png",
       "description": "Đọc truyện trên Hako",
       "type": "novel",
       "locale": "vi_VN"
