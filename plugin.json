@@ -1,19 +1,30 @@
 {
   "metadata": {
-    "author": "Hữu Trí",
-    "description": "Extension made by HTri"
+    "author": "Gold2k2k2k",
+    "description": "Extension made by Gold2k2k2k"
   },
   "data": [
     {
       "name": "Hako",
-      "author": "Hữu Trí",
-      "path": "https://raw.githubusercontent.com/Darkrai9x/vbook-extensions/master/bachngocsach/plugin.zip",
+      "author": "Gold2k2k2k",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/hako.zip",
       "version": 1,
       "source": "https://docln.sbs",
-      "icon": "https://raw.githubusercontent.com/Darkrai9x/vbook-extensions/master/bachngocsach/icon.png",
-      "description": "Đọc truyện trên Hako",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/icon.png",
+      "description": "Đọc truyện trên Hako của Gold2k2k2k",
       "type": "novel",
       "locale": "vi_VN"
+    },
+    {
+      "name": "Storya",
+      "author": "Gold2k2k2k",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/storya/storya.zip",
+      "version": 1,
+      "source": "https://storya.click",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/storya/icon.png",
+      "description": "Storya - Đọc truyện online miễn phí",
+      "type": "novel",
+      "locale": "vi-VN"
     }
   ]
 }
