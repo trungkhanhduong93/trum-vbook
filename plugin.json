@@ -6,12 +6,12 @@
   "data": [
     {
       "name": "Hako",
-      "author": "Gold2k2k2k",
+      "author": "Hữu Trí",
       "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/hako.zip",
       "version": 1,
       "source": "https://docln.sbs",
       "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/icon.png",
-      "description": "Đọc truyện trên Hako của Gold2k2k2k",
+      "description": "Đọc truyện trên Hako",
       "type": "novel",
       "locale": "vi_VN"
     },
