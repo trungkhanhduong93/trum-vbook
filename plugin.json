@@ -6,7 +6,7 @@
   "data": [
     {
       "name": "Hako",
-      "author": "Hữu Trí",
+      "author": "Gold2k2k2k",
       "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/hako/hako.zip",
       "version": 1,
       "source": "https://docln.sbs",
@@ -24,7 +24,7 @@
       "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/storya/icon.png",
       "description": "Storya - Đọc truyện online miễn phí",
       "type": "novel",
-      "locale": "vi-VN"
+      "locale": "vi_VN"
     }
   ]
 }
