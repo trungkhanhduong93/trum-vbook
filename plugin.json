@@ -48,6 +48,28 @@
       "type": "novel",
       "locale": "vi_VN",
       "tag": "nsfw"
+    },
+    {
+      "name": "MoeTruyen",
+      "author": "Gold2k2k2k",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/moetruyen/moetruyen.zip",
+      "version": 1,
+      "source": "https://www.truyen.moe",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/moetruyen/icon.png",
+      "description": "Mòe Truyện - Cộng đồng truyện tranh",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
+      "name": "Shinigami LN Team",
+      "author": "Gold2k2k2k",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/shinigamil/Shinigamil.zip",
+      "version": 1,
+      "source": "https://www.shinigamilnteam.com",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/shinigamil/icon.png",
+      "description": "Shinigami - Light Novel & Truyện tranh",
+      "type": "novel",
+      "locale": "vi_VN"
     }
   ]
 }
