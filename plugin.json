@@ -36,6 +36,17 @@
     "description": "稷下書院 - Truyện chữ Tiếng Trung online",
     "type": "chinese_novel",
     "locale": "zh_TW"
+    },
+    {
+    "name": "Loppy",
+    "author": "Gold2k2k2k",
+    "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/loppy/loppy.zip",
+    "version": 1,
+    "source": "https:\/\/loppytoon.com",
+    "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/loppy/icon.png",
+    "description": "LoppyToon - Truyện tranh & tiểu thuyết",
+    "type": "novel",
+    "locale": "vi_VN"
     }
   ]
 }
