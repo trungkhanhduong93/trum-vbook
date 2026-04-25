@@ -75,6 +75,19 @@
       "description": "Shinigami - Light Novel & Truyện tranh",
       "type": "novel",
       "locale": "vi_VN"
+    },
+    {
+      "name": "Mimimoe",
+      "author": "Gold2k2k2k",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/mimimoe/Mimimoe.zip",
+      "version": 1,
+      "source": "https://mimimoe.moe",
+      "regexp": "mimimoe\\.moe\\/g\\/[^\\/]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/mimimoe/icon.png",
+      "description": "Mimimoe - Truyện tranh 18+",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
     }
   ]
 }
