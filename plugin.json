@@ -80,7 +80,7 @@
       "name": "Mimimoe",
       "author": "Gold2k2k2k",
       "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/mimimoe/Mimimoe.zip",
-      "version": 2,
+      "version": 4,
       "source": "https://mimimoe.moe",
       "regexp": "mimimoe\\.moe\\/g\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/mimimoe/icon.png",
