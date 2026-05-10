@@ -117,7 +117,7 @@
     {
       "name": "Otakusic",
       "author": "Gold2k2k2k",
-      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/otakusic/Otakusic.zip",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/otakusic/otakusic.zip",
       "version": 1,
       "source": "https://otakusic.com",
       "regexp": "(www\\.)?otakusic\\.com/(?:chi-tiet/[^/?#]+|doc-truyen/[^/?#]+/[^/?#]+)/?(?:[?#].*)?$",
