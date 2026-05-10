@@ -113,6 +113,18 @@
       "type": "comic",
       "locale": "zh_TW",
       "tag": "nsfw"
+    },
+    {
+      "name": "Otakusic",
+      "author": "Gold2k2k2k",
+      "path": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/otakusic/Otakusic.zip",
+      "version": 1,
+      "source": "https://otakusic.com",
+      "regexp": "(www\\.)?otakusic\\.com/(?:chi-tiet/[^/?#]+|doc-truyen/[^/?#]+/[^/?#]+)/?(?:[?#].*)?$",
+      "icon": "https://raw.githubusercontent.com/Gold2k2k2k/HTri-Vbook-Ext/main/otakusic/icon.png",
+      "description": "Đọc truyện tranh trên Otakusic",
+      "type": "comic",
+      "locale": "vi_VN"
     }
   ]
 }
