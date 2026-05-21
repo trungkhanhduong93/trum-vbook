@@ -2,7 +2,7 @@
   "metadata": {
     "name": "LuotTruyen",
     "author": "trungkhanhduong93",
-    "version": 5,
+    "version": 6,
     "source": "https://luottruyen6.com",
     "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
     "description": "Lượt Truyện - Đọc truyện tranh online",
