@@ -2,8 +2,8 @@
   "metadata": {
     "name": "Fox Truyện",
     "author": "trungkhanhduong93",
-    "version": 9,
-    "source": "https://truyenggvn.com/",
+    "version": 10,
+    "source": "https://truyenggvn.com",
     "regexp": "(www.)?(foxtruyen[a-z0-9]*|truyenggvn)\\.[a-z]+/truyen-tranh/[0-9a-z-]+\\.html",
     "description": "FoxTruyen",
     "locale": "vi_VN",

@@ -2,8 +2,8 @@
   "metadata": {
     "name": "Mino Manga",
     "author": "trungkhanhduong93",
-    "version": 13,
-    "source": "https://minotruyenv7.xyz/manga",
+    "version": 14,
+    "source": "https://minotruyenv7.xyz",
     "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
     "description": "Đọc truyện trên trang Mino Manga",
     "locale": "vi_VN",
