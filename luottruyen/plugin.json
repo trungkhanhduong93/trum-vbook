@@ -1,15 +1,14 @@
 {
   "metadata": {
     "name": "LuotTruyen",
-    "author": "trungkhanhduong93",
-    "version": 6,
+    "author": "Gold2k2k2k",
+    "version": 8,
     "source": "https://luottruyen6.com",
     "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
     "description": "Lượt Truyện - Đọc truyện tranh online",
     "locale": "vi_VN",
     "type": "comic",
-    "language": "javascript",
-    "encrypt": true
+    "language": "javascript"
   },
   "script": {
     "home": "home.js",
