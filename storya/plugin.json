@@ -1,20 +1,20 @@
 {
   "metadata": {
-    "name": "CManga",
+    "name": "Storya",
     "author": "trungkhanhduong93",
-    "version": 41,
-    "source": "https://cmangax16.com",
-    "regexp": "(www.)?cmanga[a-z0-9]+.com/album/[^/]+/?$",
-    "description": "Đọc truyện trên trang CManga",
+    "version": 1,
+    "source": "https://storya.click",
+    "regexp": "(www\\.)?storya\\.click/truyen/[^/]+/?$",
+    "description": "Storya - Đọc truyện online miễn phí",
     "locale": "vi_VN",
     "language": "javascript",
-    "type": "comic"
+    "type": "novel"
   },
   "script": {
     "home": "home.js",
     "genre": "genre.js",
-    "detail": "detail.js",
     "search": "search.js",
+    "detail": "detail.js",
     "toc": "toc.js",
     "chap": "chap.js"
   }

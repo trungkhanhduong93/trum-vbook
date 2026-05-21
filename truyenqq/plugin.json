@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Truyện QQ",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 19,
     "source": "https://truyenqqko.com",
     "regexp": "(www.)?truyenqq*.*?/truyen-tranh/[0-9a-z-]+/?$",

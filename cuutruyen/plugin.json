@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Cứu Truyện",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 1,
     "source": "https://cuutruyen.net",
     "regexp": "(www.)?(cuutruyen|hetcuutruyen|nettrom).(net|com)/mangas/\\d+/?",

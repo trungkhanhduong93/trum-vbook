@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Everia Club",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 9,
     "source": "https://everia.club",
     "regexp": "(www.)?everia.club/.*",

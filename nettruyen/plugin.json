@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Nettruyen Unofficial",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 11,
     "source": "https://nettruyen9s.com",
     "regexp": "(www.)?nettruyen[0-9a-z-]+.*?/manga/[0-9a-z-]+/?$",

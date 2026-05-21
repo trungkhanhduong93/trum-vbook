@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Fox Truyện",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 7,
     "source": "https://truyenggvn.com/",
     "regexp": "(www.)?foxtruyen[a-z0-9]+.[a-z]+/truyen-tranh/[0-9a-z-]+.html",

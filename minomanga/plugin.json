@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Mino Manga",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 11,
     "source": "https://minotruyenv7.xyz/manga",
     "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",

@@ -1,14 +1,14 @@
 {
   "metadata": {
     "name": "Truyện VN",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 17,
     "source": "https://truyenvn.shop",
     "regexp": "(www.)?truyenvn(hot|pro|moi|hay)?\\.[a-z]+/truyen-tranh/[^/]+/?$",
     "description": "Đọc truyện trên trang Truyện VN",
     "locale": "vi_VN",
     "language": "javascript",
-	"type": "comic"
+    "type": "comic"
   },
   "script": {
     "home": "home.js",

@@ -1,15 +1,16 @@
 {
   "metadata": {
-    "name": "Say Hentai",
+    "name": "Mimimoe",
     "author": "trungkhanhduong93",
-    "version": 22,
-    "source": "https://sayhentai.sh",
-    "regexp": "(www.)?sayhentai.[a-z]/[^/]+.html",
-    "description": "Đọc truyện trên trang Say Hentai",
+    "version": 4,
+    "source": "https://mimimoe.moe",
+    "regexp": "mimimoe\\.moe\\/g\\/[^\\/]+\\/?$",
+    "description": "Mimimoe - Truyện tranh 18+",
     "locale": "vi_VN",
-    "language": "javascript",
+    "tag": "nsfw",
     "type": "comic",
-    "tag": "nsfw"
+    "language": "javascript",
+    "encrypt": true
   },
   "script": {
     "home": "home.js",

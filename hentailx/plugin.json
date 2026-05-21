@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "LxManga",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 36,
     "source": "https://lxmanga.space",
     "regexp": "(www.)?lxmanga.[a-z0-9]+/truyen/.*",
@@ -9,7 +9,7 @@
     "locale": "vi_VN",
     "language": "javascript",
     "type": "comic",
-    "tag" : "nsfw"
+    "tag": "nsfw"
   },
   "script": {
     "home": "home.js",

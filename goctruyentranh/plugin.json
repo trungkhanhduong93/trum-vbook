@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Góc Truyện Tranh",
-    "author": "Kou",
+    "author": "trungkhanhduong93",
     "version": 40,
     "source": "https://goctruyentranhvui23.com/",
     "regexp": "(www.)?goctruyentranhvui[a-z0-9]+.com/truyen/[0-9a-z-]+/?",
