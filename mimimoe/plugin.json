@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Mimimoe",
     "author": "trungkhanhduong93",
-    "version": 4,
+    "version": 5,
     "source": "https://mimimoe.moe",
     "regexp": "mimimoe\\.moe\\/g\\/[^\\/]+\\/?$",
     "description": "Mimimoe - Truyện tranh 18+",
