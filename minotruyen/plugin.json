@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Mino Truyện",
     "author": "trungkhanhduong93",
-    "version": 11,
+    "version": 12,
     "source": "https://minotruyenv7.xyz/comics",
     "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
     "description": "Đọc truyện trên trang Mino Truyện",
