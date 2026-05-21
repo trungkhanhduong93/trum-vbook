@@ -3,7 +3,7 @@
     "name": "Fox Truyện",
     "author": "Kou",
     "version": 7,
-    "source": "https://foxtruyen2.com",
+    "source": "https://truyenggvn.com/",
     "regexp": "(www.)?foxtruyen[a-z0-9]+.[a-z]+/truyen-tranh/[0-9a-z-]+.html",
     "description": "FoxTruyen",
     "locale": "vi_VN",
