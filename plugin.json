@@ -57,11 +57,23 @@
       "name": "Fox Truyện",
       "author": "trungkhanhduong93",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyengg/plugin.zip",
-      "version": 11,
+      "version": 12,
       "source": "https://truyenggvn.com",
       "regexp": "(www.)?(foxtruyen[a-z0-9]*|truyenggvn)\\.[a-z]+/truyen-tranh/[0-9a-z-]+\\.html",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyengg/icon.png",
       "description": "Đọc truyện trên trang Fox Truyện",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
+      "name": "TopTruyen",
+      "author": "Kou",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/plugin.zip",
+      "version": 1,
+      "source": "https://www.toptruyenzone2.com",
+      "regexp": "(www.)?toptruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/icon.png",
+      "description": "Đọc truyện trên trang TopTruyen",
       "type": "comic",
       "locale": "vi_VN"
     }

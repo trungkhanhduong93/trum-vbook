@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "name": "Fox Truyện",
-    "author": "trungkhanhduong93",
-    "version": 12,
-    "source": "https://truyenggvn.com",
-    "regexp": "(www.)?(foxtruyen[a-z0-9]*|truyenggvn)\\.[a-z]+/truyen-tranh/[0-9a-z-]+\\.html",
-    "description": "FoxTruyen",
+    "name": "TopTruyen",
+    "author": "Kou",
+    "version": 1,
+    "source": "https://www.toptruyenzone2.com",
+    "regexp": "(www.)?toptruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
+    "description": "Đọc truyện trên trang TopTruyen",
     "locale": "vi_VN",
     "language": "javascript",
     "type": "comic"
