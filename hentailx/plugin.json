@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "name": "LxManga",
+    "author": "Kou",
+    "version": 36,
+    "source": "https://lxmanga.space",
+    "regexp": "(www.)?lxmanga.[a-z0-9]+/truyen/.*",
+    "description": "Đọc truyện trên trang LX Manga",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "comic",
+    "tag" : "nsfw"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

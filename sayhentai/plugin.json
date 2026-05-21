@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "name": "Say Hentai",
+    "author": "Kou",
+    "version": 22,
+    "source": "https://sayhentai.sh",
+    "regexp": "(www.)?sayhentai.[a-z]/[^/]+.html",
+    "description": "Đọc truyện trên trang Say Hentai",
+    "locale": "vi_VN",
+    "language": "javascript",
+	"type": "comic",
+    "tag" : "nsfw"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
