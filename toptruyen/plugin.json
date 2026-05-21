@@ -2,9 +2,9 @@
   "metadata": {
     "name": "TopTruyen",
     "author": "Kou",
-    "version": 1,
+    "version": 2,
     "source": "https://www.toptruyenzone2.com",
-    "regexp": "(www.)?toptruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
+    "regexp": "(www.)?toptruyen[0-9a-z-]+.*?/truyen-tranh/[0-9a-z-]+/[0-9]+$",
     "description": "Đọc truyện trên trang TopTruyen",
     "locale": "vi_VN",
     "language": "javascript",
