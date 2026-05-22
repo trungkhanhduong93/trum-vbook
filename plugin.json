@@ -54,14 +54,14 @@
       "tag": "nsfw"
     },
     {
-      "name": "Fox Truyện",
+      "name": "Manga K",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyengg/plugin.zip",
-      "version": 15,
-      "source": "https://truyenggvn.com",
-      "regexp": "(www.)?(foxtruyen[a-z0-9]*|truyenggvn)\\.[a-z]+/truyen-tranh/[0-9a-z-]+\\.html",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyengg/icon.png",
-      "description": "Đọc truyện trên trang Fox Truyện",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/plugin.zip",
+      "version": 1,
+      "source": "https://mangak.site",
+      "regexp": "(www.)?mangak\\.site\\/story\\/[a-zA-Z0-9-]+$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/icon.png",
+      "description": "Đọc truyện trên trang Manga K",
       "type": "comic",
       "locale": "vi_VN"
     },
