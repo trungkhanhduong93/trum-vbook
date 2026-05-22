@@ -56,7 +56,7 @@ function execute(url) {
                     let first = chaptersData[0].name.toLowerCase();
                     let last = chaptersData[chaptersData.length-1].name.toLowerCase();
                     // if first is larger than last (e.g. Chapter 403 vs Chapter 1)
-                    if(first.includes('403') || last.includes('đầu') || last.includes('1')) {
+                    if(first.indexOf('403') !== -1 || last.indexOf('đầu') !== -1 || last.indexOf('1') !== -1) {
                         chaptersData.reverse();
                     }
                 }
@@ -70,13 +70,13 @@ function execute(url) {
 
     // Fallback if no API is found
     let chapters = [];
-    let els = doc.select('[class*="chapter"] a, [id*="chapter"] a').filter(function(e) {
-        return e.attr('href') && e.attr('href').includes('/chuong-');
+    var els = doc.select("a").filter(function(e) {
+        return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
     });
-    
+
     if (els.size() === 0) {
-        els = doc.select('a').filter(function(e) {
-            return e.attr('href') && e.attr('href').includes('/chuong-');
+        els = doc.select(".list-chapter a").filter(function(e) {
+            return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
         });
     }
 

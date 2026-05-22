@@ -10,7 +10,7 @@ function execute(url) {
         if (imgs.size() === 0) {
             imgs = doc.select("img").filter(function(e) {
                 let s = e.attr("src") || "";
-                return s.includes("uploads") || s.includes("chapter") || s.includes("page") || s.includes("zetimage.com");
+                return s.indexOf("uploads") !== -1 || s.indexOf("chapter") !== -1 || s.indexOf("page") !== -1 || s.indexOf("zetimage.com") !== -1;
             });
         }
         
@@ -27,7 +27,7 @@ function execute(url) {
                 }
                 
                 // Exclude tracking pixels and icons
-                if (link.includes('logo') || link.includes('icons') || link.includes('thumb-default')) return;
+                if (link.indexOf('logo') !== -1 || link.indexOf('icons') !== -1 || link.indexOf('thumb-default') !== -1) return;
 
                 if (!seen[link]) {
                     seen[link] = true;

@@ -17,7 +17,7 @@ function execute(url) {
         let genreEls = doc.select('.genre, .the-loai, a[href*="/the-loai/"]');
         for(let i = 0; i < genreEls.size(); i++) {
             let g = genreEls.get(i).text().trim();
-            if(g && !genres.includes(g)) {
+            if(g && genres.indexOf(g) === -1) {
                 genres.push(g);
             }
         }
@@ -27,7 +27,7 @@ function execute(url) {
             let descEls = doc.select('p');
             for(let i = 0; i < descEls.size(); i++) {
                 let txt = descEls.get(i).text().trim();
-                if(txt.length > 50 && !txt.includes('Tối đa') && !txt.includes('ký tự') && !txt.includes('Website sử dụng API') && !txt.includes('Quý khách nên ưu tiên')) {
+                if(txt.length > 50 && txt.indexOf('Tối đa') === -1 && txt.indexOf('ký tự') === -1 && txt.indexOf('Website sử dụng API') === -1 && txt.indexOf('Quý khách nên ưu tiên') === -1) {
                     desc = txt;
                     break;
                 }

@@ -50,7 +50,7 @@ function execute(url, page) {
                 let spans = a.select('span.font-bold');
                 for (let j = 0; j < spans.size(); j++) {
                     let txt = spans.get(j).text().trim();
-                    if (txt && txt.length > 3 && !txt.toLowerCase().includes('manhua') && !txt.toLowerCase().includes('manhwa')) {
+                    if (txt && txt.length > 3 && txt.toLowerCase().indexOf('manhua') === -1 && txt.toLowerCase().indexOf('manhwa') === -1) {
                         title = txt;
                         break;
                     }
@@ -62,7 +62,7 @@ function execute(url, page) {
                 let txts = a.select('span, div');
                 for (let j = 0; j < txts.size(); j++) {
                     let txt = txts.get(j).text().trim();
-                    if (txt && txt.length > 3 && !txt.toLowerCase().includes('manhua')) {
+                    if (txt && txt.length > 3 && txt.toLowerCase().indexOf('manhua') === -1) {
                         title = txt;
                         break;
                     }
@@ -75,13 +75,13 @@ function execute(url, page) {
             for (let j = 0; j < chapTags.size(); j++) {
                 let t = chapTags.get(j).text().trim();
                 // usually chapter is a number or contains 'Chương'
-                if (/^[0-9.]+$/.test(t) || t.toLowerCase().includes('chương')) {
+                if (/^[0-9.]+$/.test(t) || t.toLowerCase().indexOf('chương') !== -1) {
                     chap = t;
                     break;
                 }
             }
 
-            if (link && title && img && !img.includes('icons')) {
+            if (link && title && img && img.indexOf('icons') === -1) {
                 data.push({
                     name: title,
                     link: link,
