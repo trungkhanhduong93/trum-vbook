@@ -23,7 +23,7 @@ function execute(url) {
                 let chaptersData = [];
 
                 let browser = Engine.newBrowser();
-                browser.launch(apiUrl + "?page=1", 15000); // Wait for Cloudflare to clear
+                browser.launch(url, 10000); // Launch the comic page, not API page, to avoid Cloudflare blocking JSON endpoints
                 
                 var fetchScript = "" +
                 "(async function() {\n" +
@@ -32,10 +32,13 @@ function execute(url) {
                 "        let json = await res.json();\n" +
                 "        let lastPage = json.data.last_page || 1;\n" +
                 "        let chaps = json.data.chapters;\n" +
+                "        let promises = [];\n" +
                 "        for (let i = 2; i <= lastPage; i++) {\n" +
-                "            let r = await fetch('" + apiUrl + "?page=' + i);\n" +
-                "            let j = await r.json();\n" +
-                "            chaps = chaps.concat(j.data.chapters);\n" +
+                "            promises.push(fetch('" + apiUrl + "?page=' + i).then(r => r.json()));\n" +
+                "        }\n" +
+                "        let results = await Promise.all(promises);\n" +
+                "        for (let i = 0; i < results.length; i++) {\n" +
+                "            chaps = chaps.concat(results[i].data.chapters);\n" +
                 "        }\n" +
                 "        document.body.innerHTML = 'VBOOK_CHAPS_START' + JSON.stringify(chaps) + 'VBOOK_CHAPS_END';\n" +
                 "    } catch(e) {\n" +
@@ -43,7 +46,7 @@ function execute(url) {
                 "    }\n" +
                 "})();";
                 
-                browser.callJs(fetchScript, 3000);
+                browser.callJs(fetchScript, 5000);
                 let browserDoc = browser.html();
                 browser.close();
                 
