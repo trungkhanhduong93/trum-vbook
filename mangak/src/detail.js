@@ -1,5 +1,6 @@
 load('config.js');
 function execute(url) {
+    if (url.startsWith('/')) url = BASE_URL + url;
     url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
     var doc = fetchRetry(url);
     if (doc) {
