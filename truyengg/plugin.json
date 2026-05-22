@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Fox Truyện",
     "author": "tkd1793",
-    "version": 13,
+    "version": 14,
     "source": "https://truyenggvn.com",
     "regexp": "(www.)?(foxtruyen[a-z0-9]*|truyenggvn)\\.[a-z]+/truyen-tranh/[0-9a-z-]+\\.html",
     "description": "FoxTruyen",
