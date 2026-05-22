@@ -33,14 +33,14 @@ function execute(url) {
         var status = "Đang tiến hành";
         var view = "0";
 
-        doc.select("p, div, li").forEach(e => {
-            var text = e.clone().children().remove().end().text().trim();
+        doc.select("p").forEach(e => {
+            var text = e.text().trim();
             if (text.indexOf("Tác giả:") >= 0) {
-                author = text.replace("Tác giả:", "").trim();
+                author = text.replace(/.*Tác giả:/, "").trim();
             } else if (text.indexOf("Trạng thái:") >= 0) {
-                status = text.replace("Trạng thái:", "").trim();
+                status = text.replace(/.*Trạng thái:/, "").trim();
             } else if (text.indexOf("Lượt xem:") >= 0) {
-                view = text.replace("Lượt xem:", "").trim();
+                view = text.replace(/.*Lượt xem:/, "").trim();
             }
         });
 
