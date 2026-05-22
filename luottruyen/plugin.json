@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "LuotTruyen",
-    "author": "Gold2k2k2k",
+    "author": "tkd1793",
     "version": 8,
     "source": "https://luottruyen6.com",
     "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",

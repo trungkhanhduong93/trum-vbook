@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "author": "trungkhanhduong93",
-    "description": "Extension made by trungkhanhduong93, merged with Kou's extensions, updated to trungkhanhduong93/trum-vbook"
+    "author": "tkd1793",
+    "description": "Extension made by tkd1793"
   },
   "data": [
     {
       "name": "LuotTruyen",
-      "author": "Gold2k2k2k",
+      "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/luottruyen.zip",
       "version": 8,
       "source": "https://luottruyen6.com",
@@ -18,7 +18,7 @@
     },
     {
       "name": "Mino Truyện",
-      "author": "Kou",
+      "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip",
       "version": 15,
       "source": "https://minotruyenv7.xyz",
@@ -30,7 +30,7 @@
     },
     {
       "name": "Mino Manga",
-      "author": "trungkhanhduong93",
+      "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip",
       "version": 15,
       "source": "https://minotruyenv7.xyz",
@@ -42,7 +42,7 @@
     },
     {
       "name": "Mino Hentai",
-      "author": "trungkhanhduong93",
+      "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip",
       "version": 15,
       "source": "https://minotruyenv7.xyz",
@@ -55,7 +55,7 @@
     },
     {
       "name": "Fox Truyện",
-      "author": "trungkhanhduong93",
+      "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyengg/plugin.zip",
       "version": 13,
       "source": "https://truyenggvn.com",
@@ -67,7 +67,7 @@
     },
     {
       "name": "TopTruyen",
-      "author": "Kou",
+      "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/plugin.zip",
       "version": 3,
       "source": "https://www.toptruyenzone2.com",

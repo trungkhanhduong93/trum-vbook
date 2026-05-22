@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "Mino Hentai",
-    "author": "trungkhanhduong93",
+    "author": "tkd1793",
     "version": 15,
     "source": "https://minotruyenv7.xyz",
     "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
