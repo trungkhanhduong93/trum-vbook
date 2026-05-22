@@ -6,11 +6,11 @@ function execute(url) {
     
     let doc = fetchRetry(url);
     if (doc) {
-        let imgs = doc.select(".chapter-img-wrapper img, .chapter-images img, #chapter-content img, .reading-detail img");
+        let imgs = doc.select(".w-full.mx-auto.center img, .w-full.mx-auto img, .chapter-img-wrapper img, .chapter-images img, #chapter-content img, .reading-detail img");
         if (imgs.size() === 0) {
             imgs = doc.select("img").filter(function(e) {
                 let s = e.attr("src") || "";
-                return s.includes("uploads") || s.includes("chapter") || s.includes("page");
+                return s.includes("uploads") || s.includes("chapter") || s.includes("page") || s.includes("zetimage.com");
             });
         }
         

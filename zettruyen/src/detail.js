@@ -7,7 +7,7 @@ function execute(url) {
     let doc = fetchRetry(url);
     if (doc) {
         let title = doc.select('h1').text().trim();
-        let coverEl = doc.select('.comic-info img, img.thumbnail, .thumb img, picture img').first();
+        let coverEl = doc.select('img[src*="thumb"], .comic-info img, img.thumbnail, .thumb img, picture img').first();
         let cover = coverEl.attr('src') || coverEl.attr('data-src') || "";
         if(cover.startsWith("/")) cover = BASE_URL + cover;
         
@@ -22,12 +22,13 @@ function execute(url) {
             }
         }
         
-        let desc = doc.select('.summary, .description, .noidung, .comic-desc').text().trim();
+        let desc = doc.select('.summary, .description, .noidung, .comic-desc, .text-gray-300.text-sm.leading-relaxed, h2:contains("Tóm tắt") + p, h2:contains("Tóm tắt") ~ p, h3:contains("Tóm tắt") + p').text().trim();
         if (!desc) {
-            let descEls = doc.select('div');
+            let descEls = doc.select('p');
             for(let i = 0; i < descEls.size(); i++) {
-                if(descEls.get(i).text().includes('Nội dung')) {
-                    desc = descEls.get(i).parent().text().replace('Nội dung', '').trim();
+                let txt = descEls.get(i).text().trim();
+                if(txt.length > 50 && !txt.includes('Tối đa') && !txt.includes('ký tự') && !txt.includes('Website sử dụng API') && !txt.includes('Quý khách nên ưu tiên')) {
+                    desc = txt;
                     break;
                 }
             }

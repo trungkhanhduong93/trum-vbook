@@ -13,7 +13,7 @@ function execute(url, page) {
 
     let doc = fetchRetry(searchUrl);
     if (doc) {
-        let items = doc.select('a[href^="/truyen-tranh/"]');
+        let items = doc.select('a[href*="/truyen-tranh/"]');
         let data = [];
         let added = {};
         
@@ -26,7 +26,10 @@ function execute(url, page) {
             if (!link || added[link]) continue;
             added[link] = true;
             let imgEl = a.select('img').first();
-            let img = imgEl.attr('src') || imgEl.attr('data-src') || imgEl.attr('srcset') || "";
+            let img = "";
+            if (imgEl) {
+                img = imgEl.attr('src') || imgEl.attr('data-src') || imgEl.attr('srcset') || "";
+            }
             if (img.indexOf(" ") > 0) {
                 img = img.split(" ")[0]; // handles srcset
             }
@@ -34,11 +37,24 @@ function execute(url, page) {
                 img = BASE_URL + img;
             }
 
-            let title = a.attr('title') || a.text().trim();
-            // sometimes title is inside a h3 or h2
-            let hTag = a.select('h2, h3').first();
-            if (hTag && hTag.text()) {
-                title = hTag.text().trim();
+            let title = a.attr('title') || "";
+            // title could be inside an img tag
+            if (!title) {
+                let imgEl = a.select('img').first();
+                if (imgEl) {
+                    title = imgEl.attr('title') || imgEl.attr('alt') || "";
+                }
+            }
+            // fallback to spans with font-bold
+            if (!title) {
+                let spans = a.select('span.font-bold');
+                for (let j = 0; j < spans.size(); j++) {
+                    let txt = spans.get(j).text().trim();
+                    if (txt && txt.length > 3 && !txt.toLowerCase().includes('manhua') && !txt.toLowerCase().includes('manhwa')) {
+                        title = txt;
+                        break;
+                    }
+                }
             }
 
             // Fallback for title if empty
@@ -55,7 +71,7 @@ function execute(url, page) {
 
             // extract chapter info
             let chap = "";
-            let chapTags = el.select('span.text-xs, .absolute, .bg-red-500, .bg-blue-500');
+            let chapTags = el.select('span.text-xs, .text-txt-secondary, .absolute, .bg-red-500, .bg-blue-500');
             for (let j = 0; j < chapTags.size(); j++) {
                 let t = chapTags.get(j).text().trim();
                 // usually chapter is a number or contains 'Chương'
