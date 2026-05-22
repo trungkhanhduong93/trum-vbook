@@ -19,7 +19,7 @@ function execute(url, page) {
             
             for (let i = 0; i < items.size(); i++) {
                 let a = items.get(i);
-                let el = a.parent();
+                let el = a; // Do not use a.parent() as it throws TypeError in VBook's String.select polyfill
                 let link = a.attr('href');
                 
                 if (!link || added[link]) continue;
