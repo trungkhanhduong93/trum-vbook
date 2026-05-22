@@ -19,7 +19,12 @@ function execute(url) {
                 }
                 if (!seen[link]) {
                     seen[link] = true;
-                    data.push(link);
+                    // Optimize image loading speed using WP proxy
+                    if (link.indexOf('otruyencdn') > 0 || link.indexOf('mangak') > 0) {
+                        data.push("https://i0.wp.com/" + link.replace(/^(https?:\/\/)/, ""));
+                    } else {
+                        data.push(link);
+                    }
                 }
             }
         });

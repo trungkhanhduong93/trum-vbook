@@ -56,8 +56,8 @@
     {
       "name": "Manga K",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/plugin_v4.zip",
-      "version": 4,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/plugin_v5.zip",
+      "version": 5,
       "source": "https://mangak.site",
       "regexp": "(www.)?mangak\\.site\\/story\\/[a-zA-Z0-9-]+$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/icon.png",
