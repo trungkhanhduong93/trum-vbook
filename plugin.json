@@ -81,7 +81,7 @@
       "name": "ZetTruyen",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/plugin.zip",
-      "version": 1,
+      "version": 2,
       "source": "https://www.zettruyen.top",
       "regexp": "(www.)?zettruyen\\.top\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png",
