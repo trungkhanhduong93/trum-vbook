@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "name": "LuotTruyen",
+    "author": "tkd1793",
+    "version": 8,
+    "source": "https://luottruyen6.com",
+    "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
+    "description": "Lượt Truyện - Đọc truyện tranh online",
+    "locale": "vi_VN",
+    "type": "comic",
+    "language": "javascript"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js",
+    "comment": "comment.js"
+  }
+}

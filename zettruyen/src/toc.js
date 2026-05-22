@@ -25,24 +25,23 @@ function execute(url) {
                 let browser = Engine.newBrowser();
                 browser.launch(apiUrl + "?page=1", 15000); // Wait for Cloudflare to clear
                 
-                let fetchScript = `
-                (async function() {
-                    try {
-                        let res = await fetch("` + apiUrl + `?page=1");
-                        let json = await res.json();
-                        let lastPage = json.data.last_page || 1;
-                        let chaps = json.data.chapters;
-                        for (let i = 2; i <= lastPage; i++) {
-                            let r = await fetch("` + apiUrl + `?page=" + i);
-                            let j = await r.json();
-                            chaps = chaps.concat(j.data.chapters);
-                        }
-                        document.body.innerHTML = "VBOOK_CHAPS_START" + JSON.stringify(chaps) + "VBOOK_CHAPS_END";
-                    } catch(e) {
-                        document.body.innerHTML = "VBOOK_CHAPS_ERROR" + e;
-                    }
-                })();
-                `;
+                var fetchScript = "" +
+                "(async function() {\n" +
+                "    try {\n" +
+                "        let res = await fetch('" + apiUrl + "?page=1');\n" +
+                "        let json = await res.json();\n" +
+                "        let lastPage = json.data.last_page || 1;\n" +
+                "        let chaps = json.data.chapters;\n" +
+                "        for (let i = 2; i <= lastPage; i++) {\n" +
+                "            let r = await fetch('" + apiUrl + "?page=' + i);\n" +
+                "            let j = await r.json();\n" +
+                "            chaps = chaps.concat(j.data.chapters);\n" +
+                "        }\n" +
+                "        document.body.innerHTML = 'VBOOK_CHAPS_START' + JSON.stringify(chaps) + 'VBOOK_CHAPS_END';\n" +
+                "    } catch(e) {\n" +
+                "        document.body.innerHTML = 'VBOOK_CHAPS_ERROR' + e;\n" +
+                "    }\n" +
+                "})();";
                 
                 browser.callJs(fetchScript, 3000);
                 let browserDoc = browser.html();
