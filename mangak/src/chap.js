@@ -3,9 +3,9 @@ function execute(url) {
     url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
     var doc = fetchRetry(url);
     if (doc) {
-        var imgs = doc.select(".chapter-images img");
+        var imgs = doc.select(".chapter-img-wrapper img");
         if (imgs.size() === 0) {
-            imgs = doc.select(".chapter-img-wrapper img");
+            imgs = doc.select(".chapter-images img");
         }
         var data = [];
         var seen = {};
