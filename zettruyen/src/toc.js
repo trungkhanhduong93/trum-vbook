@@ -22,19 +22,37 @@ function execute(url) {
                 let routeTemplate = routeMatch[1];
                 let chaptersData = [];
 
-                // Fetch all pages
-                let page = 1;
-                let lastPage = 1;
+                let browser = Engine.newBrowser();
+                browser.launch(apiUrl + "?page=1", 15000); // Wait for Cloudflare to clear
                 
-                do {
-                    let pageUrl = apiUrl + '?page=' + page;
-                    let jsonString = fetchJson(pageUrl);
-                    if (!jsonString) break;
-                    
-                    let json = JSON.parse(jsonString);
-                    if (json && json.success && json.data && json.data.chapters) {
-                        lastPage = json.data.last_page || 1;
+                let fetchScript = `
+                (async function() {
+                    try {
+                        let res = await fetch("` + apiUrl + `?page=1");
+                        let json = await res.json();
+                        let lastPage = json.data.last_page || 1;
                         let chaps = json.data.chapters;
+                        for (let i = 2; i <= lastPage; i++) {
+                            let r = await fetch("` + apiUrl + `?page=" + i);
+                            let j = await r.json();
+                            chaps = chaps.concat(j.data.chapters);
+                        }
+                        document.body.innerHTML = "VBOOK_CHAPS_START" + JSON.stringify(chaps) + "VBOOK_CHAPS_END";
+                    } catch(e) {
+                        document.body.innerHTML = "VBOOK_CHAPS_ERROR" + e;
+                    }
+                })();
+                `;
+                
+                browser.callJs(fetchScript, 3000);
+                let browserDoc = browser.html();
+                browser.close();
+                
+                if (browserDoc) {
+                    let htmlContent = browserDoc.select("body").text();
+                    let match = htmlContent.match(/VBOOK_CHAPS_START(.*?)VBOOK_CHAPS_END/);
+                    if (match) {
+                        let chaps = JSON.parse(match[1]);
                         for(let i = 0; i < chaps.length; i++) {
                             let c = chaps[i];
                             chaptersData.push({
@@ -43,19 +61,12 @@ function execute(url) {
                                 host: BASE_URL
                             });
                         }
-                    } else {
-                        break;
                     }
-                    page++;
-                } while (page <= lastPage);
+                }
 
-                // Usually APIs return descending order. We should reverse if needed so chapter 1 is first.
-                // Or let VBook handle it. VBook usually expects ascending order for comic chapters if possible.
-                // Let's reverse to make chapter 1 at the top.
                 if (chaptersData.length > 1) {
                     let first = chaptersData[0].name.toLowerCase();
                     let last = chaptersData[chaptersData.length-1].name.toLowerCase();
-                    // if first is larger than last (e.g. Chapter 403 vs Chapter 1)
                     if(first.indexOf('403') !== -1 || last.indexOf('đầu') !== -1 || last.indexOf('1') !== -1) {
                         chaptersData.reverse();
                     }

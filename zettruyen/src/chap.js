@@ -31,12 +31,7 @@ function execute(url) {
 
                 if (!seen[link]) {
                     seen[link] = true;
-                    // Optimize image loading speed using WP proxy
-                    if (link.indexOf('otruyencdn') > 0 || link.indexOf('zettruyen') > 0 || link.indexOf('mangak') > 0) {
-                        data.push("https://i0.wp.com/" + link.replace(/^(https?:\/\/)/, ""));
-                    } else {
-                        data.push(link);
-                    }
+                    data.push(link);
                 }
             }
         });
