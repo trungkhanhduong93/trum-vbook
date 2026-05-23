@@ -7,23 +7,26 @@ function execute(url) {
     if (!doc) return Response.error("Không parse được HTML");
 
     var chapters = [];
-    var links = doc.select("a.chapter-row");
+    var items = doc.select(".list_chapter .works-chapter-item");
+    if (!items || items.size() === 0) {
+        items = doc.select(".works-chapter-list .works-chapter-item");
+    }
+    if (!items || items.size() === 0) {
+        items = doc.select(".works-chapter-item");
+    }
 
-    for (var i = 0; i < links.size(); i++) {
-        var a = links.get(i);
+    for (var i = 0; i < items.size(); i++) {
+        var it = items.get(i);
+        var a = selFirst(it, ".name-chap a");
+        if (!a) a = selFirst(it, "a");
+        if (!a) continue;
+
+        var nm = a.text().trim();
         var href = a.attr("href") || "";
-        if (!href) continue;
-
-        var nmEl = selFirst(a, ".chapter-left");
-        var nm = nmEl ? nmEl.text().trim() : a.text().trim();
-        if (!nm) continue;
-
-        var timeEl = selFirst(a, ".chapter-right");
-        var t = timeEl ? timeEl.text().trim() : "";
-        var label = t ? (nm + " (" + t + ")") : nm;
+        if (!nm || !href) continue;
 
         chapters.push({
-            name: label,
+            name: nm,
             url: resolveUrl(href),
             host: HOST
         });

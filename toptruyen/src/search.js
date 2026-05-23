@@ -4,7 +4,14 @@ function execute(keyword, page) {
     if (!keyword || keyword.trim().length === 0) return Response.success([]);
 
     var p = page ? parseInt(page) : 1;
-    var url = BASE_URL + "/tim-truyen?keyword=" + encodeURIComponent(keyword.trim()) + "&page=" + p;
+    var kw = encodeURIComponent(keyword.trim());
+
+    var url;
+    if (p === 1) {
+        url = BASE_URL + "/?s=" + kw;
+    } else {
+        url = BASE_URL + "/page/" + p + "/?s=" + kw;
+    }
 
     var res = fetchRetry(url);
     if (!res || !res.ok) return Response.success([]);
@@ -12,5 +19,8 @@ function execute(keyword, page) {
     var doc = res.html();
     if (!doc) return Response.success([]);
 
-    return Response.success(parseItems(doc), getNextPage(doc, p));
+    var items = parseItems(doc);
+    var next = getNextPage(doc, p);
+
+    return Response.success(items, next);
 }

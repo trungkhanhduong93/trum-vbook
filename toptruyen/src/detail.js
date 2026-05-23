@@ -6,126 +6,118 @@ function execute(url) {
     var doc = res.html();
     if (!doc) return Response.error("Không parse được HTML");
 
-    // ─── Title ────────────────────────────────────────────────────────────
-    var titleEl = selFirst(doc, "h1");
+    // Title
+    var titleEl = selFirst(doc, "h1.comic-title-detail");
+    if (!titleEl) titleEl = selFirst(doc, ".comic-info__header h1");
     var name = titleEl ? titleEl.text().trim() : "";
 
-    // ─── Cover ────────────────────────────────────────────────────────────
-    var coverEl = selFirst(doc, ".image-info img");
-    if (!coverEl) coverEl = selFirst(doc, "img.image-comic");
+    // Original / alt title
+    var altEl = selFirst(doc, "h2.comic-original-title");
+    var alt = altEl ? altEl.text().trim() : "";
+
+    // Cover
     var cover = "";
+    var coverEl = selFirst(doc, ".comic-info img.thumbnail");
+    if (!coverEl) coverEl = selFirst(doc, ".comic-poster img.thumbnail");
+    if (!coverEl) coverEl = selFirst(doc, ".thumbnail");
     if (coverEl) {
-        cover = coverEl.attr("src") || "";
-        if (cover && cover.indexOf("http") !== 0) {
-            if (cover.indexOf("//") === 0) {
-                cover = "https:" + cover;
-            } else {
-                cover = resolveUrl(cover);
-            }
+        cover = coverEl.attr("data-lazy-src") || coverEl.attr("data-src") || "";
+        if (!cover) {
+            var s = coverEl.attr("src") || "";
+            if (s.indexOf("data:image") !== 0) cover = s;
         }
+        if (cover && cover.indexOf("http") !== 0) cover = resolveUrl(cover);
     }
 
-    // ─── Author ───────────────────────────────────────────────────────────
+    // Meta from tag-sections
     var author = "";
-    var authorLi = selFirst(doc, "li.author");
-    if (authorLi) {
-        var authorVal = selFirst(authorLi, "p.detail-info");
-        if (authorVal) author = authorVal.text().trim();
-    }
-
-    // ─── Status ───────────────────────────────────────────────────────────
-    var ongoing = true;
+    var updateText = "";
+    var views = "";
+    var genres = [];
     var statusText = "";
-    var statusLi = selFirst(doc, "li.status");
-    if (statusLi) {
-        var statusVal = selFirst(statusLi, "p.detail-info");
-        if (statusVal) {
-            statusText = statusVal.text().trim();
-            if (statusText.indexOf("Hoàn thành") >= 0 || statusText.indexOf("Full") >= 0) {
-                ongoing = false;
+
+    var sections = doc.select(".comic-info__tags .tag-section, .comic-info__tags .cast-section");
+    for (var i = 0; i < sections.size(); i++) {
+        var sec = sections.get(i);
+        var hEl = selFirst(sec, "h3");
+        if (!hEl) continue;
+        var label = hEl.text().trim().toLowerCase();
+        var valDivEl = selFirst(sec, "div");
+        var valText = valDivEl ? valDivEl.text().trim() : "";
+
+        if (label.indexOf("tác giả") >= 0) {
+            author = valText;
+        } else if (label.indexOf("cập nhật") >= 0) {
+            updateText = valText;
+        } else if (label.indexOf("lượt xem") >= 0) {
+            views = valText;
+        } else if (label.indexOf("thể loại") >= 0) {
+            var gLinks = sec.select("a");
+            var gSeen = {};
+            for (var g = 0; g < gLinks.size(); g++) {
+                var gl = gLinks.get(g);
+                var gn = gl.text().trim();
+                var gh = gl.attr("href") || "";
+                if (!gn || !gh) continue;
+                if (gSeen[gh]) continue;
+                gSeen[gh] = true;
+                genres.push({
+                    title: gn,
+                    input: resolveUrl(gh),
+                    script: "gen.js"
+                });
             }
+        } else if (label.indexOf("trạng thái") >= 0 || label.indexOf("tình trạng") >= 0) {
+            statusText = valText;
         }
     }
 
-    // ─── Views ────────────────────────────────────────────────────────────
-    var views = "";
-    var viewEl = selFirst(doc, "li.view-total p.detail-info");
-    if (viewEl) views = viewEl.text().trim().replace(/\s+/g, " ");
+    var ongoing = true;
+    if (statusText && (statusText.indexOf("Hoàn") >= 0 || statusText.indexOf("Full") >= 0)) {
+        ongoing = false;
+    }
 
-    // ─── Rating ───────────────────────────────────────────────────────────
-    var ratingAvg = "";
-    var ratingCount = "";
-    // TopTruyen sử dụng cấu trúc schema: Xếp hạng: 3.7/5 - 3 Lượt đánh giá
-    var ratingValueEl = selFirst(doc, "span[itemprop='ratingValue']");
-    if (ratingValueEl) ratingAvg = ratingValueEl.text().trim();
-    var ratingCountEl = selFirst(doc, "span[itemprop='ratingCount']");
-    if (ratingCountEl) ratingCount = ratingCountEl.text().trim();
+    // Rating
+    var ratingEl = selFirst(doc, ".comic-info__rating .rating");
+    var rating = ratingEl ? ratingEl.text().trim() : "";
+    var ratingCountEl = selFirst(doc, ".rating-count");
+    var ratingCount = ratingCountEl ? ratingCountEl.text().trim() : "";
 
-    // ─── Followers ────────────────────────────────────────────────────────
-    var followers = "";
-    var followEl = selFirst(doc, "li.total-follow p.detail-info b");
-    if (followEl) followers = followEl.text().trim();
-
-    // ─── Description ──────────────────────────────────────────────────────
+    // Description (in summary tab or below)
     var description = "";
-    var descEl = selFirst(doc, "p.detail-summary");
+    var descEl = selFirst(doc, ".comic-info__summary");
+    if (!descEl) descEl = selFirst(doc, "#comic-info-summary");
+    if (!descEl) descEl = selFirst(doc, ".comic-summary");
     if (descEl) description = descEl.text().trim();
-    if (!description || description === "Updating" || description === "Đang cập nhật") {
-        description = "";
-    }
 
-    // ─── Detail (thông tin) ───────────────────────────────────────────────
+    // Detail block
     var detailParts = [];
+    if (alt) detailParts.push("Tên khác: " + alt);
     if (statusText) detailParts.push("Tình trạng: " + statusText);
-    if (author && author !== "Đang cập nhật") detailParts.push("Tác giả: " + author);
+    if (author) detailParts.push("Tác giả: " + author);
     if (views) detailParts.push("👁 Lượt xem: " + views);
-    if (followers) detailParts.push("🔖 Theo dõi: " + followers);
-    if (ratingAvg) {
-        var ratingStr = "⭐ Đánh giá: " + ratingAvg + "/5";
-        if (ratingCount) ratingStr += " (" + ratingCount + " lượt)";
-        detailParts.push(ratingStr);
+    if (rating) {
+        var r = "⭐ Đánh giá: " + rating;
+        if (ratingCount) r += " " + ratingCount;
+        detailParts.push(r);
     }
+    if (updateText) detailParts.push("Cập nhật: " + updateText);
     var detail = detailParts.join("<br>");
 
-    // ─── Genres ───────────────────────────────────────────────────────────
-    var genres = [];
-    var genreLinks = doc.select("li.category p.detail-info a");
-    for (var i = 0; i < genreLinks.size(); i++) {
-        var gLink = genreLinks.get(i);
-        var gName = gLink.text().trim();
-        var gHref = gLink.attr("href") || "";
-        if (!gName) continue;
-        genres.push({
-            title: gName,
-            input: resolveUrl(gHref),
-            script: "gen.js"
-        });
-    }
-
-    // ─── Suggests ─────────────────────────────────────────────────────────
+    // Suggests
     var suggests = [];
-    if (author && author !== "Đang cập nhật") {
-        suggests.push({
-            title: "Cùng tác giả: " + author,
-            input: BASE_URL + "/tim-truyen?keyword=" + encodeURIComponent(author),
-            script: "gen.js"
-        });
-    }
-
-    // ─── Comments ─────────────────────────────────────────────────────────
-    var comments = [];
-    if (url) {
-        // Find comment count (adapting user's snippet)
-        var commentCountEl = selFirst(doc, "#comment-count");
-        // Fallback to luottruyen's typical tab count or list count if #comments-count isn't found
-        if (!commentCountEl) commentCountEl = selFirst(doc, ".jcountcmt");
-
-        var commentCount = commentCountEl ? commentCountEl.text().trim() : "0";
-        comments.push({
-            title: "Bình luận (" + commentCount + ")",
-            input: url,
-            script: "comment.js"
-        });
+    if (author) {
+        var aLink = selFirst(doc, ".cast-section.tag-section a, .tag-section a[href*='/director/']");
+        if (aLink) {
+            var ah = aLink.attr("href") || "";
+            if (ah) {
+                suggests.push({
+                    title: "Cùng tác giả: " + author,
+                    input: resolveUrl(ah),
+                    script: "gen.js"
+                });
+            }
+        }
     }
 
     return Response.success({
@@ -137,7 +129,6 @@ function execute(url) {
         detail: detail,
         ongoing: ongoing,
         genres: genres,
-        suggests: suggests,
-        comments: comments
+        suggests: suggests
     });
 }

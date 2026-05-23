@@ -1,5 +1,5 @@
-var BASE_URL = "https://toptruyen.cc";
-var HOST = "https://toptruyen.cc";
+var BASE_URL = "https://truyenqqko.com";
+var HOST = "https://truyenqqko.com";
 
 var FETCH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
@@ -29,52 +29,52 @@ function fetchRetry(url) {
     return res;
 }
 
-// Story card: div.comic-item > .comic-poster a.comic-link + .comic-meta h3.comic-title a
+// Parse story cards from listing pages: ul.list_grid > li
 function parseItems(doc) {
     var items = [];
-    var seen = {};
+    var cards = doc.select("ul.list_grid li");
+    if (!cards || cards.size() === 0) {
+        cards = doc.select(".list_grid_out li");
+    }
 
-    var cards = doc.select("div.comic-item");
+    var seen = {};
     for (var i = 0; i < cards.size(); i++) {
         var card = cards.get(i);
 
-        var titleA = selFirst(card, ".comic-meta .comic-title a");
-        if (!titleA) titleA = selFirst(card, "a.comic-link");
+        var titleA = selFirst(card, ".book_info .book_name a");
+        if (!titleA) titleA = selFirst(card, ".book_name a");
         if (!titleA) continue;
 
-        var name = titleA.attr("title") || titleA.text().trim();
+        var name = titleA.text().trim();
         var href = titleA.attr("href") || "";
         if (!name || !href) continue;
         var link = resolveUrl(href);
         if (seen[link]) continue;
         seen[link] = true;
 
-        // Cover is lazy-loaded; placeholder src is a data: URI, real src in data-lazy-src.
-        var img = selFirst(card, ".comic-poster img.thumbnail");
-        if (!img) img = selFirst(card, ".comic-poster img");
+        var img = selFirst(card, ".book_avatar a img");
         var cover = "";
         if (img) {
-            cover = img.attr("data-lazy-src") || img.attr("data-src") || "";
-            if (!cover) {
-                var s = img.attr("src") || "";
-                if (s.indexOf("data:image") !== 0) cover = s;
-            }
+            cover = img.attr("src") || img.attr("data-original") || img.attr("data-src") || "";
             if (cover && cover.indexOf("http") !== 0) {
                 if (cover.indexOf("//") === 0) cover = "https:" + cover;
                 else cover = resolveUrl(cover);
             }
         }
 
-        var chapEl = selFirst(card, ".comic-chapter-last a");
-        if (!chapEl) chapEl = selFirst(card, ".comic-chapter-last");
-        var chapText = chapEl ? chapEl.text().trim() : "";
+        var lastChap = selFirst(card, ".last_chapter a");
+        var chapText = lastChap ? lastChap.text().trim() : "";
 
-        var viewsEl = selFirst(card, ".metric-box .views-count");
-        var viewsText = viewsEl ? viewsEl.text().trim() : "";
+        var timeEl = selFirst(card, ".time-ago");
+        var timeText = timeEl ? timeEl.text().trim() : "";
+
+        var hotEl = selFirst(card, ".type-label.hot");
+        var hotText = hotEl ? hotEl.text().trim() : "";
 
         var desc = "";
         if (chapText) desc = chapText;
-        if (viewsText) desc += (desc ? " • 👁 " : "👁 ") + viewsText;
+        if (timeText) desc += (desc ? " • " : "") + timeText;
+        if (hotText) desc += (desc ? " • " : "") + hotText;
 
         items.push({
             name: name,
@@ -84,31 +84,28 @@ function parseItems(doc) {
             host: HOST
         });
     }
-
     return items;
 }
 
-// WordPress paging: /page/N/
-function withPage(url, page) {
-    if (page <= 1) return url;
-    var u = url.replace(/\/$/, "");
-    if (u.indexOf("/page/") >= 0) {
-        return u.replace(/\/page\/\d+/, "/page/" + page);
-    }
-    // Search URL has ?s=...; insert /page/N/ before query string.
-    var qIdx = u.indexOf("?");
-    if (qIdx >= 0) {
-        return u.substring(0, qIdx) + "/page/" + page + "/" + u.substring(qIdx);
-    }
-    return u + "/page/" + page + "/";
-}
-
+// QQ uses /trang-N.html style pagination
 function getNextPage(doc, currentPage) {
     var next = String(currentPage + 1);
-    var pageLinks = doc.select("nav.pagination a, ul.pagination a, .page-numbers a");
+    var pageLinks = doc.select("div.page_redirect a, .pagination a");
     for (var i = 0; i < pageLinks.size(); i++) {
         var h = pageLinks.get(i).attr("href") || "";
-        if (h.indexOf("/page/" + next + "/") >= 0 || h.indexOf("/page/" + next) >= 0) return next;
+        if (h.indexOf("trang-" + next) >= 0 || h.indexOf("page=" + next) >= 0) return next;
     }
     return null;
+}
+
+// Append paged path/query to a base listing URL
+function withPage(url, page) {
+    if (page <= 1) return url;
+    // /the-loai/{slug}-{id} → /the-loai/{slug}-{id}/trang-{p}.html
+    // /truyen-moi-cap-nhat → /truyen-moi-cap-nhat/trang-{p}.html
+    var u = url.replace(/\/$/, "");
+    if (u.indexOf("trang-") >= 0) {
+        return u.replace(/trang-\d+(\.html)?/, "trang-" + page + ".html");
+    }
+    return u + "/trang-" + page + ".html";
 }

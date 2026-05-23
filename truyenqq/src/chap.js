@@ -10,33 +10,31 @@ function execute(url) {
     var images = [];
     var seen = {};
 
-    var imgEls = doc.select("div.chapter-image img");
+    var imgEls = doc.select("div.page-chapter img");
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".chapter-content img");
+        imgEls = doc.select(".chapter_content img");
     }
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".reading-content img");
+        imgEls = doc.select("img.lazy");
     }
 
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 
-        // Real URL is in data-lazy-src (theme's lazy-load); src is a data: placeholder.
-        var src = img.attr("data-lazy-src") || img.attr("data-src") || img.attr("data-original") || "";
-        if (!src) {
-            var s = img.attr("src") || "";
-            if (s.indexOf("data:image") !== 0) src = s;
-        }
+        var src = img.attr("data-original") || img.attr("data-src") || img.attr("src") || "";
+        if (!src) src = img.attr("data-cdn") || "";
         if (!src) continue;
         src = src.trim();
 
         if (src.indexOf("data:image") >= 0) continue;
         if (src.indexOf("logo") >= 0) continue;
         if (src.indexOf("avatar") >= 0) continue;
-        if (src.indexOf("/icon-") >= 0) continue;
 
-        if (src.indexOf("//") === 0) src = "https:" + src;
-        else if (src.indexOf("http") !== 0) src = resolveUrl(src);
+        if (src.indexOf("//") === 0) {
+            src = "https:" + src;
+        } else if (src.indexOf("http") !== 0) {
+            src = resolveUrl(src);
+        }
 
         if (seen[src]) continue;
         seen[src] = true;

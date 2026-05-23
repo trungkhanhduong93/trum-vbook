@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "TruyenQQ",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://truyenqqko.com",
+    "regexp": "truyenqq[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+-\\d+\\/?$",
+    "description": "Đọc truyện trên TruyenQQ",
+    "locale": "vi_VN",
+    "type": "comic",
+    "language": "javascript"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

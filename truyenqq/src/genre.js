@@ -3,21 +3,24 @@ load("config.js");
 function execute() {
     var res = fetchRetry(BASE_URL + "/");
     if (!res || !res.ok) return Response.success([]);
+
     var doc = res.html();
     if (!doc) return Response.success([]);
 
     var genres = [];
     var seen = {};
 
-    // Collect from menu links: both /the-loai-noi-bat/* and /tap-chi-truyen-tranh/*
-    var links = doc.select("a[href*='the-loai-noi-bat'], a[href*='tap-chi-truyen-tranh'], a[href*='/hanh-dong'], a[href*='/giai-tri-doi-thuong']");
+    var links = doc.select(".book_tags_content a");
+    if (!links || links.size() === 0) {
+        links = doc.select("a[href*='/the-loai/']");
+    }
 
     for (var i = 0; i < links.size(); i++) {
         var a = links.get(i);
         var name = a.text().trim();
         var href = a.attr("href") || "";
         if (!name || !href) continue;
-        if (name.length < 2 || name.length > 40) continue;
+        if (href.indexOf("/the-loai/") < 0) continue;
         if (seen[href]) continue;
         seen[href] = true;
 
