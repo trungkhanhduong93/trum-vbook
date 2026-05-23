@@ -45,9 +45,21 @@ function execute(url) {
             src = resolveUrl(src);
         }
 
-        if (seen[src]) continue;
-        seen[src] = true;
-        images.push(src);
+        // Extract fallback URL from onerror attribute (VBook doesn't run JS)
+        // onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='https://sv1.otruyencdn.com/...'}"
+        var onerror = img.attr("onerror") || "";
+        var fallback = "";
+        if (onerror) {
+            var fbMatch = onerror.match(/this\.src='([^']+)'/);
+            if (fbMatch) fallback = fbMatch[1];
+        }
+
+        // Use fallback CDN (otruyencdn) as primary since it's more reliable on Android
+        var finalSrc = fallback || src;
+
+        if (seen[finalSrc]) continue;
+        seen[finalSrc] = true;
+        images.push(finalSrc);
     }
 
     if (images.length === 0) {

@@ -93,7 +93,7 @@
       "name": "Thegioitruyen",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/thegioitruyen/plugin.zip",
-      "version": 7,
+      "version": 8,
       "source": "https://thegioitruyen.vn",
       "regexp": "thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/thegioitruyen/icon.png",
