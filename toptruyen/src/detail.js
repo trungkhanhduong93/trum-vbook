@@ -5,69 +5,53 @@ function execute(url) {
     if (!doc) return Response.error("Không tải được trang truyện");
 
     // Title
-    var titleEl = selFirst(doc, "h1.comic-title-detail");
-    if (!titleEl) titleEl = selFirst(doc, ".comic-info__header h1");
+    var titleEl = selFirst(doc, "h1.title-detail");
+    if (!titleEl) titleEl = selFirst(doc, "h1");
+    if (!titleEl) titleEl = selFirst(doc, ".title-detail");
     var name = titleEl ? titleEl.text().trim() : "";
 
     // Original / alt title
-    var altEl = selFirst(doc, "h2.comic-original-title");
+    var altEl = selFirst(doc, ".name-other p.detail-info");
     var alt = altEl ? altEl.text().trim() : "";
 
     // Cover
     var cover = "";
-    var coverEl = selFirst(doc, ".comic-info img.thumbnail");
-    if (!coverEl) coverEl = selFirst(doc, ".comic-poster img.thumbnail");
-    if (!coverEl) coverEl = selFirst(doc, ".thumbnail");
+    var coverEl = selFirst(doc, ".image-info img");
+    if (!coverEl) coverEl = selFirst(doc, "img.image-manga");
+    if (!coverEl) coverEl = selFirst(doc, ".detail-info img");
     if (coverEl) {
-        cover = coverEl.attr("data-lazy-src") || coverEl.attr("data-src") || "";
-        if (!cover) {
-            var s = coverEl.attr("src") || "";
-            if (s.indexOf("data:image") !== 0) cover = s;
+        cover = coverEl.attr("data-lazy-src") || coverEl.attr("data-src") || coverEl.attr("src") || "";
+        if (cover && cover.indexOf("http") !== 0) {
+            if (cover.indexOf("//") === 0) cover = "https:" + cover;
+            else cover = resolveUrl(cover);
         }
-        if (cover && cover.indexOf("http") !== 0) cover = resolveUrl(cover);
     }
 
-    // Meta from tag-sections
-    var author = "";
-    var updateText = "";
-    var views = "";
+    // Meta details
+    var authorEl = selFirst(doc, ".author p.detail-info");
+    var author = authorEl ? authorEl.text().trim() : "";
+
+    var statusEl = selFirst(doc, ".status p.detail-info");
+    var statusText = statusEl ? statusEl.text().trim() : "";
+
+    var viewsEl = selFirst(doc, ".view-total p.detail-info");
+    var views = viewsEl ? viewsEl.text().trim() : "";
+
     var genres = [];
-    var statusText = "";
-
-    var sections = doc.select(".comic-info__tags .tag-section, .comic-info__tags .cast-section");
-    for (var i = 0; i < sections.size(); i++) {
-        var sec = sections.get(i);
-        var hEl = selFirst(sec, "h3");
-        if (!hEl) continue;
-        var label = hEl.text().trim().toLowerCase();
-        var valDivEl = selFirst(sec, "div");
-        var valText = valDivEl ? valDivEl.text().trim() : "";
-
-        if (label.indexOf("tác giả") >= 0) {
-            author = valText;
-        } else if (label.indexOf("cập nhật") >= 0) {
-            updateText = valText;
-        } else if (label.indexOf("lượt xem") >= 0) {
-            views = valText;
-        } else if (label.indexOf("thể loại") >= 0) {
-            var gLinks = sec.select("a");
-            var gSeen = {};
-            for (var g = 0; g < gLinks.size(); g++) {
-                var gl = gLinks.get(g);
-                var gn = gl.text().trim();
-                var gh = gl.attr("href") || "";
-                if (!gn || !gh) continue;
-                if (gSeen[gh]) continue;
-                gSeen[gh] = true;
-                genres.push({
-                    title: gn,
-                    input: resolveUrl(gh),
-                    script: "gen.js"
-                });
-            }
-        } else if (label.indexOf("trạng thái") >= 0 || label.indexOf("tình trạng") >= 0) {
-            statusText = valText;
-        }
+    var genreLinks = doc.select(".category p.detail-info a");
+    var gSeen = {};
+    for (var i = 0; i < genreLinks.size(); i++) {
+        var gl = genreLinks.get(i);
+        var gn = gl.text().trim();
+        var gh = gl.attr("href") || "";
+        if (!gn || !gh) continue;
+        if (gSeen[gh]) continue;
+        gSeen[gh] = true;
+        genres.push({
+            title: gn,
+            input: resolveUrl(gh),
+            script: "gen.js"
+        });
     }
 
     var ongoing = true;
@@ -75,39 +59,27 @@ function execute(url) {
         ongoing = false;
     }
 
-    // Rating
-    var ratingEl = selFirst(doc, ".comic-info__rating .rating");
-    var rating = ratingEl ? ratingEl.text().trim() : "";
-    var ratingCountEl = selFirst(doc, ".rating-count");
-    var ratingCount = ratingCountEl ? ratingCountEl.text().trim() : "";
-
-    // Description (in summary tab or below)
+    // Description (Summary)
     var description = "";
-    var descEl = selFirst(doc, ".comic-info__summary");
-    if (!descEl) descEl = selFirst(doc, "#comic-info-summary");
+    var descEl = selFirst(doc, ".detail-content");
+    if (!descEl) descEl = selFirst(doc, ".summary-content");
     if (!descEl) descEl = selFirst(doc, ".comic-summary");
     if (descEl) description = descEl.text().trim();
 
-    // Detail block
+    // Detail block (shown in detail tab)
     var detailParts = [];
-    if (alt) detailParts.push("Tên khác: " + alt);
+    if (alt && alt !== "Đang cập nhật") detailParts.push("Tên khác: " + alt);
     if (statusText) detailParts.push("Tình trạng: " + statusText);
     if (author) detailParts.push("Tác giả: " + author);
     if (views) detailParts.push("👁 Lượt xem: " + views);
-    if (rating) {
-        var r = "⭐ Đánh giá: " + rating;
-        if (ratingCount) r += " " + ratingCount;
-        detailParts.push(r);
-    }
-    if (updateText) detailParts.push("Cập nhật: " + updateText);
     var detail = detailParts.join("<br>");
 
-    // Suggests
+    // Suggests (same author search link)
     var suggests = [];
-    if (author) {
-        var aLink = selFirst(doc, ".cast-section.tag-section a, .tag-section a[href*='/director/']");
-        if (aLink) {
-            var ah = aLink.attr("href") || "";
+    if (author && author !== "Đang cập nhật") {
+        var authorLinkEl = selFirst(doc, ".author p.detail-info a");
+        if (authorLinkEl) {
+            var ah = authorLinkEl.attr("href") || "";
             if (ah) {
                 suggests.push({
                     title: "Cùng tác giả: " + author,

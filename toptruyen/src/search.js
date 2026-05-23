@@ -4,14 +4,10 @@ function execute(keyword, page) {
     if (!keyword || keyword.trim().length === 0) return Response.success([]);
 
     var p = page ? parseInt(page) : 1;
-    var kw = encodeURIComponent(keyword.trim());
+    var kw = encodeURIComponent(keyword.trim()).replace(/%20/g, "+");
 
-    var url;
-    if (p === 1) {
-        url = BASE_URL + "/?s=" + kw;
-    } else {
-        url = BASE_URL + "/page/" + p + "/?s=" + kw;
-    }
+    var url = BASE_URL + "/tim-truyen?keyword=" + kw;
+    url = withPage(url, p);
 
     var doc = fetchRetry(url);
     if (!doc) return Response.success([]);

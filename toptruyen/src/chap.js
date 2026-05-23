@@ -7,7 +7,10 @@ function execute(url) {
     var images = [];
     var seen = {};
 
-    var imgEls = doc.select("div.chapter-image img");
+    var imgEls = doc.select(".page-chapter img");
+    if (!imgEls || imgEls.size() === 0) {
+        imgEls = doc.select("div.chapter-image img");
+    }
     if (!imgEls || imgEls.size() === 0) {
         imgEls = doc.select(".chapter-content img");
     }
@@ -18,12 +21,7 @@ function execute(url) {
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 
-        // Real URL is in data-lazy-src (theme's lazy-load); src is a data: placeholder.
-        var src = img.attr("data-lazy-src") || img.attr("data-src") || img.attr("data-original") || "";
-        if (!src) {
-            var s = img.attr("src") || "";
-            if (s.indexOf("data:image") !== 0) src = s;
-        }
+        var src = img.attr("src") || img.attr("data-lazy-src") || img.attr("data-src") || img.attr("data-original") || "";
         if (!src) continue;
         src = src.trim();
 

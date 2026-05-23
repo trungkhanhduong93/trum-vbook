@@ -7,9 +7,7 @@ function execute() {
     var genres = [];
     var seen = {};
 
-    // Collect from menu links: both /the-loai-noi-bat/* and /tap-chi-truyen-tranh/*
-    var links = doc.select("a[href*='the-loai-noi-bat'], a[href*='tap-chi-truyen-tranh'], a[href*='/hanh-dong'], a[href*='/giai-tri-doi-thuong']");
-
+    var links = doc.select("a[href*='/tim-truyen/']");
     for (var i = 0; i < links.size(); i++) {
         var a = links.get(i);
         var name = a.text().trim();
