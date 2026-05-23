@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Mimimoe",
     "author": "tkd1793",
-    "version": 2,
+    "version": 3,
     "source": "https://mimimoe.moe",
     "regexp": "mimimoe\\.moe\\/manga\\/[0-9]+\\/?$",
     "description": "Mimi - Đọc truyện chất lượng cao",

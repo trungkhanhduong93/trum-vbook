@@ -59,12 +59,21 @@ function loginAndGetToken() {
 // API fetch wrapper: tries anonymous first, falls back to authenticated on 401/403.
 function apiFetch(path) {
     var url = path.indexOf("http") === 0 ? path : API_URL + path;
-    var res = fetch(url, { headers: buildHeaders() });
+    var res = null;
+    try {
+        res = fetch(url, { headers: buildHeaders() });
+    } catch (e) {
+        // Fallback to auth on network error or unauthorized exception
+    }
+
     if (res && res.ok) return res;
-    if (res && (res.status === 401 || res.status === 403)) {
-        var token = loginAndGetToken();
-        if (token) {
+
+    var token = loginAndGetToken();
+    if (token) {
+        try {
             res = fetch(url, { headers: buildHeaders({ "Authorization": "Bearer " + token }) });
+        } catch (e) {
+            // Ignore
         }
     }
     return res;

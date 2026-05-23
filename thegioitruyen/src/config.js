@@ -24,13 +24,13 @@ function fetchRetry(url) {
     var doc = null;
     try {
         doc = Http.get(url).headers({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
             "Referer": BASE_URL + "/"
         }).html();
     } catch (e) {
-        // Ignore and fallback
+        try {
+            doc = Http.get(url).html();
+        } catch (err) {}
     }
 
     var title = doc ? doc.select("title").text() : "";
@@ -39,12 +39,17 @@ function fetchRetry(url) {
         return doc;
     }
 
-    // Fallback to browser
-    var browser = Engine.newBrowser();
-    browser.launch(url, 15000);
-    var browserDoc = browser.html();
-    browser.close();
-    return browserDoc;
+    // Fallback to browser wrapped safely
+    try {
+        var browser = Engine.newBrowser();
+        browser.launch(url, 8000);
+        var browserDoc = browser.html();
+        browser.close();
+        if (browserDoc) return browserDoc;
+    } catch (err) {
+        // Ignore browser fallback error
+    }
+    return doc;
 }
 
 // Parse story cards from .tgt-grid > .tgt-card
