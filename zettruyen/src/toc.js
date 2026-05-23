@@ -3,96 +3,55 @@ load('config.js');
 function execute(url) {
     if (url.startsWith('/')) url = BASE_URL + url;
     url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
-    
+
     let doc = fetchRetry(url);
     if (!doc) return null;
 
     let html = doc.html();
     let comicDataMatch = html.match(/window\.comicData\s*=\s*(\{.*?\});/s);
-    if (comicDataMatch) {
-        try {
-            // Need to parse JS object, not strict JSON. It has bare keys like `slug: '...'`
-            let rawData = comicDataMatch[1];
-            let slugMatch = rawData.match(/slug:\s*['"]([^'"]+)['"]/);
-            let apiMatch = rawData.match(/apiUrl:\s*['"]([^'"]+)['"]/);
-            let routeMatch = rawData.match(/chapterRouteTemplate:\s*['"]([^'"]+)['"]/);
 
-            if (apiMatch && routeMatch) {
-                let apiUrl = apiMatch[1];
-                let routeTemplate = routeMatch[1];
-                let chaptersData = [];
+    if (!comicDataMatch) return fallbackFromHtml(doc);
 
-                let browser = Engine.newBrowser();
-                browser.launch(url, 10000); // Launch the comic page, not API page, to avoid Cloudflare blocking JSON endpoints
-                
-                var fetchScript = "" +
-                "(async function() {\n" +
-                "    try {\n" +
-                "        let res = await fetch('" + apiUrl + "?page=1');\n" +
-                "        let json = await res.json();\n" +
-                "        let lastPage = json.data.last_page || 1;\n" +
-                "        let chaps = json.data.chapters;\n" +
-                "        let promises = [];\n" +
-                "        for (let i = 2; i <= lastPage; i++) {\n" +
-                "            promises.push(fetch('" + apiUrl + "?page=' + i).then(r => r.json()));\n" +
-                "        }\n" +
-                "        let results = await Promise.all(promises);\n" +
-                "        for (let i = 0; i < results.length; i++) {\n" +
-                "            chaps = chaps.concat(results[i].data.chapters);\n" +
-                "        }\n" +
-                "        document.body.innerHTML = 'VBOOK_CHAPS_START' + JSON.stringify(chaps) + 'VBOOK_CHAPS_END';\n" +
-                "    } catch(e) {\n" +
-                "        document.body.innerHTML = 'VBOOK_CHAPS_ERROR' + e;\n" +
-                "    }\n" +
-                "})();";
-                
-                browser.callJs(fetchScript, 5000);
-                let browserDoc = browser.html();
-                browser.close();
-                
-                if (browserDoc) {
-                    let htmlContent = browserDoc.select("body").text();
-                    let match = htmlContent.match(/VBOOK_CHAPS_START(.*?)VBOOK_CHAPS_END/);
-                    if (match) {
-                        let chaps = JSON.parse(match[1]);
-                        for(let i = 0; i < chaps.length; i++) {
-                            let c = chaps[i];
-                            chaptersData.push({
-                                name: c.chapter_name || 'Chapter ' + c.chapter_num,
-                                url: routeTemplate.replace('CHAPTER_NUM', c.chapter_num).replace('CHAPTER_SLUG', c.chapter_slug || c.chapter_num),
-                                host: BASE_URL
-                            });
-                        }
-                    }
-                }
+    let rawData = comicDataMatch[1];
+    let apiMatch = rawData.match(/apiUrl:\s*['"]([^'"]+)['"]/);
+    let routeMatch = rawData.match(/chapterRouteTemplate:\s*['"]([^'"]+)['"]/);
+    if (!apiMatch || !routeMatch) return fallbackFromHtml(doc);
 
-                if (chaptersData.length > 1) {
-                    let first = chaptersData[0].name.toLowerCase();
-                    let last = chaptersData[chaptersData.length-1].name.toLowerCase();
-                    if(first.indexOf('403') !== -1 || last.indexOf('đầu') !== -1 || last.indexOf('1') !== -1) {
-                        chaptersData.reverse();
-                    }
-                }
+    let apiUrl = apiMatch[1];
+    let routeTemplate = routeMatch[1];
 
-                return Response.success(chaptersData.reverse()); // Zettruyen returns DESC, so we reverse it to ASC
-            }
-        } catch(e) {
-            // fallback
-        }
+    // Single fetch for the full chapter list (per_page=-1 returns ALL chapters).
+    // Confirmed via zettruyen's own chapter.js. Replaces previous browser+Promise.all path.
+    let str = fetchJson(apiUrl + "?per_page=-1&order=asc");
+    if (!str) return Response.error("Không tải được mục lục");
+
+    let json;
+    try { json = JSON.parse(str); } catch (e) { return Response.error("Lỗi parse JSON: " + e.message); }
+    if (!json || !json.data || !json.data.chapters) return Response.error("Phản hồi mục lục không hợp lệ");
+
+    let chaps = json.data.chapters;
+    let list = [];
+    for (let i = 0; i < chaps.length; i++) {
+        let c = chaps[i];
+        list.push({
+            name: c.chapter_name || ('Chapter ' + c.chapter_num),
+            url: routeTemplate.replace('CHAPTER_NUM', c.chapter_num).replace('CHAPTER_SLUG', c.chapter_slug || c.chapter_num),
+            host: BASE_URL
+        });
     }
+    return Response.success(list);
+}
 
-    // Fallback if no API is found
+function fallbackFromHtml(doc) {
     let chapters = [];
     var els = doc.select("a").filter(function(e) {
         return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
     });
-
     if (els.size() === 0) {
         els = doc.select(".list-chapter a").filter(function(e) {
             return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
         });
     }
-
     for (let i = 0; i < els.size(); i++) {
         let e = els.get(i);
         let link = e.attr("href");
@@ -103,6 +62,5 @@ function execute(url) {
             host: BASE_URL
         });
     }
-
     return Response.success(chapters);
 }

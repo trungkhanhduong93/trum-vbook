@@ -6,25 +6,29 @@ function execute(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        browser.launch(url, 5);
+        // Wait up to 10s for the page to fully load (DOMContentLoaded).
+        // Earlier value of 5(ms) made callJs run before the page even started loading.
+        browser.launch(url, 10000);
 
-        // Poll for chap images then dump JSON-encoded srcs to a body marker.
-        // Avoids blind sleep + slow Rhino DOM iteration; finishes as soon as images appear.
+        // After launch, the React app has mounted; images may still be lazy-loading.
+        // Poll briefly for img.src to become a real URL (skip data: placeholders).
         var script = "" +
             "(async function() {\n" +
             "    try {\n" +
             "        var sel = 'div[id^=\"chap-img\"] img';\n" +
             "        var srcs = [];\n" +
-            "        for (var i = 0; i < 50; i++) {\n" +
+            "        for (var i = 0; i < 25; i++) {\n" +
             "            var imgs = document.querySelectorAll(sel);\n" +
             "            if (imgs.length > 0) {\n" +
-            "                srcs = Array.prototype.map.call(imgs, function(x){\n" +
-            "                    return x.getAttribute('src') || x.getAttribute('data-src') || x.src || '';\n" +
-            "                });\n" +
-            "                srcs = srcs.filter(function(s){ return s && s.indexOf('data:') !== 0; });\n" +
-            "                if (srcs.length > 0) break;\n" +
+            "                var tmp = [];\n" +
+            "                for (var j = 0; j < imgs.length; j++) {\n" +
+            "                    var s = imgs[j].getAttribute('src') || imgs[j].getAttribute('data-src') || imgs[j].src || '';\n" +
+            "                    if (s && s.indexOf('data:') !== 0) tmp.push(s);\n" +
+            "                }\n" +
+            "                if (tmp.length >= imgs.length) { srcs = tmp; break; }\n" +
+            "                if (tmp.length > 0 && i >= 8) { srcs = tmp; break; }\n" +
             "            }\n" +
-            "            await new Promise(function(r){ setTimeout(r, 200); });\n" +
+            "            await new Promise(function(r){ setTimeout(r, 150); });\n" +
             "        }\n" +
             "        document.body.innerHTML = 'VBOOK_IMGS_START' + JSON.stringify(srcs) + 'VBOOK_IMGS_END';\n" +
             "    } catch(e) {\n" +
@@ -32,7 +36,7 @@ function execute(url) {
             "    }\n" +
             "})();";
 
-        browser.callJs(script, 12000);
+        browser.callJs(script, 6000);
         var bdoc = browser.html();
         browser.close();
         browser = null;
