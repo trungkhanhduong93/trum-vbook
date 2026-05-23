@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "name": "Manga K",
+    "name": "Mino Manga",
     "author": "tkd1793",
-    "version": 8,
-    "source": "https://mangak.site",
-    "regexp": "(www.)?mangak\\.site\\/story\\/[a-zA-Z0-9-]+$",
-    "description": "Đọc truyện trên trang Manga K",
+    "version": 16,
+    "source": "https://minotruyenv7.xyz",
+    "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
+    "description": "Đọc truyện trên trang Mino Manga",
     "locale": "vi_VN",
     "language": "javascript",
     "type": "comic"
