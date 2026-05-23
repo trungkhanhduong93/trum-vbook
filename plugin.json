@@ -78,6 +78,31 @@
       "locale": "vi_VN"
     },
     {
+      "name": "Thegioitruyen",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/thegioitruyen/plugin.zip",
+      "version": 1,
+      "source": "https://thegioitruyen.vn",
+      "regexp": "thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/thegioitruyen/icon.png",
+      "description": "Thế Giới Truyện - Đọc truyện tranh online",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
+      "name": "Mimimoe",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip",
+      "version": 1,
+      "source": "https://mimimoe.moe",
+      "regexp": "mimimoe\\.moe\\/manga\\/[0-9]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/icon.png",
+      "description": "Mimi - Đọc truyện chất lượng cao",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
+    },
+    {
       "name": "ZetTruyen",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/plugin.zip",

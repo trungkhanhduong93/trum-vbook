@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "Mimimoe",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://mimimoe.moe",
+    "regexp": "mimimoe\\.moe\\/manga\\/[0-9]+\\/?$",
+    "description": "Mimi - Đọc truyện chất lượng cao",
+    "locale": "vi_VN",
+    "type": "comic",
+    "language": "javascript"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

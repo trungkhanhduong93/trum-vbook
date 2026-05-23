@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "Thegioitruyen",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://thegioitruyen.vn",
+    "regexp": "thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
+    "description": "Thế Giới Truyện - Đọc truyện tranh online",
+    "locale": "vi_VN",
+    "type": "comic",
+    "language": "javascript"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
