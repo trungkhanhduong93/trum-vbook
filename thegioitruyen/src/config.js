@@ -21,7 +21,7 @@ function resolveUrl(url) {
 }
 
 function fetchRetry(url) {
-    let doc = null;
+    var doc = null;
     try {
         doc = Http.get(url).headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -33,16 +33,16 @@ function fetchRetry(url) {
         // Ignore and fallback
     }
 
-    let title = doc ? doc.select("title").text() : "";
+    var title = doc ? doc.select("title").text() : "";
 
     if (doc && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
         return doc;
     }
 
     // Fallback to browser
-    let browser = Engine.newBrowser();
+    var browser = Engine.newBrowser();
     browser.launch(url, 15000);
-    let browserDoc = browser.html();
+    var browserDoc = browser.html();
     browser.close();
     return browserDoc;
 }

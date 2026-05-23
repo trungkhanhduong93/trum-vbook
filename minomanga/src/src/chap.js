@@ -6,9 +6,8 @@ function execute(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        // Wait up to 10s for the page to fully load (DOMContentLoaded).
-        // Earlier value of 5(ms) made callJs run before the page even started loading.
-        browser.launch(url, 10000);
+        // Wait up to 2.5s for the page to start mounting.
+        browser.launch(url, 2500);
 
         // After launch, the React app has mounted; images may still be lazy-loading.
         // Poll briefly for img.src to become a real URL (skip data: placeholders).
@@ -50,7 +49,15 @@ function execute(url) {
         var images = JSON.parse(match[1]);
         if (!images || images.length === 0) return Response.error("Không tìm thấy ảnh chương");
 
-        return Response.success(images);
+        var result = [];
+        for (var idx = 0; idx < images.length; idx++) {
+            var imgUrl = images[idx];
+            if (imgUrl.indexOf("//") === 0) {
+                imgUrl = "https:" + imgUrl;
+            }
+            result.push(imgUrl + "|Referer=" + BASE_URL + "/");
+        }
+        return Response.success(result);
     } catch (e) {
         if (browser) { try { browser.close(); } catch (err) {} }
         return Response.error("Lỗi tải chương: " + e.message);

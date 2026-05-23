@@ -34,7 +34,7 @@ function execute(url) {
 
         if (seen[src]) continue;
         seen[src] = true;
-        images.push(src);
+        images.push(src + "|Referer=" + BASE_URL + "/");
     }
 
     if (images.length === 0) {

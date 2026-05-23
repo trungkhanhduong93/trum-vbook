@@ -1,6 +1,6 @@
-let BASE_URL = 'https://minotruyenv7.xyz';
-let API = 'https://api.cloudkk-v1.xyz/api';
-let TYPE = 'manga';
+var BASE_URL = 'https://minotruyenv7.xyz';
+var API = 'https://api.cloudkk-v1.xyz/api';
+var TYPE = 'manga';
 try {
     if (CONFIG_URL) {
         BASE_URL = CONFIG_URL;
@@ -13,4 +13,4 @@ try {
     }
 } catch (error) {
 }
-let FULL_URL = BASE_URL + "/" + TYPE;
+var FULL_URL = BASE_URL + "/" + TYPE;

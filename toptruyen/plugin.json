@@ -2,7 +2,7 @@
   "metadata": {
     "name": "TopTruyen",
     "author": "tkd1793",
-    "version": 7,
+    "version": 8,
     "source": "https://toptruyen.cc",
     "regexp": "toptruyen\\.cc\\/[a-z0-9-]+\\/?$",
     "description": "Đọc truyện trên trang TopTruyen",
