@@ -26,7 +26,7 @@ function execute(url) {
         if (!p) continue;
         var src = p.image_url || p.url || "";
         if (!src) continue;
-        images.push(src + "|Referer=" + BASE_URL + "/");
+        images.push(src);
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
