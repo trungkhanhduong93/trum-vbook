@@ -20,7 +20,7 @@ function execute(url) {
     if (!coverEl) coverEl = selFirst(doc, "img.image-manga");
     if (!coverEl) coverEl = selFirst(doc, ".detail-info img");
     if (coverEl) {
-        cover = coverEl.attr("data-lazy-src") || coverEl.attr("data-src") || coverEl.attr("src") || "";
+        cover = coverEl.attr("data-original") || coverEl.attr("data-lazy-src") || coverEl.attr("data-src") || coverEl.attr("src") || "";
         if (cover && cover.indexOf("http") !== 0) {
             if (cover.indexOf("//") === 0) cover = "https:" + cover;
             else cover = resolveUrl(cover);

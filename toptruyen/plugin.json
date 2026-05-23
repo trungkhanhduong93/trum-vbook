@@ -2,7 +2,7 @@
   "metadata": {
     "name": "TopTruyen",
     "author": "tkd1793",
-    "version": 9,
+    "version": 10,
     "source": "https://www.toptruyenzone2.com",
     "regexp": "toptruyenzone2\\.com\\/truyen-tranh\\/[a-z0-9-]+\\/\\d+\\/?$",
     "description": "Đọc truyện trên trang TopTruyen",

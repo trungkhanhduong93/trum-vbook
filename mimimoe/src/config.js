@@ -63,17 +63,20 @@ function apiFetch(path) {
     try {
         res = fetch(url, { headers: buildHeaders() });
     } catch (e) {
-        // Fallback to auth on network error or unauthorized exception
+        // Rhino fetch may throw on network errors; fall through to auth fallback
     }
 
     if (res && res.ok) return res;
 
-    var token = loginAndGetToken();
-    if (token) {
-        try {
-            res = fetch(url, { headers: buildHeaders({ "Authorization": "Bearer " + token }) });
-        } catch (e) {
-            // Ignore
+    // Only attempt auth on 401/403 or if fetch threw an exception (res is null)
+    if (!res || res.status === 401 || res.status === 403) {
+        var token = loginAndGetToken();
+        if (token) {
+            try {
+                res = fetch(url, { headers: buildHeaders({ "Authorization": "Bearer " + token }) });
+            } catch (e) {
+                // Ignore
+            }
         }
     }
     return res;

@@ -39,12 +39,17 @@ function fetchRetry(url) {
         return doc;
     }
 
-    // Fallback to browser
-    var browser = Engine.newBrowser();
-    browser.launch(url, 15000);
-    var browserDoc = browser.html();
-    browser.close();
-    return browserDoc;
+    // Fallback to browser wrapped safely
+    try {
+        var browser = Engine.newBrowser();
+        browser.launch(url, 12000);
+        var browserDoc = browser.html();
+        browser.close();
+        if (browserDoc) return browserDoc;
+    } catch (err) {
+        // Ignore browser fallback error
+    }
+    return doc;
 }
 
 // Story card parser supporting both old and new layout
@@ -80,7 +85,7 @@ function parseItems(doc) {
         if (!img) img = selFirst(card, "img");
         var cover = "";
         if (img) {
-            cover = img.attr("data-lazy-src") || img.attr("data-src") || img.attr("src") || "";
+            cover = img.attr("data-original") || img.attr("data-lazy-src") || img.attr("data-src") || img.attr("src") || "";
             if (cover && cover.indexOf("http") !== 0) {
                 if (cover.indexOf("//") === 0) cover = "https:" + cover;
                 else cover = resolveUrl(cover);

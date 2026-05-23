@@ -21,7 +21,7 @@ function execute(url) {
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 
-        var src = img.attr("src") || img.attr("data-lazy-src") || img.attr("data-src") || img.attr("data-original") || "";
+        var src = img.attr("data-original") || img.attr("src") || img.attr("data-lazy-src") || img.attr("data-src") || "";
         if (!src) continue;
         src = src.trim();
 
@@ -29,6 +29,8 @@ function execute(url) {
         if (src.indexOf("logo") >= 0) continue;
         if (src.indexOf("avatar") >= 0) continue;
         if (src.indexOf("/icon-") >= 0) continue;
+        if (src.indexOf("follow.png") >= 0) continue;
+        if (src.indexOf("/comics/top/") >= 0) continue;
 
         if (src.indexOf("//") === 0) src = "https:" + src;
         else if (src.indexOf("http") !== 0) src = resolveUrl(src);
