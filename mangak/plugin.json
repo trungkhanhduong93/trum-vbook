@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Manga K",
     "author": "tkd1793",
-    "version": 8,
+    "version": 9,
     "source": "https://mangak.site",
     "regexp": "(www.)?mangak\\.site\\/story\\/[a-zA-Z0-9-]+$",
     "description": "Đọc truyện trên trang Manga K",

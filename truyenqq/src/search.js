@@ -74,9 +74,7 @@ function execute(keyword, page) {
     if (p > 1) url += "/trang-" + p;
     url += "?key=" + encodeURIComponent(kw);
 
-    var res2 = fetchRetry(url);
-    if (!res2 || !res2.ok) return Response.success([]);
-    var doc2 = res2.html();
+    var doc2 = fetchRetry(url);
     if (!doc2) return Response.success([]);
 
     var items2 = parseItems(doc2);

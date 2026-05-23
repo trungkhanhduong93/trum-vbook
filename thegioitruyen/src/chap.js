@@ -1,21 +1,8 @@
 load("config.js");
 
 function execute(url) {
-    var res = fetch(url, {
-        headers: {
-            "User-Agent": FETCH_HEADERS["User-Agent"],
-            "Referer": BASE_URL + "/",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"
-        }
-    });
-
-    if (!res || !res.ok) {
-        return Response.error("Không tải được trang chương: " + (res ? res.status : "null"));
-    }
-
-    var doc = res.html();
-    if (!doc) return Response.error("Không parse được HTML");
+    var doc = fetchRetry(url);
+    if (!doc) return Response.error("Không tải được chương");
 
     var images = [];
     var seen = {};

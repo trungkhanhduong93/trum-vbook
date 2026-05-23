@@ -45,7 +45,35 @@ function execute(url) {
         return list.length > 0 ? Response.success(list) : null;
     }
 
-    // ── Pages 2..N in parallel via browser + Promise.all ────────────────
+    // ── Pages 2..N sequentially using Http.get (extremely fast) ──────────
+    var success = true;
+    var listPaged = [];
+    for (var p = 2; p <= totalPages; p++) {
+        var s = ajaxGet(ajaxBase + p);
+        if (!s) {
+            success = false;
+            break;
+        }
+        try {
+            var d = JSON.parse(s);
+            if (d && d.success && d.chapters) {
+                pushChapters(listPaged, slug, d.chapters);
+            } else {
+                success = false;
+                break;
+            }
+        } catch (err) {
+            success = false;
+            break;
+        }
+    }
+
+    if (success) {
+        list = list.concat(listPaged);
+        return list.length > 0 ? Response.success(list) : null;
+    }
+
+    // ── Fallback to browser if Http.get fails ─────────────────────────────
     var browser = null;
     try {
         browser = Engine.newBrowser();

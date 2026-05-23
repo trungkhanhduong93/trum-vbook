@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Thegioitruyen",
     "author": "tkd1793",
-    "version": 1,
+    "version": 2,
     "source": "https://thegioitruyen.vn",
     "regexp": "thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
     "description": "Thế Giới Truyện - Đọc truyện tranh online",
