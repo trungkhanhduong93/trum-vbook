@@ -12,19 +12,19 @@
       "source": "https://luottruyen6.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",
-      "description": "Lướt Truyện - Đọc truyện tranh online",
+      "description": "LÆ°á»›t Truyá»‡n - Äá»c truyá»‡n tranh online",
       "type": "comic",
       "locale": "vi_VN"
     },
     {
-      "name": "Mino Truyện",
+      "name": "Mino Truyá»‡n",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip",
       "version": 18,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/icon.png",
-      "description": "Đọc truyện trên trang Mino",
+      "description": "Äá»c truyá»‡n trÃªn trang Mino",
       "type": "comic",
       "locale": "vi_VN"
     },
@@ -36,7 +36,7 @@
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/icon.png",
-      "description": "Đọc truyện trên trang Mino Manga",
+      "description": "Äá»c truyá»‡n trÃªn trang Mino Manga",
       "type": "comic",
       "locale": "vi_VN"
     },
@@ -48,7 +48,7 @@
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/icon.png",
-      "description": "Đọc truyện trên trang Mino Hentai",
+      "description": "Äá»c truyá»‡n trÃªn trang Mino Hentai",
       "type": "comic",
       "locale": "vi_VN",
       "tag": "nsfw"
@@ -61,7 +61,7 @@
       "source": "https://mangak.site",
       "regexp": "(www.)?mangak\\.site\\/story\\/[a-zA-Z0-9-]+$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/icon.png",
-      "description": "Đọc truyện trên trang Manga K",
+      "description": "Äá»c truyá»‡n trÃªn trang Manga K",
       "type": "comic",
       "locale": "vi_VN"
     },
@@ -73,7 +73,7 @@
       "source": "https://www.toptruyenzone2.com",
       "regexp": "toptruyenzone2\\.com\\/truyen-tranh\\/[a-z0-9-]+\\/\\d+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/icon.png",
-      "description": "Đọc truyện trên trang TopTruyen",
+      "description": "Äá»c truyá»‡n trÃªn trang TopTruyen",
       "type": "comic",
       "locale": "vi_VN"
     },
@@ -85,19 +85,19 @@
       "source": "https://truyenqqko.com",
       "regexp": "truyenqq[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+-\\d+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenqq/icon.png",
-      "description": "Đọc truyện trên TruyenQQ",
+      "description": "Äá»c truyá»‡n trÃªn TruyenQQ",
       "type": "comic",
       "locale": "vi_VN"
     },
     {
-      "name": "Thegioitruyen",
+      "name": "OTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/thegioitruyen/plugin.zip",
-      "version": 8,
-      "source": "https://thegioitruyen.vn",
-      "regexp": "thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/thegioitruyen/icon.png",
-      "description": "Thế Giới Truyện - Đọc truyện tranh online",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/otruyen/plugin.zip",
+      "version": 9,
+      "source": "https://nettruyen.guru",
+      "regexp": "nettruyen\\.guru\\/truyen-tranh\\/[a-z0-9-]+\\.html\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/otruyen/icon.png",
+      "description": "OTruyen - Doc truyen tranh online",
       "type": "comic",
       "locale": "vi_VN"
     },
@@ -109,7 +109,7 @@
       "source": "https://mimimoe.moe",
       "regexp": "mimimoe\\.moe\\/manga\\/[0-9]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/icon.png",
-      "description": "Mimi - Đọc truyện chất lượng cao",
+      "description": "Mimi - Äá»c truyá»‡n cháº¥t lÆ°á»£ng cao",
       "type": "comic",
       "locale": "vi_VN",
       "tag": "nsfw"
@@ -122,7 +122,7 @@
       "source": "https://www.zettruyen.top",
       "regexp": "(www.)?zettruyen\\.top\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png",
-      "description": "Đọc truyện trên trang ZetTruyen",
+      "description": "Äá»c truyá»‡n trÃªn trang ZetTruyen",
       "type": "comic",
       "locale": "vi_VN"
     }

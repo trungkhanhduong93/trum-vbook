@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "name": "Thegioitruyen",
+    "name": "OTruyen",
     "author": "tkd1793",
-    "version": 8,
-    "source": "https://thegioitruyen.vn",
-    "regexp": "thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
-    "description": "Thế Giới Truyện - Đọc truyện tranh online",
+    "version": 9,
+    "source": "https://nettruyen.guru",
+    "regexp": "nettruyen\\.guru\\/truyen-tranh\\/[a-z0-9-]+\\.html\\/?$",
+    "description": "OTruyen - Doc truyen tranh online",
     "locale": "vi_VN",
     "type": "comic",
     "language": "javascript"
