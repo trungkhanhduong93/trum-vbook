@@ -13,7 +13,10 @@ function execute(keyword, page) {
         url = BASE_URL + "/search/" + kw + "/page/" + p + "/";
     }
 
-    var doc = fetchRetry(url);
+    var res = fetchRetry(url);
+    if (!res || !res.ok) return Response.success([]);
+
+    var doc = res.html();
     if (!doc) return Response.success([]);
 
     return Response.success(parseItems(doc), getNextPage(doc, p));

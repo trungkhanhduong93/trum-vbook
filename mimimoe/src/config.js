@@ -59,24 +59,12 @@ function loginAndGetToken() {
 // API fetch wrapper: tries anonymous first, falls back to authenticated on 401/403.
 function apiFetch(path) {
     var url = path.indexOf("http") === 0 ? path : API_URL + path;
-    var res = null;
-    try {
-        res = fetch(url, { headers: buildHeaders() });
-    } catch (e) {
-        // Rhino fetch may throw on network errors; fall through to auth fallback
-    }
-
+    var res = fetch(url, { headers: buildHeaders() });
     if (res && res.ok) return res;
-
-    // Only attempt auth on 401/403 or if fetch threw an exception (res is null)
-    if (!res || res.status === 401 || res.status === 403) {
+    if (res && (res.status === 401 || res.status === 403)) {
         var token = loginAndGetToken();
         if (token) {
-            try {
-                res = fetch(url, { headers: buildHeaders({ "Authorization": "Bearer " + token }) });
-            } catch (e) {
-                // Ignore
-            }
+            res = fetch(url, { headers: buildHeaders({ "Authorization": "Bearer " + token }) });
         }
     }
     return res;

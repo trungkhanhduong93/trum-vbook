@@ -1,8 +1,10 @@
 load("config.js");
 
 function execute(url) {
-    var doc = fetchRetry(url);
-    if (!doc) return Response.error("Không tải được mục lục");
+    var res = fetchRetry(url);
+    if (!res || !res.ok) return Response.error("Không tải được mục lục");
+    var doc = res.html();
+    if (!doc) return Response.error("Không parse được HTML");
 
     var chapters = [];
     var links = doc.select("div.tgt-chapter-list a.tgt-chapter-item");

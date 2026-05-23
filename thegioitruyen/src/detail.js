@@ -1,8 +1,10 @@
 load("config.js");
 
 function execute(url) {
-    var doc = fetchRetry(url);
-    if (!doc) return Response.error("Không tải được trang truyện");
+    var res = fetchRetry(url);
+    if (!res || !res.ok) return Response.error("Không tải được trang truyện");
+    var doc = res.html();
+    if (!doc) return Response.error("Không parse được HTML");
 
     // Title
     var titleEl = selFirst(doc, "h1.tgt-info-title");

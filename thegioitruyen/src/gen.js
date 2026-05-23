@@ -12,7 +12,10 @@ function execute(url, page) {
         fetchUrl = base + "/page/" + p + "/";
     }
 
-    var doc = fetchRetry(fetchUrl);
+    var res = fetchRetry(fetchUrl);
+    if (!res || !res.ok) return Response.success([], null);
+
+    var doc = res.html();
     if (!doc) return Response.success([], null);
 
     var items = parseItems(doc);

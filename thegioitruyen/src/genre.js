@@ -1,7 +1,10 @@
 load("config.js");
 
 function execute() {
-    var doc = fetchRetry(BASE_URL + "/truyen/");
+    var res = fetchRetry(BASE_URL + "/truyen/");
+    if (!res || !res.ok) return Response.success([]);
+
+    var doc = res.html();
     if (!doc) return Response.success([]);
 
     var genres = [];
