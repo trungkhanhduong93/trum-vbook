@@ -93,7 +93,7 @@
       "name": "OTruyen",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/otruyen/plugin.zip",
-      "version": 9,
+      "version": 10,
       "source": "https://nettruyen.guru",
       "regexp": "nettruyen\\.guru\\/truyen-tranh\\/[a-z0-9-]+\\.html\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/otruyen/icon.png",
