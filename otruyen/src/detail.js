@@ -28,10 +28,8 @@ function execute(url) {
         });
     }
 
-    var metaSpans = doc.select("div.meta span");
-    var chapterText = metaSpans.size() > 0 ? trimText(metaSpans.get(0).text()) : "";
-    var lengthText = metaSpans.size() > 1 ? trimText(metaSpans.get(1).text()) : "";
-    var paceText = metaSpans.size() > 2 ? trimText(metaSpans.get(2).text()) : "";
+    var chapterCount = extractChapterCount(doc);
+    var chapterText = chapterCount > 0 ? (chapterCount + " chuong") : "";
 
     var description = "";
     var summaryBox = selFirst(doc, "div.grid2 div.box");
@@ -49,8 +47,6 @@ function execute(url) {
 
     var detailParts = [];
     if (chapterText) detailParts.push(chapterText);
-    if (lengthText) detailParts.push(lengthText);
-    if (paceText) detailParts.push(paceText);
 
     var suggests = [];
     var seenSuggests = {};

@@ -1,6 +1,5 @@
 var BASE_URL = "https://nettruyen.guru";
 var HOST = "https://nettruyen.guru";
-var STORY_META_CACHE = {};
 
 var FETCH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
@@ -52,76 +51,9 @@ function extractChapterCount(doc) {
     return 0;
 }
 
-function extractUpdatedText(doc) {
-    var metaEl = selFirst(doc, "meta[property='article:modified_time']");
-    if (!metaEl) metaEl = selFirst(doc, "meta[property='og:updated_time']");
-    if (!metaEl) metaEl = selFirst(doc, "meta[name='article:modified_time']");
-    return metaEl ? trimText(metaEl.attr("content")) : "";
-}
-
-function formatDateText(value) {
-    var text = trimText(value);
-    var match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (match) return match[3] + "/" + match[2] + "/" + match[1];
-    return text;
-}
-
 function buildStoryDescription(meta) {
-    var parts = [];
-    if (meta.chapterCount > 0) {
-        parts.push(meta.chapterCount + " chuong");
-    }
-    if (meta.updatedAt) {
-        parts.push("Cap nhat " + meta.updatedAt);
-    }
-    return parts.join(" | ");
-}
-
-function fetchStoryMeta(url) {
-    var finalUrl = resolveUrl(url);
-    if (STORY_META_CACHE[finalUrl]) return STORY_META_CACHE[finalUrl];
-
-    var meta = {
-        chapterCount: 0,
-        updatedAt: "",
-        description: ""
-    };
-
-    try {
-        var res = fetch(finalUrl, FETCH_OPTIONS);
-        if (!res || !res.ok) {
-            STORY_META_CACHE[finalUrl] = meta;
-            return meta;
-        }
-
-        var doc = res.html();
-        if (!doc) {
-            STORY_META_CACHE[finalUrl] = meta;
-            return meta;
-        }
-
-        meta.chapterCount = extractChapterCount(doc);
-        meta.updatedAt = formatDateText(extractUpdatedText(doc));
-        meta.description = buildStoryDescription(meta);
-    } catch (e) {
-    }
-
-    STORY_META_CACHE[finalUrl] = meta;
-    return meta;
-}
-
-function enrichItemsWithMeta(items) {
-    for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        if (!item || !item.link) continue;
-        if (trimText(item.description)) continue;
-
-        var meta = fetchStoryMeta(item.link);
-        if (meta && meta.description) {
-            item.description = meta.description;
-        }
-    }
-    return items;
+    if (meta.chapterCount > 0) return meta.chapterCount + " chuong";
+    return "";
 }
 
 function extractStoryBase(url) {
@@ -195,5 +127,5 @@ function parseItems(doc) {
         pushItem(items, seen, tName, tCover, a.attr("href") || "", "");
     }
 
-    return enrichItemsWithMeta(items);
+    return items;
 }
