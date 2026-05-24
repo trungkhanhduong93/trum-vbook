@@ -55,7 +55,7 @@ function execute(url) {
             if (imgUrl.indexOf("//") === 0) {
                 imgUrl = "https:" + imgUrl;
             }
-            result.push(imgUrl + "|Referer=" + BASE_URL + "/");
+            result.push(imgUrl);
         }
         return Response.success(result);
     } catch (e) {
