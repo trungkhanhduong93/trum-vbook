@@ -1,5 +1,6 @@
 var BASE_URL = "https://nettruyen.guru";
 var HOST = "https://nettruyen.guru";
+var STORY_META_CACHE = {};
 
 var FETCH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
@@ -54,6 +55,42 @@ function extractChapterCount(doc) {
 function buildStoryDescription(meta) {
     if (meta.chapterCount > 0) return meta.chapterCount + " chuong";
     return "";
+}
+
+function fetchStoryMeta(url) {
+    var finalUrl = resolveUrl(url);
+    if (STORY_META_CACHE[finalUrl]) return STORY_META_CACHE[finalUrl];
+    var meta = { chapterCount: 0 };
+    try {
+        var res = fetch(finalUrl, FETCH_OPTIONS);
+        if (res && res.ok) {
+            var doc = res.html();
+            if (doc) {
+                meta.chapterCount = extractChapterCount(doc);
+                var btns = doc.select("div.cta a.btn");
+                for (var i = 0; i < btns.size(); i++) {
+                    var h = btns.get(i).attr("href") || "";
+                    var n = parsePositiveInt(h.replace(/.*-chap-/, ""));
+                    if (n > meta.chapterCount) meta.chapterCount = n;
+                }
+            }
+        }
+    } catch (e) {}
+    STORY_META_CACHE[finalUrl] = meta;
+    return meta;
+}
+
+function enrichItemsWithMeta(items) {
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (!item || !item.link) continue;
+        if (trimText(item.description)) continue;
+        var meta = fetchStoryMeta(item.link);
+        if (meta && meta.chapterCount > 0) {
+            item.description = buildStoryDescription(meta);
+        }
+    }
+    return items;
 }
 
 function extractStoryBase(url) {
@@ -127,5 +164,5 @@ function parseItems(doc) {
         pushItem(items, seen, tName, tCover, a.attr("href") || "", "");
     }
 
-    return items;
+    return enrichItemsWithMeta(items);
 }
