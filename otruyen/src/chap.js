@@ -33,7 +33,7 @@ function execute(url) {
         var finalSrc = resolveUrl(src);
         if (seen[finalSrc]) continue;
         seen[finalSrc] = true;
-        images.push(finalSrc + "|Referer=" + BASE_URL + "/");
+        images.push(finalSrc);
     }
 
     if (images.length === 0) {
