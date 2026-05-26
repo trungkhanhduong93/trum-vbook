@@ -10,7 +10,7 @@
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/manhua3q/plugin.zip",
       "version": 2,
       "source": "https://manhua3q.com",
-      "regexp": "(www\\\\.)?manhua3q\\\\.com",
+      "regexp": "(www\\.)?manhua3q\\.com",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/manhua3q/icon.png",
       "description": "Đọc truyện trên trang manhua3q",
       "type": "comic",
