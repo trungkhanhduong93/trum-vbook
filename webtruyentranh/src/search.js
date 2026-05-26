@@ -23,25 +23,23 @@ function execute(url, page) {
         if (!link || added[link]) continue;
         if (link.indexOf("/truyen-tranh/") === -1) continue;
 
-        // Must have an <img> child — filters out header nav dropdown links
+        // Real grid cards have <h3> inside the <a>; header dropdown nav links don't.
+        let h3El = a.selectFirst("h3");
+        if (!h3El) continue;
+
         let imgEl = a.selectFirst("img");
         if (!imgEl) continue;
 
         added[link] = true;
 
+        let title = h3El.attr("title") || h3El.text().trim();
+        if (!title) title = (imgEl.attr("alt") || "").replace(/^Truyện tranh\s+/i, "").trim();
+
         let img = imgEl.attr("src") || imgEl.attr("data-src") || "";
         if (img.indexOf(" ") > 0) img = img.split(" ")[0];
         if (img.startsWith("/")) img = BASE_URL + img;
 
-        // Title: prefer h3 title attribute (cleanest), fall back to text
-        let title = "";
-        let h3El = a.selectFirst("h3");
-        if (h3El) title = h3El.attr("title") || h3El.text().trim();
-        if (!title) title = imgEl.attr("alt") || a.attr("title") || "";
-        title = title.replace(/^Truyện tranh\s+/i, "").trim();
-
-        // Updated time / chapter info
-        let chapEl = a.selectFirst("p.text-xs, .text-gray-400");
+        let chapEl = a.selectFirst("p.text-xs");
         let chap = chapEl ? chapEl.text().trim() : "";
 
         if (link && title && img) {
@@ -51,8 +49,8 @@ function execute(url, page) {
 
     // Pagination
     let next = "";
-    let pageLinks = doc.select("a[href*='page=']");
     let curPage = parseInt(page);
+    let pageLinks = doc.select("a[href*='page=']");
     for (let i = 0; i < pageLinks.size(); i++) {
         let href = pageLinks.get(i).attr("href");
         let m = href.match(/page=(\d+)/);

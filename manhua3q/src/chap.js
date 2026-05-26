@@ -1,45 +1,74 @@
 load("config.js");
 
 function execute(url) {
-    var doc = fetchRetry(url);
-    if (!doc) return Response.error("Không tải được chương");
-    
-    var html = doc.html();
-    var images = [];
-    
-    var imgsMatch = html.match(/\\"images\\":\\\[(.*?)\\\]/) || html.match(/"images":\[(.*?)\]/);
-    if (imgsMatch) {
-        var inner = imgsMatch[1];
-        var urls = [];
-        var regex = /\\"src\\":\\"([^\\"]+)\\"/g;
-        var regex2 = /"src":"([^"]+)"/g;
-        var m;
-        while ((m = regex.exec(inner)) !== null) {
-            urls.push(m[1]);
-        }
-        if (urls.length === 0) {
-            while ((m = regex2.exec(inner)) !== null) {
-                urls.push(m[1]);
-            }
-        }
-        
-        for (var i = 0; i < urls.length; i++) {
-            var src = urls[i].replace(/\\u0026/g, "&").replace(/\\/g, "");
-            images.push(src);
-        }
-    }
-    
-    if (images.length === 0) {
-        var imgEls = doc.select("img");
-        for (var i = 0; i < imgEls.size(); i++) {
-            var el = imgEls.get(i);
-            var src = el.attr("src") || el.attr("data-src") || el.attr("data-original") || "";
-            if (src && src.indexOf("logo") === -1 && src.indexOf("icon") === -1 && src.indexOf("data:") === -1) {
-                images.push(resolveUrl(src));
-            }
-        }
-    }
+    if (url.indexOf("http") !== 0) url = resolveUrl(url);
 
-    if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
-    return Response.success(images);
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.launch(url, 3000);
+
+        var script = "" +
+            "(async function() {\n" +
+            "    try {\n" +
+            "        var srcs = [];\n" +
+            "        for (var i = 0; i < 40; i++) {\n" +
+            "            srcs = [];\n" +
+            "            var imgs = document.querySelectorAll('img');\n" +
+            "            for (var j = 0; j < imgs.length; j++) {\n" +
+            "                var s = imgs[j].getAttribute('src') || imgs[j].getAttribute('data-src') || imgs[j].src || '';\n" +
+            "                if (!s || s.indexOf('data:') === 0) continue;\n" +
+            "                if (s.indexOf('logo') !== -1) continue;\n" +
+            "                if (s.indexOf('favicon') !== -1) continue;\n" +
+            "                if (s.indexOf('/avatars/') !== -1) continue;\n" +
+            "                if (s.indexOf('thumbnail') !== -1) continue;\n" +
+            "                if (s.indexOf('/_next/image') !== -1) {\n" +
+            "                    var m = s.match(/[?&]url=([^&]+)/);\n" +
+            "                    if (m) s = decodeURIComponent(m[1]);\n" +
+            "                }\n" +
+            "                if (s.indexOf('//') === 0) s = 'https:' + s;\n" +
+            "                if (s.indexOf('http') !== 0) continue;\n" +
+            "                if (s.match(/\\.(jpg|jpeg|png|webp|gif)/i)) srcs.push(s);\n" +
+            "            }\n" +
+            "            if (srcs.length >= 3) break;\n" +
+            "            await new Promise(function(r){ setTimeout(r, 200); });\n" +
+            "        }\n" +
+            "        document.body.innerHTML = 'VBOOK_IMGS_START' + JSON.stringify(srcs) + 'VBOOK_IMGS_END';\n" +
+            "    } catch(e) {\n" +
+            "        document.body.innerHTML = 'VBOOK_IMGS_ERROR' + e.message;\n" +
+            "    }\n" +
+            "})();";
+
+        browser.callJs(script, 10000);
+        var bdoc = browser.html();
+        browser.close();
+        browser = null;
+
+        if (!bdoc) return Response.error("Không tải được trang chương");
+
+        var text = bdoc.select("body").text();
+        var match = text.match(/VBOOK_IMGS_START(.*?)VBOOK_IMGS_END/);
+        if (!match) {
+            var errMatch = text.match(/VBOOK_IMGS_ERROR(.*?)$/);
+            return Response.error("Không trích xuất được ảnh: " + (errMatch ? errMatch[1] : "unknown"));
+        }
+
+        var images = JSON.parse(match[1]);
+        if (!images || images.length === 0) return Response.error("Không tìm thấy ảnh chương");
+
+        var seen = {};
+        var result = [];
+        for (var idx = 0; idx < images.length; idx++) {
+            var imgUrl = images[idx];
+            if (imgUrl.indexOf("//") === 0) imgUrl = "https:" + imgUrl;
+            if (seen[imgUrl]) continue;
+            seen[imgUrl] = true;
+            result.push(imgUrl);
+        }
+
+        return Response.success(result);
+    } catch (e) {
+        if (browser) { try { browser.close(); } catch (err) {} }
+        return Response.error("Lỗi tải chương: " + e.message);
+    }
 }
