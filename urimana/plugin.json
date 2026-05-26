@@ -2,7 +2,7 @@
   "metadata": {
     "name": "urimana",
     "author": "tkd1793",
-    "version": 5,
+    "version": 6,
     "source": "https://www.urimana.com",
     "regexp": "(www\\.)?urimana\\.com",
     "description": "Đọc truyện trên trang Urimana",
