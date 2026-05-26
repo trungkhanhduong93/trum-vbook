@@ -12,47 +12,32 @@ function execute(url, page) {
         }
 
         let doc = fetchRetry(fetchUrl);
-        if (!doc) {
-            return Response.success([{
-                name: "DEBUG: fetchRetry null. url=" + fetchUrl,
-                link: fetchUrl,
-                cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/icon.png",
-                description: "fetch failed",
-                host: BASE_URL
-            }]);
-        }
-
-        let htmlLen = 0;
-        try { htmlLen = doc.html().length; } catch (e) {}
+        if (!doc) return Response.error("Không tải được danh sách truyện");
 
         let data = [];
         let added = {};
-        let allCards = doc.select("a[href*='/truyen-tranh/']");
-        let totalLinks = allCards.size();
-        let h3Count = 0;
-        let imgCount = 0;
+        let cards = doc.select("a[href*='/truyen-tranh/']");
 
-        for (let i = 0; i < allCards.size(); i++) {
-            let a = allCards.get(i);
+        for (let i = 0; i < cards.size(); i++) {
+            let a = cards.get(i);
             let link = a.attr("href");
-            if (!link) continue;
-            if (link.indexOf("/truyen-tranh/") === -1) continue;
+            if (!link || link.indexOf("/truyen-tranh/") === -1) continue;
             if (added[link]) continue;
 
-            let imgEl = a.selectFirst("img");
-            if (!imgEl) continue;
-            imgCount++;
+            // Real grid cards have <h3>; header nav dropdowns don't. Use .select().first()
+            let h3List = a.select("h3");
+            if (h3List.size() === 0) continue;
 
-            let h3El = a.selectFirst("h3");
-            if (h3El) h3Count++;
+            let imgList = a.select("img");
+            if (imgList.size() === 0) continue;
 
             added[link] = true;
 
-            let title = "";
-            if (h3El) title = h3El.attr("title") || h3El.text().trim();
+            let h3El = h3List.get(0);
+            let imgEl = imgList.get(0);
+
+            let title = h3El.attr("title") || h3El.text().trim();
             if (!title) title = (imgEl.attr("alt") || "").replace(/^Truyện tranh\s+/i, "").trim();
-            if (!title) title = a.attr("title") || "";
-            title = title.trim();
             if (!title) continue;
 
             let img = imgEl.attr("src") || imgEl.attr("data-src") || "";
@@ -60,19 +45,16 @@ function execute(url, page) {
             if (img.startsWith("/")) img = BASE_URL + img;
             if (!img) continue;
 
-            data.push({ name: title, link: link, cover: img, description: "", host: BASE_URL });
+            let chap = "";
+            let chapList = a.select("p.text-xs");
+            if (chapList.size() > 0) chap = chapList.get(0).text().trim();
+
+            data.push({ name: title, link: link, cover: img, description: chap, host: BASE_URL });
         }
 
-        if (data.length === 0) {
-            return Response.success([{
-                name: "DEBUG: 0 items. links=" + totalLinks + " img=" + imgCount + " h3=" + h3Count + " html=" + htmlLen,
-                link: fetchUrl,
-                cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/icon.png",
-                description: "filter loại hết",
-                host: BASE_URL
-            }]);
-        }
+        if (data.length === 0) return Response.error("Không tìm thấy truyện nào");
 
+        // Pagination
         let next = "";
         let curPage = parseInt(page);
         let pageLinks = doc.select("a[href*='page=']");
@@ -88,12 +70,6 @@ function execute(url, page) {
 
         return Response.success(data, next);
     } catch (err) {
-        return Response.success([{
-            name: "EXCEPTION: " + (err && err.message ? err.message : String(err)),
-            link: "https://www.webtruyentranh.com",
-            cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/icon.png",
-            description: "uncaught error in search.js",
-            host: BASE_URL
-        }]);
+        return Response.error("Lỗi search.js: " + (err && err.message ? err.message : String(err)));
     }
 }
