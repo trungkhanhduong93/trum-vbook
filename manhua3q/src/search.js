@@ -19,12 +19,13 @@ function execute(url, page) {
     var items = [];
     var seen = {};
 
-    var pattern = /\\"id\\":\d+,\\"name\\":\\"([^\\"]+)\\",\\"origin_name\\":.*?\\"slug\\":\\"([^\\"]+)\\",(?:.*?)\\"thumbnail\\":\\"([^\\"]+)\\"/g;
+    var pattern = /\\"id\\":\d+,\\"name\\":\\"([^\\"]+)\\",\\"origin_name\\":.*?\\"slug\\":\\"([^\\"]+)\\",(?:.*?)\\"thumbnail\\":\\"([^\\"]+)\\".*?(?:\\"last_chapter\\":(?:.*?)\\"name\\":\\"([^\\"]+)\\")?/g;
     var m;
     while ((m = pattern.exec(html)) !== null) {
         var name = m[1];
         var slug = m[2];
         var cover = m[3];
+        var chap = m[4] ? "Chương " + m[4] : "";
         var link = BASE_URL + "/" + slug;
         
         if (seen[link]) continue;
@@ -34,7 +35,7 @@ function execute(url, page) {
             name: name,
             link: link,
             cover: cover,
-            description: "",
+            description: chap,
             host: BASE_URL
         });
     }

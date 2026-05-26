@@ -7,18 +7,24 @@ function execute(url) {
     var html = doc.html();
     var images = [];
     
-    var imgsMatch = html.match(/\\"images\\":\\\[(.*?)\\\]/);
+    var imgsMatch = html.match(/\\"images\\":\\\[(.*?)\\\]/) || html.match(/"images":\[(.*?)\]/);
     if (imgsMatch) {
         var inner = imgsMatch[1];
         var urls = [];
         var regex = /\\"src\\":\\"([^\\"]+)\\"/g;
+        var regex2 = /"src":"([^"]+)"/g;
         var m;
         while ((m = regex.exec(inner)) !== null) {
             urls.push(m[1]);
         }
+        if (urls.length === 0) {
+            while ((m = regex2.exec(inner)) !== null) {
+                urls.push(m[1]);
+            }
+        }
         
         for (var i = 0; i < urls.length; i++) {
-            var src = urls[i].replace(/\\u0026/g, "&");
+            var src = urls[i].replace(/\\u0026/g, "&").replace(/\\/g, "");
             images.push(src);
         }
     }
