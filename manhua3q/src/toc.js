@@ -8,8 +8,9 @@ function execute(url) {
     var chapters = [];
     
     var links = doc.select("a[href*=/chapter-]");
+    var nl = links.size();
     var seen = {};
-    for (var i = 0; i < links.size(); i++) {
+    for (var i = 0; i < nl; i++) {
         var a = links.get(i);
         var href = resolveUrl(a.attr("href"));
         if (seen[href]) continue;

@@ -3,44 +3,49 @@ load("config.js");
 function execute(url) {
     var doc = fetchRetry(url);
     if (!doc) return Response.error("Không tải được chi tiết truyện");
-    
+
     var html = doc.html();
-    
+
     var name = "";
-    var titleEl = doc.select("h1").first();
-    if (titleEl) name = titleEl.text();
-    else {
-        var match = doc.html().match(/<h1[^>]*>(.*?)<\/h1>/i);
+    var titleEls = doc.select("h1");
+    if (titleEls.size() > 0) {
+        name = titleEls.get(0).text();
+    } else {
+        var match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
         if (match) name = match[1];
     }
-    
+
     var cover = "";
-    var coverEl = doc.select(".info-manga img, .thumbnail img, img[src*=thumbnail], img[alt*='" + name + "']").first();
-    if (coverEl) cover = coverEl.attr("src") || coverEl.attr("data-src");
+    var coverEls = doc.select(".info-manga img, .thumbnail img, img[src*=thumbnail]");
+    if (coverEls.size() > 0) {
+        var coverEl = coverEls.get(0);
+        cover = coverEl.attr("src") || coverEl.attr("data-src");
+    }
     if (!cover) {
-        var mCover = doc.html().match(/"thumbnail"\s*:\s*"([^"]+)"/);
+        var mCover = html.match(/"thumbnail"\s*:\s*"([^"]+)"/);
         if (mCover) cover = mCover[1];
     }
-    
+
     var desc = "";
-    var descEl = doc.select(".summary, .description, .detail-content, .info-desc").first();
-    if (descEl) desc = descEl.text();
+    var descEls = doc.select(".summary, .description, .detail-content, .info-desc");
+    if (descEls.size() > 0) desc = descEls.get(0).text();
     if (!desc) {
-        var mDesc = doc.html().match(/"content"\s*:\s*"(.*?)"/);
+        var mDesc = html.match(/"content"\s*:\s*"(.*?)"/);
         if (mDesc) desc = mDesc[1].replace(/<[^>]+>/g, "");
     }
-    
+
     var author = "Đang cập nhật";
-    var authorEl = doc.select(".author, .info-manga .author").first();
-    if (authorEl) author = authorEl.text();
-    
+    var authorEls = doc.select(".author, .info-manga .author");
+    if (authorEls.size() > 0) author = authorEls.get(0).text();
+
     var genres = [];
     var genreEls = doc.select(".genres a, .list-tags a, .tags a");
-    for (var i = 0; i < genreEls.size(); i++) {
+    var ng = genreEls.size();
+    for (var i = 0; i < ng; i++) {
         genres.push(trimText(genreEls.get(i).text()));
     }
     if (genres.length === 0) {
-        var genreMatch = doc.html().match(/"genres":\[(.*?)\]/);
+        var genreMatch = html.match(/"genres":\[(.*?)\]/);
         if (genreMatch) {
             var gPattern = /"name":"([^"]+)"/g;
             var gm;
