@@ -3,15 +3,22 @@ load("config.js");
 function execute(url, page) {
     var p = page ? parseInt(page) : 1;
     var fetchUrl = "";
+    var isStaticHome = false;
     
     if (url.indexOf("http") === 0) {
-        // Nếu là URL duyệt chuyên mục truyền vào từ home.js
+        // Kiểm tra xem có phải trang chủ tĩnh không
+        var cleanUrl = url;
+        if (cleanUrl.slice(-1) === "/") {
+            cleanUrl = cleanUrl.slice(0, -1);
+        }
+        if (cleanUrl === BASE_URL) {
+            isStaticHome = true;
+        }
+
         if (p > 1) {
-            // Chuẩn hóa đường dẫn phân trang cho WordPress
-            // url: https://www.urimana.com/hot-nhat -> https://www.urimana.com/hot-nhat/page/2
-            var cleanUrl = url;
-            if (cleanUrl.slice(-1) === "/") {
-                cleanUrl = cleanUrl.slice(0, -1);
+            if (isStaticHome) {
+                // Trang chủ không có phân trang thực tế, trả về rỗng để tránh lỗi 404/chuyển hướng
+                return Response.success([], "");
             }
             fetchUrl = cleanUrl + "/page/" + p;
         } else {
@@ -68,7 +75,7 @@ function execute(url, page) {
 
     // Phân trang
     var next = "";
-    if (items.length > 0) {
+    if (items.length > 0 && !isStaticHome) {
         var nextEl = doc.selectFirst("a.next");
         if (nextEl) {
             next = String(p + 1);

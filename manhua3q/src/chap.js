@@ -36,7 +36,7 @@ function execute(url) {
         if (raw.indexOf("//") === 0) raw = "https:" + raw;
         if (seen[raw]) continue;
         seen[raw] = true;
-        images.push(raw + "|Referer=" + BASE_URL + "/");
+        images.push(raw);
     }
 
     if (images.length === 0) {
