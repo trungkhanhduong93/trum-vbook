@@ -2,7 +2,7 @@
   "metadata": {
     "name": "manhua3q",
     "author": "tkd1793",
-    "version": 6,
+    "version": 7,
     "source": "https://manhua3q.com",
     "regexp": "(www\\.)?manhua3q\\.com",
     "description": "Đọc truyện trên trang manhua3q",
