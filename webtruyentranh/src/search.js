@@ -11,40 +11,69 @@ function execute(url, page) {
     }
 
     let doc = fetchRetry(fetchUrl);
-    if (!doc) return Response.error("Không tải được danh sách truyện");
+    if (!doc) {
+        // DEBUG: surface the failure as a fake item so we can see it in the app
+        return Response.success([{
+            name: "DEBUG: fetchRetry returned null",
+            link: fetchUrl,
+            cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/icon.png",
+            description: "url=" + fetchUrl,
+            host: BASE_URL
+        }]);
+    }
+
+    let htmlLen = 0;
+    try { htmlLen = doc.html().length; } catch (e) {}
 
     let data = [];
     let added = {};
-    let cards = doc.select("a[href*='/truyen-tranh/']");
+    let allCards = doc.select("a[href*='/truyen-tranh/']");
+    let totalLinks = allCards.size();
+    let h3Count = 0;
+    let imgCount = 0;
 
-    for (let i = 0; i < cards.size(); i++) {
-        let a = cards.get(i);
+    for (let i = 0; i < allCards.size(); i++) {
+        let a = allCards.get(i);
         let link = a.attr("href");
-        if (!link || added[link]) continue;
+        if (!link) continue;
         if (link.indexOf("/truyen-tranh/") === -1) continue;
-
-        // Real grid cards have <h3> inside the <a>; header dropdown nav links don't.
-        let h3El = a.selectFirst("h3");
-        if (!h3El) continue;
+        if (added[link]) continue;
 
         let imgEl = a.selectFirst("img");
         if (!imgEl) continue;
+        imgCount++;
+
+        let h3El = a.selectFirst("h3");
+        if (h3El) h3Count++;
 
         added[link] = true;
 
-        let title = h3El.attr("title") || h3El.text().trim();
+        let title = "";
+        if (h3El) title = h3El.attr("title") || h3El.text().trim();
         if (!title) title = (imgEl.attr("alt") || "").replace(/^Truyện tranh\s+/i, "").trim();
+        if (!title) title = a.attr("title") || "";
+        title = title.trim();
+        if (!title) continue;
 
         let img = imgEl.attr("src") || imgEl.attr("data-src") || "";
         if (img.indexOf(" ") > 0) img = img.split(" ")[0];
         if (img.startsWith("/")) img = BASE_URL + img;
+        if (!img) continue;
 
         let chapEl = a.selectFirst("p.text-xs");
         let chap = chapEl ? chapEl.text().trim() : "";
 
-        if (link && title && img) {
-            data.push({ name: title, link: link, cover: img, description: chap, host: BASE_URL });
-        }
+        data.push({ name: title, link: link, cover: img, description: chap, host: BASE_URL });
+    }
+
+    if (data.length === 0) {
+        return Response.success([{
+            name: "DEBUG: 0 items. links=" + totalLinks + " withImg=" + imgCount + " withH3=" + h3Count + " htmlLen=" + htmlLen,
+            link: fetchUrl,
+            cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/icon.png",
+            description: "Filter loại hết items",
+            host: BASE_URL
+        }]);
     }
 
     // Pagination
