@@ -154,7 +154,7 @@
       "name": "Urimana",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/urimana/plugin.zip",
-      "version": 4,
+      "version": 5,
       "source": "https://www.urimana.com",
       "regexp": "(www\\.)?urimana\\.com",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/urimana/icon.png",
