@@ -19,7 +19,7 @@ function execute(url, page) {
     var items = [];
     var seen = {};
 
-    var pattern = /\\"id\\":\d+,\\"name\\":\\"([^\\"]+)\\",\\"origin_name\\":.*?\\"slug\\":\\"([^\\"]+)\\",(?:.*?)\\"thumbnail\\":\\"([^\\"]+)\\".*?(?:\\"last_chapter\\":(?:.*?)\\"name\\":\\"([^\\"]+)\\")?/g;
+    var pattern = /\\"id\\":\d+,\\"name\\":\\"([^\\"]+)\\",\\"origin_name\\":(?:null|\\"[^\\"]*\\"),\\"slug\\":\\"([^\\"]+)\\",(?:.*?)\\"thumbnail\\":\\"([^\\"]+)\\",(?:.*?)\\"last_chapter\\":\s*(?:null|\\*\{\s*\\"id\\":\d+,\s*\\"name\\":\\"([^\\"]+)\\")/g;
     var m;
     while ((m = pattern.exec(html)) !== null) {
         var name = m[1];
