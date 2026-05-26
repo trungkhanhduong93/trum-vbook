@@ -5,14 +5,14 @@ function execute(url) {
     var doc = fetchRetry(url);
     if (!doc) return Response.error("Không tải được chi tiết truyện");
 
-    var titleEl = doc.selectFirst("h1");
+    var titleEl = selFirst(doc, "h1");
     var name = titleEl ? trimText(titleEl.text()) : "";
     var cIdx = name.indexOf(" - Chapter");
     if (cIdx > 0) name = name.substring(0, cIdx);
 
     var cover = "";
-    var coverEl = doc.selectFirst(".book_avatar img");
-    if (!coverEl) coverEl = doc.selectFirst(".book_detail img");
+    var coverEl = selFirst(doc, ".book_avatar img");
+    if (!coverEl) coverEl = selFirst(doc, ".book_detail img");
     if (coverEl) {
         cover = coverEl.attr("src") || coverEl.attr("data-original") || "";
         if (cover && cover.indexOf("http") !== 0) {
@@ -28,7 +28,7 @@ function execute(url) {
         var item = infoItems.get(i);
         var label = item.text();
         if (label.indexOf("Tác giả") >= 0 || label.indexOf("Author") >= 0) {
-            var authorA = item.selectFirst("a");
+            var authorA = selFirst(item, "a");
             if (authorA) author = trimText(authorA.text());
             break;
         }
@@ -39,7 +39,7 @@ function execute(url) {
         for (var j = 0; j < ns; j++) {
             var p = storyInfo.get(j);
             if (p.text().indexOf("Tác giả") >= 0) {
-                var aEl = p.selectFirst("a");
+                var aEl = selFirst(p, "a");
                 if (aEl) author = trimText(aEl.text());
                 break;
             }
@@ -59,7 +59,8 @@ function execute(url) {
     }
 
     var description = "";
-    var descEl = doc.selectFirst(".detail-content") || doc.selectFirst(".story-detail-info");
+    var descEl = selFirst(doc, ".detail-content");
+    if (!descEl) descEl = selFirst(doc, ".story-detail-info");
     if (descEl) description = trimText(descEl.text());
 
     return Response.success({

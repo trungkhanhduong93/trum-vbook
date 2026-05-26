@@ -10,7 +10,8 @@ var REQ_HEADERS = {
 };
 
 function selFirst(el, css) {
-    return el.selectFirst(css);
+    var items = el.select(css);
+    return items.size() > 0 ? items.get(0) : null;
 }
 
 function trimText(s) {
@@ -19,7 +20,6 @@ function trimText(s) {
 
 function resolveUrl(href) {
     if (!href) return "";
-    if (href.charAt(0) !== " " && href.indexOf("http") === 0) return href;
     href = trimText(href);
     if (href.indexOf("http") === 0) return href;
     if (href.indexOf("//") === 0) return "https:" + href;
@@ -34,8 +34,8 @@ function fetchRetry(url) {
     } catch (e) {}
 
     if (doc) {
-        var t = doc.selectFirst("title");
-        var title = t ? t.text() : "";
+        var titles = doc.select("title");
+        var title = titles.size() > 0 ? titles.get(0).text() : "";
         if (title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
             return doc;
         }
@@ -67,7 +67,7 @@ function parseItems(doc) {
     for (var i = 0; i < n; i++) {
         var card = cards.get(i);
 
-        var titleA = card.selectFirst(".book_name a");
+        var titleA = selFirst(card, ".book_name a");
         if (!titleA) continue;
 
         var href = titleA.attr("href");
@@ -79,7 +79,7 @@ function parseItems(doc) {
         if (!name) continue;
         seen[link] = true;
 
-        var img = card.selectFirst(".book_avatar img");
+        var img = selFirst(card, ".book_avatar img");
         var cover = "";
         if (img) {
             cover = img.attr("src") || img.attr("data-original") || img.attr("data-src") || "";
@@ -89,8 +89,8 @@ function parseItems(doc) {
             }
         }
 
-        var lastChap = card.selectFirst(".last_chapter a");
-        var timeEl = card.selectFirst(".time-ago");
+        var lastChap = selFirst(card, ".last_chapter a");
+        var timeEl = selFirst(card, ".time-ago");
         var desc = "";
         if (lastChap) desc = trimText(lastChap.text());
         if (timeEl) {
