@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "name": "urimana",
+    "name": "truyenggvn",
     "author": "tkd1793",
-    "version": 6,
-    "source": "https://www.urimana.com",
-    "regexp": "(www\\.)?urimana\\.com",
-    "description": "Đọc truyện trên trang Urimana",
+    "version": 2,
+    "source": "https://truyenggvn.com",
+    "regexp": "(www\\.)?truyenggvn\\.com",
+    "description": "Đọc truyện trên trang TruyenGGVN",
     "local": "vi_VN",
     "language": "javascript",
     "type": "comic"

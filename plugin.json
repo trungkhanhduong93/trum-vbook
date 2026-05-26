@@ -151,14 +151,14 @@
       "locale": "vi_VN"
     },
     {
-      "name": "Urimana",
+      "name": "TruyenGGVN",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/urimana/plugin.zip",
-      "version": 6,
-      "source": "https://www.urimana.com",
-      "regexp": "(www\\.)?urimana\\.com",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/urimana/icon.png",
-      "description": "Đọc truyện trên trang Urimana",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/plugin.zip",
+      "version": 2,
+      "source": "https://truyenggvn.com",
+      "regexp": "(www\\.)?truyenggvn\\.com",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/icon.png",
+      "description": "Đọc truyện trên trang TruyenGGVN",
       "type": "comic",
       "locale": "vi_VN"
     }
