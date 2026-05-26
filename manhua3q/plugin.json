@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "name": "manhua3q",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://manhua3q.com",
+    "regexp": "(www\\.)?manhua3q\\.com",
+    "description": "Đọc truyện trên trang manhua3q",
+    "local": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "search": "search.js",
+    "detail": "detail.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
