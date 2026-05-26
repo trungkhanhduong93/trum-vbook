@@ -15,7 +15,8 @@ function execute(url) {
         
         let genres = [];
         let genreEls = doc.select('.genre, .the-loai, a[href*="/the-loai/"]');
-        for(let i = 0; i < genreEls.size(); i++) {
+        let ng = genreEls.size();
+        for(let i = 0; i < ng; i++) {
             let g = genreEls.get(i).text().trim();
             if(g && genres.indexOf(g) === -1) {
                 genres.push(g);
@@ -25,7 +26,8 @@ function execute(url) {
         let desc = doc.select('.summary, .description, .noidung, .comic-desc, .text-gray-300.text-sm.leading-relaxed, h2:contains("Tóm tắt") + p, h2:contains("Tóm tắt") ~ p, h3:contains("Tóm tắt") + p').text().trim();
         if (!desc) {
             let descEls = doc.select('p');
-            for(let i = 0; i < descEls.size(); i++) {
+            let nd = descEls.size();
+            for(let i = 0; i < nd; i++) {
                 let txt = descEls.get(i).text().trim();
                 if(txt.length > 50 && txt.indexOf('Tối đa') === -1 && txt.indexOf('ký tự') === -1 && txt.indexOf('Website sử dụng API') === -1 && txt.indexOf('Quý khách nên ưu tiên') === -1) {
                     desc = txt;

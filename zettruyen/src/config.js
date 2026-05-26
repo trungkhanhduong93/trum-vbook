@@ -1,59 +1,67 @@
 let BASE_URL = 'https://www.zettruyen.top';
+let REFERER = BASE_URL + '/';
+
+let HTML_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+    "Accept-Language": "vi-VN,vi;q=0.9",
+    "Referer": REFERER
+};
+
+let JSON_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+    "Accept": "application/json,text/plain,*/*",
+    "Accept-Language": "vi-VN,vi;q=0.9",
+    "Referer": REFERER
+};
 
 function fetchRetry(url) {
     let doc = null;
     try {
-        doc = Http.get(url).headers({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
-            "Referer": BASE_URL + "/"
-        }).html();
+        doc = Http.get(url).headers(HTML_HEADERS).html();
+    } catch (e) {}
+
+    if (doc) {
+        let titles = doc.select("title");
+        let title = titles.size() > 0 ? titles.get(0).text() : "";
+        if (title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
+            return doc;
+        }
+    }
+
+    let browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.launch(url, 15000);
+        let browserDoc = browser.html();
+        browser.close();
+        return browserDoc;
     } catch (e) {
-        // Ignore and let doc be null to trigger browser fallback
+        if (browser) { try { browser.close(); } catch (err) {} }
+        return null;
     }
-    
-    let title = doc ? doc.select("title").text() : "";
-    
-    if (doc && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
-        return doc;
-    }
-    
-    // Fallback to browser
-    let browser = Engine.newBrowser();
-    browser.launch(url, 15000);
-    let browserDoc = browser.html();
-    browser.close();
-    return browserDoc;
 }
 
 function fetchJson(url) {
-    let res = null;
     let str = "";
     try {
-        res = Http.get(url).headers({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            'Accept': 'application/json, text/plain, */*',
-            'Referer': BASE_URL + '/'
-        });
-        str = res.string();
-    } catch (e) {
-        // Ignore and let it fallback
-    }
+        str = Http.get(url).headers(JSON_HEADERS).string();
+    } catch (e) {}
+
+    if (str && str.charAt(0) === "{") return str;
     if (str && str.indexOf('Just a moment') === -1 && str.indexOf('Cloudflare') === -1) {
         return str;
     }
-    
-    // Fallback to browser for JSON
-    let browser = Engine.newBrowser();
-    browser.launch(url, 15000);
-    let browserDoc = browser.html();
-    browser.close();
-    
-    // browserDoc is HTML, we need to extract JSON text from body
-    if (browserDoc) {
-        let body = browserDoc.select("body").text();
-        return body;
+
+    let browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.launch(url, 15000);
+        let browserDoc = browser.html();
+        browser.close();
+        return browserDoc ? browserDoc.select("body").text() : null;
+    } catch (e) {
+        if (browser) { try { browser.close(); } catch (err) {} }
+        return null;
     }
-    return null;
 }

@@ -20,11 +20,13 @@ function execute(url) {
     var images = [];
     var seen = {};
     var imgEls = doc.select("div.imgs img");
-    if (!imgEls || imgEls.size() === 0) {
+    var n = imgEls.size();
+    if (n === 0) {
         imgEls = doc.select("img[src*='/uploads/']");
+        n = imgEls.size();
     }
 
-    for (var i = 0; i < imgEls.size(); i++) {
+    for (var i = 0; i < n; i++) {
         var img = imgEls.get(i);
         var src = img.attr("src") || img.attr("data-src") || "";
         src = trimText(src);

@@ -52,7 +52,8 @@ function fallbackFromHtml(doc) {
             return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
         });
     }
-    for (let i = 0; i < els.size(); i++) {
+    let ne = els.size();
+    for (let i = 0; i < ne; i++) {
         let e = els.get(i);
         let link = e.attr("href");
         if (link.startsWith("/")) link = BASE_URL + link;

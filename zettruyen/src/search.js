@@ -14,10 +14,11 @@ function execute(url, page) {
         let doc = fetchRetry(searchUrl);
         if (doc) {
             let items = doc.select('a[href*="/truyen-tranh/"]');
+            let ni = items.size();
             let data = [];
             let added = {};
-            
-            for (let i = 0; i < items.size(); i++) {
+
+            for (let i = 0; i < ni; i++) {
                 let a = items.get(i);
                 let el = a; // Do not use a.parent() as it throws TypeError in VBook's String.select polyfill
                 let link = a.attr('href');
@@ -87,7 +88,8 @@ function execute(url, page) {
 
             let next = "";
             let paginationUrls = doc.select('a[href*="page="]');
-            for(let i = 0; i < paginationUrls.size(); i++) {
+            let np = paginationUrls.size();
+            for(let i = 0; i < np; i++) {
                 let pUrl = paginationUrls.get(i).attr('href');
                 let pMatch = pUrl.match(/page=(\d+)/);
                 if(pMatch && parseInt(pMatch[1]) > parseInt(page)) {

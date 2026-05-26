@@ -113,7 +113,8 @@ function buildSearchUrl(keyword, page) {
 function getNextPage(doc, currentPage) {
     var nextPage = String(currentPage + 1);
     var pageLinks = doc.select("a[href*='?page=']");
-    for (var i = 0; i < pageLinks.size(); i++) {
+    var np = pageLinks.size();
+    for (var i = 0; i < np; i++) {
         var href = pageLinks.get(i).attr("href") || "";
         if (href.indexOf("?page=" + nextPage) >= 0 || href.indexOf("&page=" + nextPage) >= 0) {
             return nextPage;
@@ -141,7 +142,8 @@ function parseItems(doc) {
     var seen = {};
 
     var blockCards = doc.select("div.grid div.card");
-    for (var i = 0; i < blockCards.size(); i++) {
+    var nb = blockCards.size();
+    for (var i = 0; i < nb; i++) {
         var card = blockCards.get(i);
         var titleA = selFirst(card, "a.title");
         var thumbA = selFirst(card, "a.thumb");
@@ -154,7 +156,8 @@ function parseItems(doc) {
     }
 
     var anchorCards = doc.select("div.grid a.card");
-    for (var j = 0; j < anchorCards.size(); j++) {
+    var na = anchorCards.size();
+    for (var j = 0; j < na; j++) {
         var a = anchorCards.get(j);
         var tEl = selFirst(a, "div.t");
         var imgEl = selFirst(a, "img");

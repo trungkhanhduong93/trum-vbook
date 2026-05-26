@@ -15,7 +15,8 @@ function execute(url) {
     var genres = [];
     var seenGenres = {};
     var genreLinks = doc.select("a.tag");
-    for (var i = 0; i < genreLinks.size(); i++) {
+    var ng = genreLinks.size();
+    for (var i = 0; i < ng; i++) {
         var a = genreLinks.get(i);
         var gName = trimText(a.text());
         var gHref = a.attr("href") || "";
@@ -51,7 +52,8 @@ function execute(url) {
     var suggests = [];
     var seenSuggests = {};
     var relCards = doc.select("div.rel-cards a.rel-card");
-    for (var k = 0; k < relCards.size(); k++) {
+    var nr = relCards.size();
+    for (var k = 0; k < nr; k++) {
         var card = relCards.get(k);
         var sTitleEl = selFirst(card, "span.rel-title");
         var sImgEl = selFirst(card, "img");
