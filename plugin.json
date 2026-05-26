@@ -149,6 +149,18 @@
       "description": "Doc truyen tren trang WebTruyenTranh",
       "type": "comic",
       "locale": "vi_VN"
+    },
+    {
+      "name": "Urimana",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/urimana/plugin.zip",
+      "version": 1,
+      "source": "https://www.urimana.com",
+      "regexp": "(www\\.)?urimana\\.com",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/urimana/icon.png",
+      "description": "Đọc truyện trên trang Urimana",
+      "type": "comic",
+      "locale": "vi_VN"
     }
   ]
 }

@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "name": "urimana",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://www.urimana.com",
+    "regexp": "(www\\.)?urimana\\.com",
+    "description": "Đọc truyện trên trang Urimana",
+    "local": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "search": "search.js",
+    "detail": "detail.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
