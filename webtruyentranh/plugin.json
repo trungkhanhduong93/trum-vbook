@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "WebTruyenTranh",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://www.webtruyentranh.com",
+    "regexp": "(www\\.)?webtruyentranh\\.com\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
+    "description": "Đọc truyện trên trang WebTruyenTranh",
+    "local": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "search": "search.js",
+    "detail": "detail.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
