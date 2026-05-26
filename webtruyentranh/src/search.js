@@ -22,39 +22,42 @@ function execute(url, page) {
         let link = a.attr("href");
         if (!link || added[link]) continue;
         if (link.indexOf("/truyen-tranh/") === -1) continue;
+
+        // Must have an <img> child — filters out header nav dropdown links
+        let imgEl = a.selectFirst("img");
+        if (!imgEl) continue;
+
         added[link] = true;
 
-        let imgEl = a.select("img").first();
-        let img = "";
-        if (imgEl) {
-            img = imgEl.attr("src") || imgEl.attr("data-src") || "";
-            if (img.indexOf(" ") > 0) img = img.split(" ")[0];
-            if (img.startsWith("/")) img = BASE_URL + img;
-        }
+        let img = imgEl.attr("src") || imgEl.attr("data-src") || "";
+        if (img.indexOf(" ") > 0) img = img.split(" ")[0];
+        if (img.startsWith("/")) img = BASE_URL + img;
 
-        let title = a.attr("title") || "";
-        if (!title && imgEl) title = imgEl.attr("alt") || imgEl.attr("title") || "";
-        if (!title) {
-            let titleEl = a.selectFirst("h2, h3, span.font-bold, .font-semibold");
-            if (titleEl) title = titleEl.text().trim();
-        }
-        title = title.trim();
+        // Title: prefer h3 title attribute (cleanest), fall back to text
+        let title = "";
+        let h3El = a.selectFirst("h3");
+        if (h3El) title = h3El.attr("title") || h3El.text().trim();
+        if (!title) title = imgEl.attr("alt") || a.attr("title") || "";
+        title = title.replace(/^Truyện tranh\s+/i, "").trim();
 
-        let chapEl = a.selectFirst("span.text-xs, .text-gray-400, .text-sm");
+        // Updated time / chapter info
+        let chapEl = a.selectFirst("p.text-xs, .text-gray-400");
         let chap = chapEl ? chapEl.text().trim() : "";
 
-        if (link && title && img && img.indexOf("logo") === -1) {
+        if (link && title && img) {
             data.push({ name: title, link: link, cover: img, description: chap, host: BASE_URL });
         }
     }
 
+    // Pagination
     let next = "";
     let pageLinks = doc.select("a[href*='page=']");
+    let curPage = parseInt(page);
     for (let i = 0; i < pageLinks.size(); i++) {
         let href = pageLinks.get(i).attr("href");
         let m = href.match(/page=(\d+)/);
-        if (m && parseInt(m[1]) > parseInt(page)) {
-            next = m[1];
+        if (m && parseInt(m[1]) > curPage) {
+            next = String(curPage + 1);
             break;
         }
     }

@@ -7,7 +7,7 @@ function execute(url) {
     var html = doc.html();
     
     var name = "";
-    var titleEl = doc.selectFirst("h1");
+    var titleEl = doc.select("h1").first();
     if (titleEl) name = titleEl.text();
     else {
         var match = doc.html().match(/<h1[^>]*>(.*?)<\/h1>/i);
@@ -15,7 +15,7 @@ function execute(url) {
     }
     
     var cover = "";
-    var coverEl = doc.selectFirst(".info-manga img, .thumbnail img, img[src*=thumbnail], img[alt*='" + name + "']");
+    var coverEl = doc.select(".info-manga img, .thumbnail img, img[src*=thumbnail], img[alt*='" + name + "']").first();
     if (coverEl) cover = coverEl.attr("src") || coverEl.attr("data-src");
     if (!cover) {
         var mCover = doc.html().match(/"thumbnail"\s*:\s*"([^"]+)"/);
@@ -23,7 +23,7 @@ function execute(url) {
     }
     
     var desc = "";
-    var descEl = doc.selectFirst(".summary, .description, .detail-content, .info-desc");
+    var descEl = doc.select(".summary, .description, .detail-content, .info-desc").first();
     if (descEl) desc = descEl.text();
     if (!desc) {
         var mDesc = doc.html().match(/"content"\s*:\s*"(.*?)"/);
@@ -31,7 +31,7 @@ function execute(url) {
     }
     
     var author = "Đang cập nhật";
-    var authorEl = doc.selectFirst(".author, .info-manga .author");
+    var authorEl = doc.select(".author, .info-manga .author").first();
     if (authorEl) author = authorEl.text();
     
     var genres = [];
