@@ -1,42 +1,36 @@
-let BASE_URL = "https://www.webtruyentranh.com";
+var BASE_URL = "https://www.webtruyentranh.com";
+var HOST = "https://www.webtruyentranh.com";
+var API_BASE = "https://otruyenapi.com/v1/api";
 
-function fetchRetry(url) {
-    let doc = null;
+function trimText(s) {
+    return s ? String(s).replace(/^\s+|\s+$/g, "") : "";
+}
+
+function fetchJson(url) {
+    var str = "";
     try {
-        doc = Http.get(url).headers({
+        var res = Http.get(url).headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
-            "Referer": BASE_URL + "/"
-        }).html();
+            "Accept": "application/json, text/plain, */*"
+        });
+        str = res.string();
     } catch (e) {}
-
-    let title = doc ? doc.select("title").text() : "";
-    if (doc && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
-        return doc;
+    
+    if (str && str.indexOf("Just a moment") === -1 && str.indexOf("Cloudflare") === -1) {
+        return str;
     }
-
-    let browser = null;
+    
+    // Fallback Browser
+    var browser = null;
     try {
         browser = Engine.newBrowser();
         browser.launch(url, 15000);
-        let browserDoc = browser.html();
+        var doc = browser.html();
         browser.close();
         browser = null;
-        return browserDoc;
+        return doc ? doc.select("body").text() : null;
     } catch (e) {
         if (browser) { try { browser.close(); } catch (err) {} }
         return null;
     }
-}
-
-function parseJsonLd(doc) {
-    let scripts = doc.select("script[type='application/ld+json']");
-    for (let i = 0; i < scripts.size(); i++) {
-        let txt = scripts.get(i).html();
-        if (txt.indexOf("ComicSeries") !== -1) {
-            try { return JSON.parse(txt); } catch (e) {}
-        }
-    }
-    return null;
 }

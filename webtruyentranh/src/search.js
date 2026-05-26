@@ -1,77 +1,67 @@
-load('config.js');
+load("config.js");
 
 function execute(url, page) {
+    var p = page ? parseInt(page, 10) : 1;
+    var fetchUrl = "";
+
+    if (url.indexOf("http") === 0) {
+        fetchUrl = url + (url.indexOf("?") >= 0 ? "&" : "?") + "page=" + p;
+    } else {
+        fetchUrl = API_BASE + "/tim-kiem?keyword=" + encodeURIComponent(url) + "&page=" + p;
+    }
+
+    var str = fetchJson(fetchUrl);
+    if (!str) return Response.error("Không tải được danh sách truyện");
+
     try {
-        if (!page) page = '1';
+        var json = JSON.parse(str);
+        if (json.status !== "success") return Response.error("Lỗi API: " + json.status);
 
-        let fetchUrl = "";
-        if (url && url.startsWith && url.startsWith("http")) {
-            fetchUrl = url + (url.indexOf("?") >= 0 ? "&" : "?") + "page=" + page;
-        } else {
-            fetchUrl = BASE_URL + "/tim-kiem?keyword=" + encodeURIComponent(url || "") + "&page=" + page;
-        }
+        var data = json.data;
+        var cdnImage = data.APP_DOMAIN_CDN_IMAGE || "https://img.otruyenapi.com";
+        var list = data.items || [];
+        var items = [];
 
-        let doc = fetchRetry(fetchUrl);
-        if (!doc) return Response.error("Không tải được danh sách truyện");
-
-        let data = [];
-        let added = {};
-        let cards = doc.select("a[href*='/truyen-tranh/']");
-
-        for (let i = 0; i < cards.size(); i++) {
-            let a = cards.get(i);
-            let link = a.attr("href");
-            if (!link || link.indexOf("/truyen-tranh/") === -1) continue;
-            if (added[link]) continue;
-
-            // Real grid cards have <h3>; header nav dropdowns don't. Use .select().first()
-            let h3List = a.select("h3");
-            if (h3List.size() === 0) continue;
-
-            let imgList = a.select("img");
-            if (imgList.size() === 0) continue;
-
-            added[link] = true;
-
-            let h3El = h3List.get(0);
-            let imgEl = imgList.get(0);
-
-            let title = h3El.attr("title") || h3El.text().trim();
-            if (!title) title = (imgEl.attr("alt") || "").replace(/^Truyện tranh\s+/i, "").trim();
-            if (!title) continue;
-
-            let img = imgEl.attr("src") || imgEl.attr("data-src") || "";
-            if (img.indexOf(" ") > 0) img = img.split(" ")[0];
-            if (img.startsWith("/")) img = BASE_URL + img;
-            if (!img) continue;
-
-            let chap = "";
-            let chapList = a.select("p.text-xs");
-            if (chapList.size() > 0) {
-                chap = chapList.get(0).text().trim();
+        for (var i = 0; i < list.length; i++) {
+            var item = list[i];
+            
+            var name = trimText(item.name);
+            var link = BASE_URL + "/truyen-tranh/" + item.slug;
+            
+            var cover = "";
+            var thumb = item.thumb_url || item.poster_url || "";
+            if (thumb) {
+                if (thumb.indexOf("http") === 0) cover = thumb;
+                else cover = cdnImage + "/uploads/comics/" + thumb;
             }
 
-            data.push({ name: title, link: link, cover: img, description: chap, host: BASE_URL });
-        }
-
-        if (data.length === 0) return Response.error("Không tìm thấy truyện nào");
-
-        // Pagination
-        let next = "";
-        let curPage = parseInt(page);
-        let pageLinks = doc.select("a[href*='page=']");
-        for (let i = 0; i < pageLinks.size(); i++) {
-            let href = pageLinks.get(i).attr("href");
-            if (!href) continue;
-            let m = href.match(/page=(\d+)/);
-            if (m && parseInt(m[1]) > curPage) {
-                next = String(curPage + 1);
-                break;
+            var chap = "Đang cập nhật";
+            var latest = item.chaptersLatest || [];
+            if (latest.length > 0) {
+                chap = latest[0].chapter_name + " Chương";
             }
+
+            items.push({
+                name: name,
+                link: link,
+                cover: cover,
+                description: chap,
+                host: BASE_URL
+            });
         }
 
-        return Response.success(data, next);
-    } catch (err) {
-        return Response.error("Lỗi search.js: " + (err && err.message ? err.message : String(err)));
+        // Phân trang
+        var next = "";
+        var params = data.params || {};
+        var pagination = params.pagination || {};
+        var total = pagination.totalItems || 0;
+        var limit = pagination.totalItemsPerPage || 0;
+        if (total > 0 && limit > 0 && p * limit < total) {
+            next = String(p + 1);
+        }
+
+        return Response.success(items, next);
+    } catch (e) {
+        return Response.error("Lỗi parse JSON: " + e.message);
     }
 }

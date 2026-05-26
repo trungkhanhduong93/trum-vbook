@@ -1,64 +1,55 @@
-load('config.js');
+load("config.js");
 
 function execute(url) {
-    if (url.startsWith("/")) url = BASE_URL + url;
+    var slugMatch = url.match(/\/truyen-tranh\/([^\/]+)/);
+    if (!slugMatch) return Response.error("URL không hợp lệ");
+    var slug = slugMatch[1];
 
-    let doc = fetchRetry(url);
-    if (!doc) return Response.error("Không tải được chi tiết truyện");
+    var fetchUrl = API_BASE + "/truyen-tranh/" + slug;
+    var str = fetchJson(fetchUrl);
+    if (!str) return Response.error("Không tải được chi tiết truyện");
 
-    let title = doc.select("h1").text().trim();
+    try {
+        var json = JSON.parse(str);
+        if (json.status !== "success") return Response.error("Lỗi API: " + json.status);
 
-    // Cover — prefer og:image
-    let cover = "";
-    let ogList = doc.select("meta[property='og:image']");
-    if (ogList.size() > 0) cover = ogList.get(0).attr("content") || "";
-    if (!cover) {
-        let imgList = doc.select("img.w-full");
-        if (imgList.size() > 0) cover = imgList.get(0).attr("src") || imgList.get(0).attr("data-src") || "";
-    }
+        var data = json.data;
+        var item = data.item || {};
+        var cdnImage = data.APP_DOMAIN_CDN_IMAGE || "https://img.otruyenapi.com";
 
-    // Description, author, genres from JSON-LD
-    let ld = parseJsonLd(doc);
-    let desc = "";
-    let author = "Đang cập nhật";
-    let genres = [];
-
-    if (ld) {
-        desc = ld["description"] || "";
-        if (ld["author"] && ld["author"]["name"]) author = ld["author"]["name"];
-        let genreArr = ld["genre"];
-        if (genreArr && genreArr.length) {
-            for (let i = 0; i < genreArr.length; i++) genres.push(genreArr[i]);
+        var name = trimText(item.name);
+        
+        var cover = "";
+        var thumb = item.thumb_url || item.poster_url || "";
+        if (thumb) {
+            if (thumb.indexOf("http") === 0) cover = thumb;
+            else cover = cdnImage + "/uploads/comics/" + thumb;
         }
-    }
 
-    // Fallback author
-    if (author === "Đang cập nhật") {
-        let metaDivs = doc.select("div.flex.items-center");
-        for (let i = 0; i < metaDivs.size(); i++) {
-            let mDiv = metaDivs.get(i);
-            if (mDiv.text().indexOf("Tác giả") !== -1) {
-                let spans = mDiv.select("span.ml-2");
-                if (spans.size() > 0) { author = spans.get(0).text().trim(); break; }
-            }
+        var author = "Đang cập nhật";
+        var authors = item.author || [];
+        if (authors.length > 0 && authors[0]) {
+            author = trimText(authors.join(", "));
         }
-    }
 
-    // Fallback description
-    if (!desc) {
-        let paras = doc.select("p");
-        for (let i = 0; i < paras.size(); i++) {
-            let t = paras.get(i).text().trim();
-            if (t.length > desc.length && t.length > 50) desc = t;
+        var genres = [];
+        var categories = item.category || [];
+        for (var i = 0; i < categories.length; i++) {
+            var g = trimText(categories[i].name);
+            if (g) genres.push(g);
         }
-    }
 
-    return Response.success({
-        name: title,
-        cover: cover,
-        author: author,
-        description: desc,
-        detail: genres.length ? "Thể loại: " + genres.join(", ") : "",
-        host: BASE_URL
-    });
+        var description = trimText(item.content).replace(/<[^>]+>/g, "");
+
+        return Response.success({
+            name: name,
+            cover: cover,
+            author: author,
+            description: description,
+            detail: "Thể loại: " + genres.join(", "),
+            host: BASE_URL
+        });
+    } catch (e) {
+        return Response.error("Lỗi parse JSON: " + e.message);
+    }
 }

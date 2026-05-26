@@ -15,20 +15,25 @@ function resolveUrl(href) {
 }
 
 function fetchRetry(url) {
-    var doc = null;
-    try {
-        doc = Http.get(url).headers({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
-            "Referer": BASE_URL + "/"
-        }).html();
-    } catch (e) {}
+    var headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
+        "Referer": BASE_URL + "/"
+    };
     
-    var title = doc ? doc.select("title").text() : "";
-    if (doc && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
-        return doc;
-    }
+    try {
+        var res = fetch(url, { headers: headers });
+        if (res && res.ok) {
+            var doc = res.html();
+            if (doc) {
+                var title = doc.select("title").text();
+                if (title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
+                    return doc;
+                }
+            }
+        }
+    } catch (e) {}
     
     // Fallback sang Browser
     var browser = null;
@@ -46,19 +51,21 @@ function fetchRetry(url) {
 }
 
 function fetchJson(url) {
-    var str = "";
-    try {
-        var res = Http.get(url).headers({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Referer": BASE_URL + "/"
-        });
-        str = res.string();
-    } catch (e) {}
+    var headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Referer": BASE_URL + "/"
+    };
     
-    if (str && str.indexOf("Just a moment") === -1 && str.indexOf("Cloudflare") === -1) {
-        return str;
-    }
+    try {
+        var res = fetch(url, { headers: headers });
+        if (res && res.ok) {
+            var str = res.string();
+            if (str && str.indexOf("Just a moment") === -1 && str.indexOf("Cloudflare") === -1) {
+                return str;
+            }
+        }
+    } catch (e) {}
     
     // Browser fallback cho API JSON
     var browser = null;
