@@ -48,10 +48,12 @@ function execute(url, page) {
             let chap = "";
             let chapList = a.select("p.text-xs");
             if (chapList.size() > 0) {
-                chap = chapList.get(0).text().trim();
-                let match = chap.match(/(\d+(?:\.\d+)?)/);
+                let rawChap = chapList.get(0).text().trim();
+                let match = rawChap.match(/(\d+(?:\.\d+)?)/);
                 if (match) {
-                    title = title + " (" + match[1] + " Chương)";
+                    chap = match[1] + " Chương";
+                } else {
+                    chap = rawChap;
                 }
             }
 

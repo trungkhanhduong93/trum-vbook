@@ -25,12 +25,8 @@ function execute(url, page) {
         var name = m[1];
         var slug = m[2];
         var cover = m[3];
-        var chap = m[4] ? "Chương " + m[4] : "";
+        var chap = m[4] ? m[4] + " Chương" : "";
         var link = BASE_URL + "/" + slug;
-        
-        if (m[4]) {
-            name = name + " (" + m[4] + " Chương)";
-        }
         
         if (seen[link]) continue;
         seen[link] = true;
