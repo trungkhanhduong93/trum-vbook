@@ -28,6 +28,10 @@ function execute(url, page) {
         var chap = m[4] ? "Chương " + m[4] : "";
         var link = BASE_URL + "/" + slug;
         
+        if (m[4]) {
+            name = name + " (" + m[4] + " Chương)";
+        }
+        
         if (seen[link]) continue;
         seen[link] = true;
 
