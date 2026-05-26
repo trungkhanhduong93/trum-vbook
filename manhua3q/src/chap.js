@@ -9,27 +9,26 @@ function execute(url) {
     var html = doc.html();
     if (!html) return Response.error("HTML rỗng");
 
-    // Images are embedded in Next.js Server Component data as:
-    //   \"images\":[{\"src\":\"URL\\u0026host=gg\", ...}, ...]
-    // (backslash-escaped JSON inside a JS string)
+    // Manhua3q nhúng dữ liệu chapter trong Next.js Server Component data dưới dạng:
+    //   \"images\":[{\"src\":\"URL&host=gg\", ...}, ...]
+    // (escape JSON kép — \" thực sự là 2 ký tự backslash + quote)
     var imagesMatch = html.match(/\\"images\\":\[([\s\S]*?)\]/);
-    if (!imagesMatch) return Response.error("Không tìm thấy mảng images trong HTML");
+    if (!imagesMatch) return Response.error("Không tìm thấy mảng images. HTML len=" + html.length);
 
     var block = imagesMatch[1];
-    var BS = String.fromCharCode(92); // single backslash literal
-    var srcPattern = new RegExp(BS + '"src' + BS + '":' + BS + '"([^"]+?)' + BS + '"', "g");
+
+    // Regex literal — match literal \"src\":\"...\"
+    var srcRegex = /\\"src\\":\\"([^"]+?)\\"/g;
 
     var images = [];
     var seen = {};
     var m;
-    while ((m = srcPattern.exec(block)) !== null) {
+    while ((m = srcRegex.exec(block)) !== null) {
         var raw = m[1];
-        // Decode & → & (and any other common unicode escapes)
-        var unicodeEsc = BS + "u0026";
-        while (raw.indexOf(unicodeEsc) !== -1) raw = raw.replace(unicodeEsc, "&");
-        // Decode \/ → / just in case
-        var slashEsc = BS + "/";
-        while (raw.indexOf(slashEsc) !== -1) raw = raw.replace(slashEsc, "/");
+        // Decode & → & (literal 6 chars trong URL)
+        raw = raw.replace(/\\u0026/g, "&");
+        // Decode \/ → /
+        raw = raw.replace(/\\\//g, "/");
         if (!raw) continue;
         if (raw.indexOf("//") === 0) raw = "https:" + raw;
         if (seen[raw]) continue;
@@ -37,7 +36,9 @@ function execute(url) {
         images.push(raw);
     }
 
-    if (images.length === 0) return Response.error("Regex chạy nhưng không trích xuất được URL nào");
+    if (images.length === 0) {
+        return Response.error("Inner regex 0 hits. Block sample: " + block.substring(0, 200));
+    }
 
     return Response.success(images);
 }
