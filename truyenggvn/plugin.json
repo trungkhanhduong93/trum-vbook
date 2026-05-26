@@ -2,7 +2,7 @@
   "metadata": {
     "name": "truyenggvn",
     "author": "tkd1793",
-    "version": 2,
+    "version": 3,
     "source": "https://truyenggvn.com",
     "regexp": "(www\\.)?truyenggvn\\.com",
     "description": "Đọc truyện trên trang TruyenGGVN",

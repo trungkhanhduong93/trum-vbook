@@ -154,7 +154,7 @@
       "name": "TruyenGGVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/plugin.zip",
-      "version": 2,
+      "version": 3,
       "source": "https://truyenggvn.com",
       "regexp": "(www\\.)?truyenggvn\\.com",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/icon.png",
