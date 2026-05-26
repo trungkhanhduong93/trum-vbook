@@ -1,29 +1,26 @@
 load("config.js");
 
 function execute(url) {
-    if (url.indexOf("/") === 0) url = BASE_URL + url;
+    if (url.charAt(0) === "/") url = BASE_URL + url;
     var doc = fetchRetry(url);
     if (!doc) return Response.error("Không tải được mục lục chương");
 
+    var links = doc.select(".works-chapter-item .name-chap a");
+    var n = links.size();
+    if (n === 0) {
+        links = doc.select(".list_chapter a");
+        n = links.size();
+    }
+    if (n === 0) {
+        links = doc.select(".chapter-list a[href*=chap]");
+        n = links.size();
+    }
+
     var chapters = [];
     var seen = {};
-
-    // Selector chính: .works-chapter-item .name-chap a
-    var links = doc.select(".works-chapter-item .name-chap a");
-
-    // Fallback 1: .list_chapter a
-    if (links.size() === 0) {
-        links = doc.select(".list_chapter a");
-    }
-
-    // Fallback 2: chapter-list chung
-    if (links.size() === 0) {
-        links = doc.select(".chapter-list a[href*=chap]");
-    }
-
-    for (var i = 0; i < links.size(); i++) {
+    for (var i = 0; i < n; i++) {
         var a = links.get(i);
-        var href = a.attr("href") || "";
+        var href = a.attr("href");
         if (!href || href.indexOf("chap") < 0) continue;
 
         var fullUrl = resolveUrl(href);
@@ -31,22 +28,17 @@ function execute(url) {
         seen[fullUrl] = true;
 
         var name = trimText(a.text());
-        if (!name) name = "Chương " + (i + 1);
+        if (!name) name = "Chương " + (chapters.length + 1);
 
-        chapters.push({
-            name: name,
-            url: fullUrl,
-            host: HOST
-        });
+        chapters.push({ name: name, url: fullUrl, host: HOST });
     }
 
-    if (chapters.length === 0) return Response.error("Không tìm thấy chương nào");
+    var len = chapters.length;
+    if (len === 0) return Response.error("Không tìm thấy chương nào");
 
-    // Sắp xếp từ cũ nhất đến mới nhất (Chương 1 ở đầu)
-    // Trang truyenggvn liệt kê chương mới nhất ở đầu
-    if (chapters.length > 1) {
+    if (len > 1) {
         var firstNum = parseFloat(chapters[0].name.replace(/[^\d.]/g, ""));
-        var lastNum = parseFloat(chapters[chapters.length - 1].name.replace(/[^\d.]/g, ""));
+        var lastNum = parseFloat(chapters[len - 1].name.replace(/[^\d.]/g, ""));
         if (!isNaN(firstNum) && !isNaN(lastNum) && firstNum > lastNum) {
             chapters.reverse();
         }
