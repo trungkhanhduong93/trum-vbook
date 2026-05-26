@@ -48,13 +48,7 @@ function execute(url, page) {
             let chap = "";
             let chapList = a.select("p.text-xs");
             if (chapList.size() > 0) {
-                let rawChap = chapList.get(0).text().trim();
-                let match = rawChap.match(/(\d+(?:\.\d+)?)/);
-                if (match) {
-                    chap = match[1] + " Chương";
-                } else {
-                    chap = rawChap;
-                }
+                chap = chapList.get(0).text().trim();
             }
 
             data.push({ name: title, link: link, cover: img, description: chap, host: BASE_URL });

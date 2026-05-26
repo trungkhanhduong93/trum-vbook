@@ -2,7 +2,7 @@
   "metadata": {
     "name": "WebTruyenTranh",
     "author": "tkd1793",
-    "version": 8,
+    "version": 9,
     "source": "https://www.webtruyentranh.com",
     "regexp": "(www\\.)?webtruyentranh\\.com\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
     "description": "Đọc truyện trên trang WebTruyenTranh",

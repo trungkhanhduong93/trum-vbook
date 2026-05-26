@@ -15,6 +15,9 @@ function execute(url) {
 
     var block = imagesMatch[1];
 
+    // Decode escaped characters first to prevent regex breakdown on backslashes like \u0026
+    block = block.replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+
     // Robust regex to match src URLs regardless of backslash escape count
     var srcRegex = /\\*"?src\\*"?:\s*\\*"([^"\\]+)/g;
 
