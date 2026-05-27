@@ -28,7 +28,7 @@ function execute(url) {
         if (link.indexOf("//") === 0) link = "https:" + link;
         if (!seen[link]) {
             seen[link] = true;
-            data.push(link + "|Referer=" + SITE_URL + "/");
+            data.push(link);
         }
     }
 

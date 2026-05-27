@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Tcomic",
     "author": "tkd1793",
-    "version": 2,
+    "version": 3,
     "source": "https://tcomicfanqq.com",
     "regexp": "(www\\.)?tcomicfanqq\\.com\\/truyen-tranh\\/[a-z0-9-]+-\\d+\\/?$",
     "description": "Đọc truyện trên trang Tcomic",
