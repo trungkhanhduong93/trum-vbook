@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "CuuTruyen",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://cuutruyen.cc",
+    "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-z0-9-]+\\/?$",
+    "description": "Đọc truyện trên trang Cứu Truyện",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

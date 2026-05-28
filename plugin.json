@@ -189,6 +189,18 @@
       "tag": "nsfw"
     },
     {
+      "name": "CuuTruyen",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip",
+      "version": 1,
+      "source": "https://cuutruyen.cc",
+      "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",
+      "description": "Đọc truyện trên trang Cứu Truyện",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
       "name": "TruyenGGVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/plugin.zip",

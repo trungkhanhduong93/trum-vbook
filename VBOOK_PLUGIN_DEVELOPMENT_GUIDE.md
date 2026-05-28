@@ -1223,6 +1223,139 @@ var html = httpGet(targetUrl); // lần này đã có cookie
 
 ---
 
+## Quy Trình Tạo Plugin Mới (End-to-End)
+
+Đây là quy trình chuẩn áp dụng khi thêm 1 nguồn truyện mới vào repo này. Đã verify với plugin CuuTruyen (cuutruyen.cc) — site HTML scraping, không có signing.
+
+### Bước 1: Recon site (10–15 phút)
+
+Mục tiêu: xác định site là API-based hay HTML scraping, và tìm các URL pattern cần thiết.
+
+```bash
+# Tải trang chủ
+curl -s -L -A "Mozilla/5.0" "https://SITE/" -o /tmp/home.html
+
+# Tìm API endpoints (nếu có)
+grep -nE '(fetch\(|axios|/api/)' /tmp/home.html | head -20
+
+# Tìm pattern URL chính
+grep -oE 'href="/[^"]+"' /tmp/home.html | sort -u | head -30
+```
+
+Cần xác định 5 URL pattern:
+- **Listing/newest:** ví dụ `/newest`, `/danh-sach-truyen/...`
+- **Detail manga:** ví dụ `/mangas/{id}`, `/truyen/{slug}`
+- **Chapter reader:** ví dụ `/chapters/{id}`, `/truyen/{slug}/{chap}`
+- **Search:** test cả `?q=`, `?keyword=`, `?s=` xem cái nào không 301
+- **Genre/tag:** link `/tag/{id}` hoặc filter param `?tag_query=...`
+
+### Bước 2: Test scrape ảnh chapter (10 phút)
+
+Đây là điểm dễ vỡ nhất. Mở 1 trang chapter và check:
+
+```bash
+curl -s "https://SITE/chapters/{id}" -A "Mozilla/5.0" -o /tmp/chap.html
+grep -nE '<img|data-src|data-original|lazy-load' /tmp/chap.html | head -20
+```
+
+Patterns thường gặp:
+- `src="REAL_URL"` — load trực tiếp, dễ nhất
+- `src="data:image/gif;base64,..." data-src="REAL_URL"` — lazy load, parse `data-src`
+- `data-original="REAL_URL"` — biến thể lazy load khác
+- URL relative `//cdn...` → cần prefix `https:`
+- CDN proxy `https://workers.dev/?url=ENCODED` — pass nguyên URL, app sẽ tự load
+
+### Bước 3: Copy template từ plugin tương tự
+
+```powershell
+# HTML scraping → copy từ truyenvi, cuutruyen
+# API-based + signing → copy từ tcomic
+$src = "C:\...\trum-vbook\cuutruyen"
+$dst = "C:\...\trum-vbook\NEW_PLUGIN"
+Copy-Item -Recurse $src $dst
+```
+
+Sau đó sửa từng file theo site mới. Giữ nguyên cấu trúc chuẩn:
+- `plugin.json` (metadata)
+- `icon.png` (root, < 100KB — tải từ `/img/icons/apple-touch-icon.png` nếu có)
+- `src/config.js`, `home.js`, `genre.js`, `gen.js`, `detail.js`, `search.js`, `toc.js`, `chap.js`
+
+### Bước 4: Build plugin.zip (PowerShell)
+
+**CỰC KỲ QUAN TRỌNG:** cấu trúc zip phải đúng (xem Bug 1 — TruyenVI). Root chứa `icon.png` + `plugin.json`, thư mục `src/` chứa JS.
+
+```powershell
+$pluginDir = "C:\...\trum-vbook\NEW_PLUGIN"
+$zipPath = "$pluginDir\plugin.zip"
+if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::Open($zipPath, 'Create')
+foreach ($f in @("icon.png","plugin.json")) {
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$pluginDir\$f", $f) | Out-Null
+}
+foreach ($f in @("config.js","home.js","genre.js","gen.js","detail.js","search.js","toc.js","chap.js")) {
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$pluginDir\src\$f", "src/$f") | Out-Null
+}
+$zip.Dispose()
+```
+
+### Bước 5: Đăng ký vào root `plugin.json`
+
+Thêm entry vào array `data` của [plugin.json](plugin.json):
+
+```json
+{
+  "name": "PluginName",
+  "author": "tkd1793",
+  "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/PLUGIN_DIR/plugin.zip",
+  "version": 1,
+  "source": "https://SITE",
+  "regexp": "(www\\.)?SITE\\.com\\/PATTERN",
+  "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/PLUGIN_DIR/icon.png",
+  "description": "...",
+  "type": "comic",
+  "locale": "vi_VN"
+}
+```
+
+**Lưu ý regexp:** phải khớp URL detail manga (không phải chapter), dùng để app nhận biết link cần plugin nào xử lý.
+
+### Bước 6: Commit & push GitHub
+
+```bash
+git add PLUGIN_DIR/ plugin.json
+git commit -m "feat(PLUGIN): thêm nguồn PluginName cho SITE"
+git push origin main
+```
+
+Sau khi push, app Vbook fetch được zip từ `raw.githubusercontent.com` ngay lập tức (không cần CDN propagation).
+
+### Bước 7: Test trong app & iterate
+
+Theo thứ tự ưu tiên test:
+1. **Home** — danh sách category hiện đủ
+2. **Click category** → list truyện load OK
+3. **Detail truyện** → title, cover, mô tả, danh sách chapter
+4. **Click chapter** → ảnh load đúng thứ tự
+5. **Search** — kết quả khớp
+6. **Pagination** — next page có thêm truyện mới
+
+Nếu fail bước nào → fix → **tăng version** ở cả 2 chỗ (Bug 3) → rebuild zip → commit & push.
+
+### Checklist nhanh
+
+- [ ] Recon: tìm được 5 URL pattern (list/detail/chap/search/genre)
+- [ ] Verify: ảnh chapter parse được (curl + grep)
+- [ ] Copy template phù hợp (scraping vs API)
+- [ ] Sửa 8 file JS + plugin.json + icon.png
+- [ ] Build zip đúng cấu trúc (root + src/)
+- [ ] Đăng ký vào root plugin.json (regexp khớp URL detail)
+- [ ] Commit + push
+- [ ] Test 7 luồng trong app
+- [ ] Bump version khi fix bug
+
+---
+
 ## Best Practices
 
 ### 1. Configuration Management
