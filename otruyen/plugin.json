@@ -2,7 +2,7 @@
   "metadata": {
     "name": "OTruyen",
     "author": "tkd1793",
-    "version": 16,
+    "version": 17,
     "source": "https://nettruyen.guru",
     "regexp": "nettruyen\\.guru\\/truyen-tranh\\/[a-z0-9-]+\\.html\\/?$",
     "description": "OTruyen - Doc truyen tranh online",

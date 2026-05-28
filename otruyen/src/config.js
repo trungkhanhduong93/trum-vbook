@@ -167,5 +167,7 @@ function parseItems(doc) {
         pushItem(items, seen, tName, tCover, a.attr("href") || "", "");
     }
 
-    return enrichItemsWithMeta(items);
+    // Bỏ enrichItemsWithMeta để tránh N+1 HTTP request mỗi lần load list.
+    // Đổi lại: description rỗng (không hiển thị "X chương") — chấp nhận để load nhanh ~20x.
+    return items;
 }

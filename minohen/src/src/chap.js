@@ -25,9 +25,9 @@ function execute(url) {
             "                    if (s && s.indexOf('data:') !== 0) tmp.push(s);\n" +
             "                }\n" +
             "                if (tmp.length >= imgs.length) { srcs = tmp; break; }\n" +
-            "                if (tmp.length > 0 && i >= 8) { srcs = tmp; break; }\n" +
+            "                if (tmp.length > 0 && i >= 5) { srcs = tmp; break; }\n" +
             "            }\n" +
-            "            await new Promise(function(r){ setTimeout(r, 150); });\n" +
+            "            await new Promise(function(r){ setTimeout(r, 100); });\n" +
             "        }\n" +
             "        document.body.innerHTML = 'VBOOK_IMGS_START' + JSON.stringify(srcs) + 'VBOOK_IMGS_END';\n" +
             "    } catch(e) {\n" +
