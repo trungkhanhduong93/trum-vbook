@@ -1,171 +1,107 @@
-var BASE_URL = "https://nettruyen.guru";
-var HOST = "https://nettruyen.guru";
-var STORY_META_CACHE = {};
+var BASE_URL = "https://otruyen.cc";
+var HOST = BASE_URL;
+var API_BASE = "https://otruyenapi.com/v1/api";
+var CDN_IMAGE = "https://img.otruyenapi.com";
 
-var FETCH_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
+var JSON_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+    "Accept": "application/json,*/*;q=0.8",
+    "Accept-Language": "vi-VN,vi;q=0.9",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS };
 
-function selFirst(el, css) {
-    var items = el.select(css);
-    return items.size() > 0 ? items.get(0) : null;
+function trimText(s) {
+    return s ? String(s).replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "") : "";
 }
 
-function trimText(value) {
-    if (!value) return "";
-    return String(value).replace(/\s+/g, " ").trim();
+function stripHtml(s) {
+    return s ? String(s).replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#039;/g, "'")
+        .replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "") : "";
 }
 
-function resolveUrl(url) {
-    if (!url) return BASE_URL;
-    if (url.indexOf("http") === 0) return url;
-    if (url.indexOf("//") === 0) return "https:" + url;
-    return BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
-}
-
-function fetchRetry(url) {
-    var res = fetch(url, FETCH_OPTIONS);
-    if (!res) return res;
-    if (!res.ok && !(res.status >= 400 && res.status < 500)) {
-        res = fetch(url, FETCH_OPTIONS);
-    }
-    return res;
-}
-
-function parsePositiveInt(text) {
-    if (!text) return 0;
-    var match = String(text).match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-}
-
-function extractChapterCount(doc) {
-    var spans = doc.select("div.meta span");
-    for (var i = 0; i < spans.size(); i++) {
-        var value = trimText(spans.get(i).text());
-        var count = parsePositiveInt(value);
-        if (count > 0) return count;
-    }
-    return 0;
-}
-
-function buildStoryDescription(meta) {
-    if (meta.chapterCount > 0) return meta.chapterCount + " chuong";
-    return "";
-}
-
-function fetchStoryMeta(url) {
-    var finalUrl = resolveUrl(url);
-    if (STORY_META_CACHE[finalUrl]) return STORY_META_CACHE[finalUrl];
-    var meta = { chapterCount: 0 };
+// Fetch JSON từ API; trả về raw string. KHÔNG dùng browser fallback vì
+// otruyenapi.com là JSON API thuần — không có CF challenge, không cần Engine.newBrowser.
+function fetchJson(url) {
     try {
-        var res = fetch(finalUrl, FETCH_OPTIONS);
-        if (res && res.ok) {
-            var doc = res.html();
-            if (doc) {
-                meta.chapterCount = extractChapterCount(doc);
-                var btns = doc.select("div.cta a.btn");
-                for (var i = 0; i < btns.size(); i++) {
-                    var h = btns.get(i).attr("href") || "";
-                    var n = parsePositiveInt(h.replace(/.*-chap-/, ""));
-                    if (n > meta.chapterCount) meta.chapterCount = n;
-                }
-            }
-        }
-    } catch (e) {}
-    STORY_META_CACHE[finalUrl] = meta;
-    return meta;
+        var s = Http.get(url).headers(JSON_HEADERS).string();
+        return s && s.charAt(0) === "{" ? s : null;
+    } catch (e) { return null; }
 }
 
-function enrichItemsWithMeta(items) {
-    for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        if (!item || !item.link) continue;
-        if (trimText(item.description)) continue;
-        var meta = fetchStoryMeta(item.link);
-        if (meta && meta.chapterCount > 0) {
-            item.description = buildStoryDescription(meta);
-        }
+function parseJson(str) {
+    if (!str) return null;
+    try { return JSON.parse(str); } catch (e) { return null; }
+}
+
+// Build cover URL từ thumb_url của API (có thể là full URL hoặc tên file)
+function buildCover(thumb, cdnImage) {
+    if (!thumb) return "";
+    var t = String(thumb);
+    if (t.indexOf("http") === 0) return t;
+    var cdn = cdnImage || CDN_IMAGE;
+    if (t.charAt(0) === "/") return cdn + t;
+    return cdn + "/uploads/comics/" + t;
+}
+
+// Map 1 item từ API list response sang card Vbook
+function mapItem(it, cdnImage) {
+    if (!it || !it.slug) return null;
+    var name = trimText(it.name);
+    if (!name) return null;
+
+    var desc = "";
+    if (it.chaptersLatest && it.chaptersLatest.length > 0) {
+        var ch = it.chaptersLatest[0];
+        var cn = trimText(ch.chapter_name);
+        if (cn) desc = "Chương " + cn;
     }
-    return items;
-}
+    if (!desc && it.status === "completed") desc = "Hoàn thành";
 
-function extractStoryBase(url) {
-    if (!url) return "";
-    return String(url).replace(/\.html\/?$/, "").replace(/\/$/, "");
-}
-
-function buildPagedUrl(url, page) {
-    var p = page ? parseInt(page, 10) : 1;
-    if (!p || p <= 1) return url;
-    return url + (url.indexOf("?") >= 0 ? "&" : "?") + "page=" + p;
-}
-
-function buildSearchUrl(keyword, page) {
-    var kw = encodeURIComponent(trimText(keyword)).replace(/%20/g, "+");
-    var url = BASE_URL + "/?s=" + kw;
-    return buildPagedUrl(url, page);
-}
-
-function getNextPage(doc, currentPage) {
-    var nextPage = String(currentPage + 1);
-    var pageLinks = doc.select("a[href*='?page=']");
-    var np = pageLinks.size();
-    for (var i = 0; i < np; i++) {
-        var href = pageLinks.get(i).attr("href") || "";
-        if (href.indexOf("?page=" + nextPage) >= 0 || href.indexOf("&page=" + nextPage) >= 0) {
-            return nextPage;
-        }
-    }
-    return null;
-}
-
-function pushItem(items, seen, name, cover, link, description) {
-    var finalName = trimText(name);
-    var finalLink = resolveUrl(link);
-    if (!finalName || !finalLink || seen[finalLink]) return;
-    seen[finalLink] = true;
-    items.push({
-        name: finalName,
-        cover: cover ? resolveUrl(cover) : "",
-        link: finalLink,
-        description: trimText(description),
+    return {
+        name: name,
+        link: BASE_URL + "/truyen-tranh/" + it.slug,
+        cover: buildCover(it.thumb_url || it.poster_url, cdnImage),
+        description: desc,
         host: HOST
-    });
+    };
 }
 
-function parseItems(doc) {
-    var items = [];
-    var seen = {};
+// Parse list response chung của /danh-sach, /the-loai, /tim-kiem
+// Trả về {items: [...], next: "N" | ""}
+function parseListResponse(json, currentPage) {
+    var out = { items: [], next: "" };
+    if (!json || json.status !== "success" || !json.data) return out;
 
-    var blockCards = doc.select("div.grid div.card");
-    var nb = blockCards.size();
-    for (var i = 0; i < nb; i++) {
-        var card = blockCards.get(i);
-        var titleA = selFirst(card, "a.title");
-        var thumbA = selFirst(card, "a.thumb");
-        var coverEl = selFirst(card, "img");
-        var name = titleA ? titleA.text() : "";
-        var link = titleA ? titleA.attr("href") : "";
-        if (!link && thumbA) link = thumbA.attr("href") || "";
-        var cover = coverEl ? (coverEl.attr("src") || coverEl.attr("data-src") || "") : "";
-        pushItem(items, seen, name, cover, link, "");
+    var data = json.data;
+    var cdnImage = data.APP_DOMAIN_CDN_IMAGE || CDN_IMAGE;
+    var list = data.items || [];
+
+    for (var i = 0; i < list.length; i++) {
+        var card = mapItem(list[i], cdnImage);
+        if (card) out.items.push(card);
     }
 
-    var anchorCards = doc.select("div.grid a.card");
-    var na = anchorCards.size();
-    for (var j = 0; j < na; j++) {
-        var a = anchorCards.get(j);
-        var tEl = selFirst(a, "div.t");
-        var imgEl = selFirst(a, "img");
-        var tName = tEl ? tEl.text() : a.attr("title");
-        if (!tName && imgEl) tName = imgEl.attr("alt") || "";
-        var tCover = imgEl ? (imgEl.attr("src") || imgEl.attr("data-src") || "") : "";
-        pushItem(items, seen, tName, tCover, a.attr("href") || "", "");
+    // Pagination từ params.pagination
+    var pag = (data.params && data.params.pagination) ? data.params.pagination : {};
+    var total = pag.totalItems || 0;
+    var perPage = pag.totalItemsPerPage || 24;
+    if (total > 0 && currentPage * perPage < total) {
+        out.next = String(currentPage + 1);
     }
 
-    return enrichItemsWithMeta(items);
+    return out;
+}
+
+// Extract slug từ URL /truyen-tranh/{slug}
+function extractSlug(url) {
+    var m = String(url || "").match(/\/truyen-tranh\/([a-z0-9-]+)/i);
+    return m ? m[1] : "";
+}
+
+// Build URL có ?page=N (giữ nguyên query string có sẵn)
+function withPage(url, page) {
+    if (!page || page <= 1) return url;
+    var sep = (url.indexOf("?") >= 0) ? "&" : "?";
+    return url + sep + "page=" + page;
 }

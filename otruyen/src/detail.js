@@ -1,82 +1,88 @@
 load("config.js");
 
 function execute(url) {
-    var res = fetchRetry(url);
-    if (!res || !res.ok) return Response.error("Khong tai duoc trang truyen");
+    var slug = extractSlug(url);
+    if (!slug) return Response.error("URL truyện không hợp lệ");
 
-    var doc = res.html();
-    if (!doc) return Response.error("Khong parse duoc HTML");
+    var str = fetchJson(API_BASE + "/truyen-tranh/" + slug);
+    if (!str) return Response.error("Không tải được chi tiết truyện");
 
-    var titleEl = selFirst(doc, "h1");
-    var coverEl = selFirst(doc, "div.cover img");
-    var name = titleEl ? trimText(titleEl.text()) : "";
-    var cover = coverEl ? (coverEl.attr("src") || "") : "";
+    var json = parseJson(str);
+    if (!json || json.status !== "success" || !json.data || !json.data.item) {
+        return Response.error("API trả về dữ liệu không hợp lệ");
+    }
 
+    var data = json.data;
+    var item = data.item;
+    var cdnImage = data.APP_DOMAIN_CDN_IMAGE || CDN_IMAGE;
+
+    var name = trimText(item.name);
+    if (!name) return Response.error("Truyện không có tên");
+
+    var cover = buildCover(item.thumb_url || item.poster_url, cdnImage);
+
+    // Author
+    var author = "Đang cập nhật";
+    if (item.author && item.author.length > 0) {
+        var authors = [];
+        for (var i = 0; i < item.author.length; i++) {
+            var a = trimText(item.author[i]);
+            if (a && a.toLowerCase() !== "đang cập nhật" && a.toLowerCase() !== "dang cap nhat") {
+                authors.push(a);
+            }
+        }
+        if (authors.length > 0) author = authors.join(", ");
+    }
+
+    // Genres
     var genres = [];
-    var seenGenres = {};
-    var genreLinks = doc.select("a.tag");
-    var ng = genreLinks.size();
-    for (var i = 0; i < ng; i++) {
-        var a = genreLinks.get(i);
-        var gName = trimText(a.text());
-        var gHref = a.attr("href") || "";
-        if (!gName || !gHref || seenGenres[gHref]) continue;
-        seenGenres[gHref] = true;
+    var seenG = {};
+    var cats = item.category || [];
+    for (var j = 0; j < cats.length; j++) {
+        var c = cats[j];
+        if (!c || !c.slug || !c.name || seenG[c.slug]) continue;
+        seenG[c.slug] = true;
         genres.push({
-            title: gName,
-            input: resolveUrl(gHref),
+            title: trimText(c.name),
+            input: API_BASE + "/the-loai/" + c.slug,
             script: "gen.js"
         });
     }
 
-    var chapterCount = extractChapterCount(doc);
-    var chapterText = chapterCount > 0 ? (chapterCount + " chuong") : "";
+    // Status
+    var statusRaw = String(item.status || "").toLowerCase();
+    var ongoing = statusRaw !== "completed" && statusRaw !== "complete" && statusRaw !== "done";
+    var statusText = "Đang tiến hành";
+    if (statusRaw === "completed") statusText = "Đã hoàn thành";
+    else if (statusRaw === "coming_soon") statusText = "Sắp ra mắt";
 
-    var description = "";
-    var summaryBox = selFirst(doc, "div.grid2 div.box");
-    if (summaryBox) {
-        var summaryParas = summaryBox.select("p");
-        for (var j = 0; j < summaryParas.size(); j++) {
-            var text = trimText(summaryParas.get(j).text());
-            if (!text) continue;
-            if (description) description += "\n\n";
-            description += text;
-            if (j >= 1) break;
-        }
-        if (!description) description = trimText(summaryBox.text());
+    // Chapter count (lấy từ server_data[0] đầu tiên)
+    var chapterCount = 0;
+    if (item.chapters && item.chapters.length > 0) {
+        var sv = item.chapters[0].server_data || [];
+        chapterCount = sv.length;
     }
 
-    var detailParts = [];
-    if (chapterText) detailParts.push(chapterText);
+    var description = stripHtml(item.content || "");
 
-    var suggests = [];
-    var seenSuggests = {};
-    var relCards = doc.select("div.rel-cards a.rel-card");
-    var nr = relCards.size();
-    for (var k = 0; k < nr; k++) {
-        var card = relCards.get(k);
-        var sTitleEl = selFirst(card, "span.rel-title");
-        var sImgEl = selFirst(card, "img");
-        var sName = sTitleEl ? trimText(sTitleEl.text()) : "";
-        var sHref = card.attr("href") || "";
-        if (!sName || !sHref || seenSuggests[sHref]) continue;
-        seenSuggests[sHref] = true;
-        suggests.push({
-            title: sName,
-            input: resolveUrl(sHref),
-            script: "detail.js"
-        });
+    var infoParts = [];
+    infoParts.push("Tác giả: " + author);
+    if (chapterCount > 0) infoParts.push("Số chương: " + chapterCount);
+    infoParts.push("Trạng thái: " + statusText);
+    if (genres.length > 0) {
+        var gnames = [];
+        for (var k = 0; k < genres.length; k++) gnames.push(genres[k].title);
+        infoParts.push("Thể loại: " + gnames.join(", "));
     }
 
     return Response.success({
         name: name,
-        cover: resolveUrl(cover),
+        cover: cover,
         host: HOST,
-        author: "",
+        author: author,
         description: description,
-        detail: detailParts.join("<br>"),
-        ongoing: true,
-        genres: genres,
-        suggests: suggests
+        detail: infoParts.join("<br>"),
+        ongoing: ongoing,
+        genres: genres
     });
 }

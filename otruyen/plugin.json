@@ -2,10 +2,10 @@
   "metadata": {
     "name": "OTruyen",
     "author": "tkd1793",
-    "version": 18,
-    "source": "https://nettruyen.guru",
-    "regexp": "nettruyen\\.guru\\/truyen-tranh\\/[a-z0-9-]+\\.html\\/?$",
-    "description": "OTruyen - Doc truyen tranh online",
+    "version": 19,
+    "source": "https://otruyen.cc",
+    "regexp": "(www\\.)?otruyen\\.cc\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
+    "description": "OTruyen - Đọc truyện tranh online qua otruyenapi.com",
     "locale": "vi_VN",
     "type": "comic",
     "language": "javascript"

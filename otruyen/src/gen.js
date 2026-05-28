@@ -1,14 +1,14 @@
 load("config.js");
 
-function execute(url, page) {
+function execute(input, page) {
     var p = page ? parseInt(page, 10) : 1;
-    var fetchUrl = buildPagedUrl(url, p);
+    if (!p || p < 1) p = 1;
 
-    var res = fetchRetry(fetchUrl);
-    if (!res || !res.ok) return Response.success([], null);
+    var url = withPage(input, p);
+    var str = fetchJson(url);
+    if (!str) return Response.success([], null);
 
-    var doc = res.html();
-    if (!doc) return Response.success([], null);
-
-    return Response.success(parseItems(doc), getNextPage(doc, p));
+    var json = parseJson(str);
+    var r = parseListResponse(json, p);
+    return Response.success(r.items, r.next);
 }
