@@ -2,7 +2,7 @@
   "metadata": {
     "name": "OTruyen",
     "author": "tkd1793",
-    "version": 19,
+    "version": 20,
     "source": "https://otruyen.cc",
     "regexp": "(www\\.)?otruyen\\.cc\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
     "description": "OTruyen - Đọc truyện tranh online qua otruyenapi.com",

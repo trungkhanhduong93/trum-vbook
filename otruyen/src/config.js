@@ -50,11 +50,13 @@ function mapItem(it, cdnImage) {
     var name = trimText(it.name);
     if (!name) return null;
 
+    // Description hiển thị "X chap" (X = số chương mới nhất, từ chaptersLatest API).
+    // Đây là số chap đã ra, đủ để user biết tiến độ; không cần N+1 request lấy total.
     var desc = "";
     if (it.chaptersLatest && it.chaptersLatest.length > 0) {
         var ch = it.chaptersLatest[0];
         var cn = trimText(ch.chapter_name);
-        if (cn) desc = "Chương " + cn;
+        if (cn) desc = cn + " chap";
     }
     if (!desc && it.status === "completed") desc = "Hoàn thành";
 
