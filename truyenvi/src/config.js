@@ -58,10 +58,10 @@ function parseMangaCards(html) {
         if (!coverM) coverM = block.match(/src="(https?:\/\/s[0-9]+\.truyenvi\.com\/[^"]+)"/);
         var cover = coverM ? coverM[1] : "";
 
-        // Name from itemprop="headline" or title attribute
-        var nameM = block.match(/itemprop="headline">([^<]+)<\/span>/);
-        if (!nameM) nameM = block.match(/title="([^"]+)"><span itemprop="headline"/);
-        var name = nameM ? strip(nameM[1]) : "";
+        // Name từ title attribute của <a class="rdthumbs" ...title="...">
+        // (itemprop="headline" đầu tiên trong block là thể loại, không phải tên truyện)
+        var nameM = block.match(/class="rdthumbs"[^>]*title="([^"]+)"/);
+        var name = nameM ? nameM[1].trim() : "";
 
         if (!link || !name) continue;
         list.push({ name: name, link: link, cover: cover, host: SITE_URL });
