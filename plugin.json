@@ -163,6 +163,19 @@
       "locale": "vi_VN"
     },
     {
+      "name": "metruyen",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/metruyen/plugin.zip",
+      "version": 1,
+      "source": "https://metruyen18.net",
+      "regexp": "metruyen18\\.net\\/truyen\\/[a-z0-9-]+$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/metruyen/icon.png",
+      "description": "Đọc truyện trên trang Mê Truyện 18",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
+    },
+    {
       "name": "TruyenGGVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/plugin.zip",
