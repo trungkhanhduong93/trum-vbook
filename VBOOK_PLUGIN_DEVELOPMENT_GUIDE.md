@@ -1043,6 +1043,186 @@ console.log(m ? m[1] : "NO MATCH");  // Should print: 12345
 
 ---
 
+## TruyenVI Case Study — Bugs & Fixes
+
+Phần này ghi lại 4 lỗi thực tế phát sinh khi phát triển plugin TruyenVI và cách giải quyết từng lỗi.
+
+---
+
+### Bug 1: Không bấm tải nguồn truyện vào app được (Wrong plugin.zip Structure)
+
+**Triệu chứng:** App không nhận plugin sau khi cài; bấm "Tải nguồn" không có phản hồi.
+
+**Nguyên nhân:** Cấu trúc file bên trong `plugin.zip` sai. Các file JS để ở root thay vì thư mục `src/`, thiếu `plugin.json` và `icon.png` ở root.
+
+**Cấu trúc SAI:**
+```
+plugin.zip
+├── config.js       ❌ nên nằm trong src/
+├── home.js         ❌
+├── chap.js         ❌
+└── ...
+```
+
+**Cấu trúc ĐÚNG:**
+```
+plugin.zip
+├── icon.png        ✅ root
+├── plugin.json     ✅ root
+└── src/
+    ├── config.js   ✅
+    ├── home.js     ✅
+    ├── genre.js    ✅
+    ├── gen.js      ✅
+    ├── detail.js   ✅
+    ├── search.js   ✅
+    ├── toc.js      ✅
+    └── chap.js     ✅
+```
+
+**Cách build đúng (PowerShell):**
+```powershell
+$zip = [System.IO.Compression.ZipFile]::Open($zipPath, 'Create')
+# Root files
+foreach ($f in @("icon.png", "plugin.json")) {
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$pluginDir\$f", $f) | Out-Null
+}
+# src/ JS files
+foreach ($f in @("config.js","home.js","genre.js","gen.js","detail.js","search.js","toc.js","chap.js")) {
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, "$pluginDir\src\$f", "src/$f") | Out-Null
+}
+$zip.Dispose()
+```
+
+---
+
+### Bug 2: Không tải được danh sách truyện — "báo lỗi không có nội dung" (parseMangaCards Name Empty)
+
+**Triệu chứng:** Vào home/genre → danh sách trống, app báo "không có nội dung".
+
+**Nguyên nhân:** Regex `itemprop="headline"` match nhầm thẻ meta thể loại (nội dung trống/whitespace) trước khi match tên truyện thực sự. HTML có **2 thẻ `itemprop="headline"`** trong mỗi card — cái đầu là thể loại, cái thứ hai mới là tên truyện.
+
+```html
+<!-- Cấu trúc HTML thực tế của TruyenVI -->
+<div class="browse-bookcontent">
+  <span itemprop="headline">Hành động</span>   <!-- ← thể loại, không phải tên -->
+  <a class="rdthumbs" title="Tên Truyện" href="/truyen/ten-truyen/">
+    <img itemprop="image" src="https://s1.truyenvi.com/..." />
+  </a>
+  <span itemprop="headline">Tên Truyện</span>  <!-- ← tên đúng nhưng match sau -->
+</div>
+```
+
+**Fix:** Dùng `title` attribute của thẻ `<a class="rdthumbs">` thay vì `itemprop="headline"`:
+```javascript
+// ❌ Sai — match thể loại trống trước
+var nameM = block.match(/itemprop="headline"[^>]*>([^<]+)</);
+
+// ✅ Đúng — lấy title từ anchor rdthumbs
+var nameM = block.match(/class="rdthumbs"[^>]*title="([^"]+)"/);
+var name = nameM ? nameM[1].trim() : "";
+```
+
+**Bài học:** Khi một pattern match nhiều phần tử trong HTML, luôn xác định element **duy nhất và chính xác** để tránh match nhầm (ở đây dùng attribute `class` + `title` thay vì `itemprop`).
+
+---
+
+### Bug 3: App không thấy bản cập nhật plugin (Version Not Incremented)
+
+**Triệu chứng:** Đã sửa code và rebuild zip nhưng app không hiện thông báo cập nhật.
+
+**Nguyên nhân:** App so sánh trường `version` trong `plugin.json` registry (root repo) với version đang cài. Nếu version không tăng → app coi như chưa có gì thay đổi.
+
+**Cần cập nhật version ở 2 nơi:**
+
+1. **`plugin.json` nội bộ** (trong thư mục plugin):
+```json
+{
+  "metadata": {
+    "version": 3   ← tăng lên
+  }
+}
+```
+
+2. **`plugin.json` registry** (root repo):
+```json
+{
+  "data": [
+    {
+      "name": "TruyenVI",
+      "version": 3   ← tăng lên
+    }
+  ]
+}
+```
+
+**Sau đó rebuild `plugin.zip` và push lên GitHub.**
+
+**Quy tắc:** Mỗi lần sửa bất kỳ file nào trong plugin → tăng version → rebuild zip → commit & push.
+
+---
+
+### Bug 4: Bấm vào chap không load được ảnh — "không thể tải nội dung" (Age Gate Bypass)
+
+**Triệu chứng:** Danh sách chapter hiển thị OK, bấm vào đọc chapter nhưng không có ảnh nào.
+
+**Nguyên nhân gốc rễ:** TruyenVI dùng age gate — server chỉ trả về HTML chapter đầy đủ (có ảnh) khi client có cookie `age_valid=true`. Mặc dù đã thêm `"Cookie": "age_valid=true"` vào header trong `REQ_HEADERS()`, HTTP client của Vbook (Rhino) có thể không gửi header Cookie tùy ý — thay vào đó server set cookie thông qua endpoint `/age-valid`.
+
+**Cơ chế age gate của TruyenVI:**
+1. Server trả về trang có form `age_confirm` khi chưa có cookie
+2. Client POST/GET đến `/age-valid?url={chapter_url}` → server set `Set-Cookie: age_valid=true` và redirect
+3. Lần fetch tiếp theo với cookie jar đã có `age_valid=true` → server trả HTML chapter thực
+
+**Fix trong `chap.js` — gọi endpoint `/age-valid` trước:**
+```javascript
+function execute(url) {
+    var sUrl = String(url);
+
+    // Bước 1: Trigger server set cookie age_valid=true vào cookie jar
+    try {
+        Http.get(SITE_URL + "/age-valid?url=" + encodeURIComponent(sUrl))
+            .headers(REQ_HEADERS())
+            .string();
+    } catch (e) {}
+
+    // Bước 2: Fetch chapter (giờ cookie jar đã có age_valid=true)
+    var html = httpGet(sUrl);
+    if (!html) return null;
+
+    // Kiểm tra vẫn còn bị age gate → bail out
+    if (html.indexOf("age_confirm") !== -1 && html.indexOf("w__") === -1) return null;
+
+    // Parse ảnh bình thường...
+}
+```
+
+**Kiểm tra CDN referer (không phải nguyên nhân):**
+
+Trong quá trình debug, nghi ngờ CDN `s{N}.truyenvi.com` chặn ảnh do sai Referer. Đã test và xác nhận:
+- `curl "https://s1.truyenvi.com/Library/.../page1.jpg"` → **200** (không cần Referer)
+- `curl -H "Referer: https://www.truyenvi.com/" ...` → **200** (OK)
+- `curl -H "Referer: https://google.com/" ...` → **403** (chặn Referer ngoài)
+- Vbook ImageLoader load ảnh không kèm Referer → **200** ✅
+
+→ Referer không phải nguyên nhân. Lỗi hoàn toàn do age gate chặn response HTML chapter.
+
+**Pattern tổng quát — Age Gate Bypass:**
+```javascript
+// Khi site có age gate cookie-based:
+// 1. Tìm endpoint mà site dùng để set cookie (thường là /age-valid, /confirm-age, /gate)
+// 2. Gọi endpoint đó TRƯỚC khi fetch nội dung thực
+// 3. HTTP client của Vbook sẽ lưu cookie vào jar và gửi ở request tiếp theo
+// 4. Thêm cookie vào REQ_HEADERS() làm fallback (phòng jar không hoạt động)
+try {
+    Http.get(SITE_URL + "/age-valid?url=" + encodeURIComponent(targetUrl))
+        .headers(REQ_HEADERS())
+        .string();
+} catch (e) {}
+var html = httpGet(targetUrl); // lần này đã có cookie
+```
+
+---
+
 ## Best Practices
 
 ### 1. Configuration Management
