@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "TruyenVI",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://www.truyenvi.com",
+    "regexp": "(www\\.)?truyenvi\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
+    "description": "Đọc truyện trên trang Truyện VI",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

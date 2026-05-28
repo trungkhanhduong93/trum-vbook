@@ -176,6 +176,19 @@
       "tag": "nsfw"
     },
     {
+      "name": "TruyenVI",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenvi/plugin.zip",
+      "version": 1,
+      "source": "https://www.truyenvi.com",
+      "regexp": "(www\\.)?truyenvi\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenvi/icon.png",
+      "description": "Đọc truyện trên trang Truyện VI",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
+    },
+    {
       "name": "TruyenGGVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/plugin.zip",
