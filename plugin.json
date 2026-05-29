@@ -5,6 +5,18 @@
   },
   "data": [
     {
+      "name": "2tenVN",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/2ten.zip",
+      "version": 1,
+      "source": "https://www.2tenvn.com",
+      "regexp": "2tenvn\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/icon.png",
+      "description": "2tenVN - Kho truyện tranh online",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
       "name": "manhua3q",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/manhua3q/plugin.zip",
