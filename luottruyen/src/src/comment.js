@@ -12,6 +12,7 @@ load("config.js");
  * Có pagination: "Xem thêm" sẽ load trang tiếp theo.
  */
 function execute(input, next) {
+    syncBaseFromUrl(input);
     var url = resolveUrl(input);
     var pageNum = next ? parseInt(next) : 1;
 

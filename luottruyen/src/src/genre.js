@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute() {
+    resolveBaseUrl();
     var res = fetchRetry(BASE_URL + "/tim-truyen");
     if (!res || !res.ok) return Response.success([]);
 

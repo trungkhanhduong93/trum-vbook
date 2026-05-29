@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute(url) {
+    syncBaseFromUrl(url);
     // Extract StoryID from URL: e.g. /truyen-tranh/ten-truyen-12345 -> "12345"
     var storyId = url.replace(/\/$/, "").split("-").pop();
 

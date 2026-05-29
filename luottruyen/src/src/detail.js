@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute(url) {
+    syncBaseFromUrl(url);
     var res = fetchRetry(url);
     if (!res || !res.ok) return Response.error("Không tải được trang truyện");
     var doc = res.html();

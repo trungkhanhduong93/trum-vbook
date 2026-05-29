@@ -2,6 +2,7 @@ load("config.js");
 
 // gen.js handles home content tabs and browsing pages
 function execute(url, page) {
+    syncBaseFromUrl(url);
     var p = page ? parseInt(page) : 1;
 
     // Build URL with page parameter

@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute(url) {
+    syncBaseFromUrl(url);
     // Fetch chapter page directly (no browser needed, matching Tachiyomi approach)
     var res = fetch(url, {
         headers: {
