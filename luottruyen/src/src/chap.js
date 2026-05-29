@@ -84,7 +84,7 @@ function execute(url) {
         if (seen[src]) continue;
         seen[src] = true;
 
-        images.push(toWebp(src));
+        images.push(src);
     }
 
     // If no images found, check for login requirement (matching Tachiyomi)
@@ -101,14 +101,4 @@ function execute(url) {
     }
 
     return Response.success(images);
-}
-
-// Tối ưu băng thông: ảnh gốc là JPEG full-size trên img*.dichvucdn.com
-// (CDN công khai, không hỗ trợ resize). Route qua weserv → WebP q85
-// (~40% nhỏ hơn, GIỮ NGUYÊN kích thước & độ nét ≈ nguyên bản) → đọc
-// nhanh hơn. Chỉ áp dụng cho ảnh dichvucdn; host khác trả nguyên.
-function toWebp(url) {
-    if (!url || url.indexOf("dichvucdn") < 0) return url;
-    var bare = url.replace(/^https?:\/\//i, "");
-    return "https://wsrv.nl/?url=ssl:" + bare + "&output=webp&q=85";
 }
