@@ -1,24 +1,21 @@
 load('config.js');
+
 function execute(key, page) {
-    if (!page) page = '1';
-    var browser = Engine.newBrowser();
-    browser.launch(`${FULL_URL}/search?q=${key}&page=${page}`, 10000);
-    sleep(1000);
-    const doc = browser.html();
-    browser.close();
+    if (!key || String(key).trim().length === 0) return Response.success([], null);
+    var p = page ? parseInt(page) : 1;
 
-    if(!doc) return null;
+    var url = API + "/books?category=" + TYPE + "&take=" + LIMIT + "&page=" + p +
+              "&q=" + encodeURIComponent(String(key).trim());
+    var data = jsonGet(url);
+    if (!data || !data.books) return Response.success([], null);
 
-    const data = []
-    doc.select(".grid > figure").forEach(e => {
-        const name = e.select("h3").text()
-        const link = BASE_URL + e.select("a").first().attr("href")
-        const description = `${e.select(".mt-2 > .mb-1 > a").first().text()} - ${e.select(".mt-1 > .mb-2 > span").first().text()}`
-        const cover = e.select("img").attr("src");
-        const host = BASE_URL;
-        data.push({ name, link, description, cover, host });
-    })
-    const next = doc.select('.w-10.h-10.text-center.bg-blue-600 + .w-10.h-10.text-center').text()
+    var list = [];
+    for (var i = 0; i < data.books.length; i++) {
+        var c = mapBook(data.books[i]);
+        if (c) list.push(c);
+    }
 
-    return Response.success(data, next)
+    var total = data.countBook || 0;
+    var next = (p * LIMIT < total) ? String(p + 1) : null;
+    return Response.success(list, next);
 }

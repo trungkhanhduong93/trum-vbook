@@ -1,25 +1,19 @@
 load('config.js');
 
-function execute(url, page) {
-    if (!page) page = '1';
-    var browser = Engine.newBrowser();
-    browser.launch(BASE_URL + url + "?page=" + page, 10000);
-    sleep(1000);
-    const doc = browser.html();
-    browser.close();
+// Bộ xử lý listing dùng chung (home tab + thể loại). Gọi API JSON
+// trực tiếp — KHÔNG dùng Engine.newBrowser → nhanh hơn nhiều lần.
+function execute(input, page) {
+    var p = page ? parseInt(page) : 1;
+    var data = jsonGet(API + "/books?" + buildBooksQuery(input, p));
+    if (!data || !data.books) return Response.success([], null);
 
-    if(!doc) return null;
+    var list = [];
+    for (var i = 0; i < data.books.length; i++) {
+        var c = mapBook(data.books[i]);
+        if (c) list.push(c);
+    }
 
-    const data = []
-    doc.select(".grid > figure").forEach(e => {
-        const name = e.select("h3").text()
-        const link = BASE_URL + e.select("a").first().attr("href")
-        const description = `${e.select(".mt-2 > .mb-1 > a").first().text()} - ${e.select(".mt-2 > .mb-1 > span").first().text()}`
-        const cover = e.select("img").attr("src");
-        const host = BASE_URL;
-        data.push({ name, link, description, cover, host });
-    })
-    const next = doc.select('.w-10.h-10.text-center.bg-blue-600 + .w-10.h-10.text-center').text()
-
-    return Response.success(data, next)
+    var total = data.countBook || 0;
+    var next = (p * LIMIT < total) ? String(p + 1) : null;
+    return Response.success(list, next);
 }
