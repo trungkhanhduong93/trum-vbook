@@ -2,7 +2,7 @@
   "metadata": {
     "name": "2tenVN",
     "author": "tkd1793",
-    "version": 1,
+    "version": 2,
     "source": "https://www.2tenvn.com",
     "regexp": "2tenvn\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
     "description": "2tenVN - Kho truyện tranh online",

@@ -36,9 +36,21 @@ function execute(url) {
 
         if (seen[src]) continue;
         seen[src] = true;
-        images.push(src); // URL trần — không kèm header/referer
+        images.push(toPhoton(src, images.length)); // convert AVIF→JPEG
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
     return Response.success(images);
+}
+
+// Ảnh nguồn là AVIF (img.wsrvnl.xyz) — nhiều máy Android (< 12) không
+// decode được → ảnh vỡ. Route qua Photon (i*.wp.com) để chuyển sang
+// JPEG (mọi thiết bị đọc được), kèm nén nhẹ cho nhẹ băng thông.
+// Chỉ áp dụng cho ảnh AVIF/CDN nguồn; URL khác trả nguyên (an toàn).
+function toPhoton(url, idx) {
+    var isAvif = url.indexOf(".avif") >= 0 || url.indexOf("wsrvnl") >= 0;
+    if (!isAvif) return url;
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + (idx % 3) + ".wp.com/"; // xoay i0/i1/i2 để tải song song
+    return "https://" + host + bare + "?w=1000&quality=80";
 }
