@@ -32,7 +32,7 @@
       "name": "LuotTruyen",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/luottruyen.zip",
-      "version": 11,
+      "version": 12,
       "source": "https://luottruyen7.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",
