@@ -2,42 +2,73 @@ load("config.js");
 
 function execute(url) {
     syncBaseFromUrl(url);
-    // Extract StoryID from URL: e.g. /truyen-tranh/ten-truyen-12345 -> "12345"
+    // StoryID nằm cuối URL: /truyen-tranh/ten-truyen-12345 -> "12345"
     var storyId = url.replace(/\/$/, "").split("-").pop();
 
-    // Use POST API like Tachiyomi (much faster than browser)
-    var apiUrl = BASE_URL + "/Story/ListChapterByStoryID";
+    // 1) POST API (nhanh nhất, như Tachiyomi)
+    var chapters = tocViaApi(url, storyId);
 
+    // 2) Rỗng → nguồn có thể vừa đổi domain → dò lại rồi gọi đúng domain
+    if (chapters.length === 0) {
+        resolveBaseUrl();
+        chapters = tocViaApi(swapDomain(url), storyId);
+    }
+
+    // 3) Vẫn rỗng → render bằng trình duyệt (danh sách chương nạp qua AJAX)
+    if (chapters.length === 0) {
+        return tocViaBrowser(swapDomain(url));
+    }
+
+    // Đảo để chương cũ nhất lên đầu (Vbook cần thứ tự tăng dần)
+    chapters.reverse();
+    return Response.success(chapters);
+}
+
+// Gọi POST API ListChapterByStoryID, trả về mảng chương (newest-first)
+function tocViaApi(refererUrl, storyId) {
+    var apiUrl = BASE_URL + "/Story/ListChapterByStoryID";
     var res = fetch(apiUrl, {
         method: "POST",
         headers: {
             "User-Agent": FETCH_HEADERS["User-Agent"],
-            "Referer": url,
+            "Referer": refererUrl,
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "Accept": "text/html, */*; q=0.01"
         },
         body: "StoryID=" + storyId
     });
-
-    if (!res || !res.ok) {
-        // Fallback: try fetching the detail page and parsing chapter list from HTML
-        return fallbackToc(url);
-    }
-
+    if (!res || !res.ok) return [];
     var doc = res.html();
-    if (!doc) return fallbackToc(url);
+    if (!doc) return [];
+    return parseChapterList(doc);
+}
 
-    var chapters = parseChapterList(doc);
+// Fallback: mở trang truyện bằng trình duyệt, chờ AJAX nạp #nt_listchapter
+function tocViaBrowser(url) {
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.setUserAgent(UserAgent.android());
+        browser.launch(url, 8);
+        browser.callJs("", 2500); // chờ JS nạp danh sách chương
+        var doc = browser.html();
+        browser.close();
+        browser = null;
 
-    if (chapters.length === 0) {
-        // Fallback if POST API returns empty
-        return fallbackToc(url);
+        var chapters = parseChapterList(doc);
+        if (chapters.length === 0) {
+            // thử selector embedded khác trên trang detail
+            chapters = parseEmbeddedChapters(doc);
+        }
+        if (chapters.length === 0) return Response.error("Không tải được mục lục");
+
+        chapters.reverse();
+        return Response.success(chapters);
+    } catch (e) {
+        if (browser) { try { browser.close(); } catch (err) {} }
+        return Response.error("Lỗi tải mục lục: " + e.message);
     }
-
-    // Reverse so oldest chapter is first (Vbook expects ascending order)
-    chapters.reverse();
-    return Response.success(chapters);
 }
 
 // Parse chapter list from HTML fragment (used by both POST API and fallback)
@@ -75,17 +106,10 @@ function parseChapterList(doc) {
     return chapters;
 }
 
-// Fallback: fetch the full detail page and parse chapter list from embedded HTML
-function fallbackToc(url) {
-    var res = fetchRetry(url);
-    if (!res || !res.ok) return Response.error("Không tải được mục lục");
-
-    var doc = res.html();
-    if (!doc) return Response.error("Không parse được HTML");
-
+// Parse danh sách chương nhúng sẵn trên trang detail (sau khi render)
+function parseEmbeddedChapters(doc) {
     var chapters = [];
 
-    // Try multiple selectors for embedded chapter list
     var el = doc.select("#nt_listchapter li.row");
     if (!el || el.size() === 0) {
         el = doc.select(".list-chapter li.row");
@@ -107,8 +131,7 @@ function fallbackToc(url) {
         var chName = chapterLink.text().trim();
         if (!chName) continue;
 
-        var chapterUrl = chapterLink.attr("href") || "";
-        chapterUrl = resolveUrl(chapterUrl);
+        var chapterUrl = resolveUrl(chapterLink.attr("href") || "");
 
         chapters.push({
             name: chName,
@@ -117,6 +140,5 @@ function fallbackToc(url) {
         });
     }
 
-    chapters.reverse();
-    return Response.success(chapters);
+    return chapters;
 }

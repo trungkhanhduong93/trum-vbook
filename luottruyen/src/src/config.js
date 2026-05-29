@@ -102,11 +102,23 @@ function resolveUrl(url) {
     return BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
 }
 
+// Đổi domain trong URL sang BASE_URL hiện hành
+function swapDomain(url) {
+    if (!url) return url;
+    return String(url).replace(/^(https?:\/\/)luottruyen\d*\.com/i, BASE_URL);
+}
+
 function fetchRetry(url) {
     var res = fetch(url, FETCH_OPTIONS);
-    if (!res) return res;
-    if (!res.ok && !(res.status >= 400 && res.status < 500)) {
-        res = fetch(url, FETCH_OPTIONS);
+    if (res && res.ok) return res;
+
+    // Lỗi mạng / 5xx (không phải 4xx) → có thể nguồn vừa đổi domain.
+    // Tự dò domain mới rồi gọi lại đúng domain. Chỉ tốn thêm request
+    // khi THẬT SỰ lỗi → đường đi bình thường vẫn nhanh (1 request).
+    if (!res || (!res.ok && !(res.status >= 400 && res.status < 500))) {
+        resolveBaseUrl();
+        var res2 = fetch(swapDomain(url), FETCH_OPTIONS);
+        if (res2) return res2;
     }
     return res;
 }
