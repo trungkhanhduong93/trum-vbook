@@ -36,6 +36,8 @@ function execute(url) {
     if (author) parts.push("Tác giả: " + author);
     if (b.totalViews) parts.push("👁 Lượt xem: " + b.totalViews);
     if (b._count && b._count.usersFollow) parts.push("🔖 Theo dõi: " + b._count.usersFollow);
+    var totalCh = bookTotalChapters(b);
+    if (totalCh) parts.push("📚 Số chương: " + totalCh);
     if (b.chapterLatest && b.chapterLatest.num) parts.push("Chương mới nhất: " + b.chapterLatest.num);
     var detail = parts.join("<br>");
 

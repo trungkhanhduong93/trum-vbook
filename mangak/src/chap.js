@@ -18,9 +18,13 @@ function execute(url) {
                 if (link.indexOf("//") === 0) {
                     link = "https:" + link;
                 }
+                // Bỏ logo / ảnh không phải nội dung
+                if (link.indexOf("data:image") >= 0) continue;
+                if (link.indexOf("/img/logo") >= 0) continue;
+                if (link.indexOf("http") !== 0) continue;
                 if (!seen[link]) {
                     seen[link] = true;
-                    data.push(link + "|Referer=" + BASE_URL + "/");
+                    data.push(link); // URL trần — CDN otruyencdn công khai, vbook KHÔNG parse |Referer=
                 }
             }
         }

@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Mino Truyện",
     "author": "tkd1793",
-    "version": 21,
+    "version": 22,
     "source": "https://minotruyenv7.xyz",
     "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
     "description": "Đọc truyện trên trang Mino Truyện",

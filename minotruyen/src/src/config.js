@@ -35,15 +35,30 @@ function bookLink(b) {
     return BASE_URL + "/" + TYPE + "/books/" + b.bookId;
 }
 
+// Tổng số chương ≈ số chương mới nhất (chapterNumber lớn nhất).
+// Listing trả b.chapters (mới→cũ), detail trả b.chapterLatest.
+function bookTotalChapters(b) {
+    var total = 0;
+    if (b.chapters) {
+        for (var i = 0; i < b.chapters.length; i++) {
+            var n = b.chapters[i].chapterNumber || 0;
+            if (n > total) total = n;
+        }
+    }
+    if (!total && b.chapterLatest && b.chapterLatest.chapterNumber) {
+        total = b.chapterLatest.chapterNumber;
+    }
+    return total;
+}
+
 function mapBook(b) {
     if (!b || !b.bookId) return null;
-    var desc = "";
-    if (b.chapterLatest && b.chapterLatest.num) desc = "Chương " + b.chapterLatest.num;
+    var total = bookTotalChapters(b);
     return {
         name: b.title || "",
         link: bookLink(b),
         cover: bookCover(b),
-        description: desc,
+        description: total ? (total + " chương") : "",
         host: BASE_URL
     };
 }
