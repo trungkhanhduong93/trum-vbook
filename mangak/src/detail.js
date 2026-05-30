@@ -4,7 +4,10 @@ function execute(url) {
     url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
     var doc = fetchRetry(url);
     if (doc) {
-        var imgEl = doc.select("div[class*=row-span] img").first();
+        var imgEl = doc.select("img.story-detail-card__cover-image").first();
+        if (!imgEl) {
+            imgEl = doc.select("div[class*=row-span] img").first();
+        }
         if (!imgEl) {
             imgEl = doc.select("img[src*=/uploads/]").first();
         }
