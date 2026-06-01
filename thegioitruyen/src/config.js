@@ -9,9 +9,12 @@ var FETCH_HEADERS = {
     "Referer": BASE_URL + "/"
 };
 
-function selFirst(el, css) {
-    var items = el.select(css);
-    return items.size() > 0 ? items.get(0) : null;
+function decodeEntities(s) {
+    return String(s || "")
+        .replace(/&amp;/g, "&").replace(/&#0?38;/g, "&")
+        .replace(/&#0?39;/g, "'").replace(/&apos;/g, "'")
+        .replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function resolveUrl(url) {
@@ -22,78 +25,53 @@ function resolveUrl(url) {
     return BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
 }
 
-// Http.get trước; nếu rỗng / dính challenge Cloudflare → fallback browser
-function fetchRetry(url) {
-    var doc = null;
-    try {
-        doc = Http.get(url).headers(FETCH_HEADERS).html();
-    } catch (e) {}
+// Tải HTML dạng CHUỖI (nhẹ — không dựng DOM Jsoup cho trang WordPress nặng).
+// Chỉ fallback browser khi gặp challenge Cloudflare (thực tế site này không challenge).
+function httpGet(url) {
+    var s = "";
+    try { s = Http.get(url).headers(FETCH_HEADERS).string() || ""; } catch (e) { s = ""; }
 
-    if (doc) {
-        var title = doc.select("title").text();
-        if (title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
-            return doc;
-        }
+    if (!s || s.indexOf("Just a moment") !== -1 || s.indexOf("challenge-platform") !== -1 || s.indexOf("cf-browser-verification") !== -1) {
+        var browser = null;
+        try {
+            browser = Engine.newBrowser();
+            browser.launch(url, 15000);
+            var doc = browser.html();
+            browser.close(); browser = null;
+            if (doc) { try { s = doc.outerHtml(); } catch (e2) { try { s = doc.html(); } catch (e3) {} } }
+        } catch (eb) { if (browser) { try { browser.close(); } catch (e4) {} } }
     }
-
-    var browser = null;
-    try {
-        browser = Engine.newBrowser();
-        browser.launch(url, 15000);
-        var bdoc = browser.html();
-        browser.close();
-        return bdoc;
-    } catch (e2) {
-        if (browser) { try { browser.close(); } catch (e3) {} }
-        return doc;
-    }
+    return s || "";
 }
 
-// Card listing: div.tgt-card > a.tgt-card-thumb[href] > img[src][alt]
-function parseItems(doc) {
+// Parse card listing bằng regex (tách theo class="tgt-card")
+function parseItems(html) {
     var items = [];
     var seen = {};
-    var cards = doc.select(".tgt-card");
-    for (var i = 0; i < cards.size(); i++) {
-        var card = cards.get(i);
-
-        var a = selFirst(card, "a.tgt-card-thumb");
-        if (!a) a = selFirst(card, "a[href*='/truyen/']");
-        if (!a) continue;
-        var href = a.attr("href") || "";
-        if (!href || href.indexOf("/truyen/") < 0) continue;
-        var link = resolveUrl(href);
+    var parts = String(html).split('"tgt-card"');
+    for (var i = 1; i < parts.length; i++) {
+        var seg = parts[i].slice(0, 1500);
+        var lm = seg.match(/href="(https?:\/\/[^"]*\/truyen\/[a-z0-9-]+\/)"/i);
+        if (!lm) continue;
+        var link = resolveUrl(lm[1]);
         if (seen[link]) continue;
         seen[link] = true;
 
-        var img = selFirst(card, "img");
-        var cover = "";
-        var name = "";
-        if (img) {
-            cover = img.attr("src") || img.attr("data-src") || "";
-            if (cover && cover.indexOf("http") !== 0) cover = resolveUrl(cover);
-            name = (img.attr("alt") || "").trim();
-        }
-        if (!name) {
-            var titleA = selFirst(card, ".tgt-card-info a");
-            if (titleA) name = titleA.text().trim();
-        }
+        var cm = seg.match(/<img\s+src="([^"]+)"/i);
+        var cover = cm ? resolveUrl(cm[1]) : "";
+        var nm = seg.match(/alt="([^"]+)"/i);
+        var name = nm ? decodeEntities(nm[1]) : "";
         if (!name) continue;
 
-        // Số chương mới nhất (≈ tổng số chap) hiển thị dưới tên
-        var chapEl = selFirst(card, ".tgt-card-chap span");
-        var desc = chapEl ? chapEl.text().trim() : "";
-        if (!desc) {
-            var badge = selFirst(card, ".tgt-badge");
-            desc = badge ? badge.text().trim() : "";
-        }
+        var ch = seg.match(/tgt-card-chap"[^>]*>\s*<span>([^<]+)<\/span>/i);
+        var desc = ch ? decodeEntities(ch[1]) : "";
 
         items.push({ name: name, cover: cover, link: link, description: desc, host: HOST });
     }
     return items;
 }
 
-// WordPress phân trang kiểu /path/page/N/ ; search là /page/N/?s=key
+// WordPress phân trang /path/page/N/ ; search /page/N/?s=key
 function withPage(url, page) {
     page = parseInt(page) || 1;
     if (page <= 1) return url;
@@ -106,9 +84,8 @@ function withPage(url, page) {
     return url.replace(/\/+$/, "") + "/page/" + page + "/";
 }
 
-function getNextPage(doc, currentPage) {
+function getNextPage(html, currentPage) {
     var next = (parseInt(currentPage) || 1) + 1;
-    var html = doc.html();
     if (html.indexOf("/page/" + next + "/") >= 0 || html.indexOf("/page/" + next + "?") >= 0) {
         return String(next);
     }

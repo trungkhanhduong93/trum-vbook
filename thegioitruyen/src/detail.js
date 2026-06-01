@@ -1,58 +1,56 @@
 load("config.js");
 
-function metaContent(doc, prop) {
-    var el = selFirst(doc, "meta[property='" + prop + "']");
-    if (!el) el = selFirst(doc, "meta[name='" + prop + "']");
-    return el ? (el.attr("content") || "").trim() : "";
+function meta(html, prop) {
+    var m = html.match(new RegExp('<meta property="' + prop + '" content="([^"]*)"', "i"));
+    if (!m) m = html.match(new RegExp('<meta name="' + prop + '" content="([^"]*)"', "i"));
+    return m ? decodeEntities(m[1]) : "";
 }
 
 function execute(url) {
-    var doc = fetchRetry(url);
-    if (!doc) return Response.error("Không tải được trang truyện");
+    var html = httpGet(url);
+    if (!html) return Response.error("Không tải được trang truyện");
 
-    // Title: h1 ưu tiên, fallback og:title (bỏ hậu tố "[... Chapter]" và "| Thế Giới Truyện")
+    // Title: h1 ưu tiên, fallback og:title (bỏ [..], | hậu tố, "Đọc ", "Full Mới Nhất")
     var name = "";
-    var h1 = selFirst(doc, "h1");
-    if (h1) name = h1.text().trim();
+    var h1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1) name = decodeEntities(h1[1]);
     if (!name) {
-        name = metaContent(doc, "og:title");
-        name = name.replace(/\s*\[[^\]]*\]\s*/g, " ").replace(/\s*\|.*$/, "").replace(/^Đọc\s+/i, "").trim();
+        name = meta(html, "og:title")
+            .replace(/\s*\[[^\]]*\]\s*/g, " ")
+            .replace(/\s*\|.*$/, "")
+            .replace(/^Đọc\s+/i, "")
+            .replace(/\s*(Full\s*)?Mới Nhất\s*$/i, "")
+            .trim();
     }
 
     // Cover
-    var cover = metaContent(doc, "og:image");
-    if (!cover) {
-        var cimg = selFirst(doc, ".tgt-card-thumb img") || selFirst(doc, ".tgt-detail img");
-        if (cimg) cover = cimg.attr("src") || "";
-    }
+    var cover = meta(html, "og:image");
     if (cover && cover.indexOf("http") !== 0) cover = resolveUrl(cover);
 
-    // Description
+    // Description: #tgt-desc-wrap (đầy đủ), fallback og:description
     var description = "";
-    var descEl = selFirst(doc, "#tgt-desc-wrap") || selFirst(doc, ".tgt-desc") || selFirst(doc, ".description");
-    if (descEl) description = descEl.text().trim();
-    if (!description) description = metaContent(doc, "og:description");
+    var dw = html.match(/id="tgt-desc-wrap"[^>]*>([\s\S]*?)<\/div>/i);
+    if (dw) description = decodeEntities(dw[1].replace(/<[^>]+>/g, " "));
+    if (!description) description = meta(html, "og:description");
 
     // Genres
     var genres = [];
     var gSeen = {};
-    var gLinks = doc.select("a[href*='/the-loai/']");
-    for (var g = 0; g < gLinks.size(); g++) {
-        var gl = gLinks.get(g);
-        var gn = gl.text().trim();
-        var gh = gl.attr("href") || "";
-        if (!gn || !gh || gh.indexOf("/the-loai/") < 0) continue;
-        if (/\/the-loai\/?$/.test(gh)) continue;
-        var gLink = resolveUrl(gh);
-        if (gSeen[gLink]) continue;
-        gSeen[gLink] = true;
-        genres.push({ title: gn, input: gLink, script: "gen.js" });
+    var gre = /href="([^"]*\/the-loai\/([a-z0-9-]+)\/)"[^>]*>([^<]{1,200})</gi;
+    var gm;
+    while ((gm = gre.exec(html)) !== null) {
+        var slug = gm[2];
+        var gn = decodeEntities(gm[3]);
+        if (!gn || !slug || gSeen[slug]) continue;
+        if (gn.length > 25) continue; // bỏ link SEO mô tả dài, giữ tên thể loại ngắn
+        gSeen[slug] = true;
+        genres.push({ title: gn, input: resolveUrl(gm[1]), script: "gen.js" });
     }
 
-    // Status: badge "Đang phát hành" / "Hoàn thành"
+    // Status
     var ongoing = true;
-    var badge = selFirst(doc, ".tgt-badge");
-    var statusText = badge ? badge.text().trim() : "";
+    var badge = html.match(/tgt-badge"[^>]*>([^<]+)</i);
+    var statusText = badge ? decodeEntities(badge[1]) : "";
     if (statusText && (statusText.indexOf("Hoàn") >= 0 || statusText.indexOf("Full") >= 0)) ongoing = false;
 
     var detailParts = [];
