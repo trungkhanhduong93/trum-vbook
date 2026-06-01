@@ -21,9 +21,18 @@ function execute(url) {
         else if (src.indexOf("http") !== 0) src = resolveUrl(src);
         if (seen[src]) continue;
         seen[src] = true;
-        images.push(src); // URL trần (img1.thegioitruyen.vn / otruyencdn) — không cần referer
+        images.push(toPhoton(src, images.length));
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
     return Response.success(images);
+}
+
+// Ảnh gốc img1.thegioitruyen.vn nặng (~216KB/trang). Route qua Photon (i*.wp.com)
+// để nén còn ~120KB (giảm ~43% data, ảnh vẫn JPEG mọi máy đọc được), xoay i0/i1/i2
+// cho tải song song. Photon là proxy ảnh công khai của Automattic (như 2ten dùng).
+function toPhoton(url, idx) {
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + (idx % 3) + ".wp.com/";
+    return "https://" + host + bare + "?w=800&quality=80";
 }
