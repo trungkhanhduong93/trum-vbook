@@ -37,7 +37,7 @@ function execute(url) {
 
         if (seen[src]) continue;
         seen[src] = true;
-        images.push(src + "|Referer=" + BASE_URL + "/");
+        images.push(src); // URL trần — Vbook ImageLoader KHÔNG parse |Referer= (gãy ảnh)
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
