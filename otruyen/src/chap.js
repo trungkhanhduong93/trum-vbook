@@ -38,9 +38,18 @@ function execute(url) {
 
         if (seen[link]) continue;
         seen[link] = true;
-        out.push(link);
+        out.push(toPhoton(link, out.length));
     }
 
     if (out.length === 0) return Response.error("Không tìm thấy ảnh chương");
     return Response.success(out);
+}
+
+// CDN gốc sv1.otruyencdn.com chậm & thất thường (4–14s/ảnh, có lúc lỗi). Route qua
+// Photon (i*.wp.com — proxy ảnh Automattic, có cache + CDN toàn cầu): nóng ~0.46s,
+// nguội ~1.2s, ổn định hơn hẳn. Xoay i0/i1/i2 để tải song song. Ảnh vẫn JPEG/gốc.
+function toPhoton(url, idx) {
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + (idx % 3) + ".wp.com/";
+    return "https://" + host + bare + "?w=1000&quality=82";
 }
