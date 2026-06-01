@@ -11,11 +11,40 @@ function REQ_HEADERS() {
     };
 }
 
+// Phát hiện trang challenge Cloudflare (OkHttp của Vbook hay bị chặn dù curl qua được)
+function isBlocked(html) {
+    if (!html) return true;
+    return html.indexOf("Just a moment") !== -1
+        || html.indexOf("challenge-platform") !== -1
+        || html.indexOf("cf-browser-verification") !== -1
+        || html.indexOf("Enable JavaScript and cookies") !== -1
+        || html.indexOf("/cdn-cgi/challenge") !== -1;
+}
+
 function httpGet(url) {
+    var s = "";
     try {
-        var s = Http.get(url).headers(REQ_HEADERS()).string();
-        return s || "";
-    } catch (e) { return ""; }
+        s = Http.get(url).headers(REQ_HEADERS()).string() || "";
+    } catch (e) { s = ""; }
+
+    // Bị Cloudflare chặn / rỗng → render lại bằng browser (WebView vượt được challenge)
+    if (isBlocked(s)) {
+        var browser = null;
+        try {
+            browser = Engine.newBrowser();
+            browser.launch(url, 15000);
+            var doc = browser.html();
+            browser.close();
+            browser = null;
+            if (doc) {
+                try { s = doc.outerHtml(); }
+                catch (e2) { try { s = doc.html(); } catch (e3) {} }
+            }
+        } catch (eb) {
+            if (browser) { try { browser.close(); } catch (e4) {} }
+        }
+    }
+    return s || "";
 }
 
 function toAbs(url) {
