@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Thế Giới Truyện",
     "author": "tkd1793",
-    "version": 4,
+    "version": 5,
     "source": "https://thegioitruyen.vn",
     "regexp": "(www\\.)?thegioitruyen\\.vn\\/truyen\\/[a-z0-9-]+\\/?$",
     "description": "Đọc truyện tranh trên Thế Giới Truyện",

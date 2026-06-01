@@ -29,7 +29,12 @@ function resolveUrl(url) {
 // Chỉ fallback browser khi gặp challenge Cloudflare (thực tế site này không challenge).
 function httpGet(url) {
     var s = "";
-    try { s = Http.get(url).headers(FETCH_HEADERS).string() || ""; } catch (e) { s = ""; }
+    // Dùng fetch() (HTTP/2 + keepalive trong Vbook) — nhanh hơn Http.get, giống luottruyen
+    try {
+        var res = fetch(url, { headers: FETCH_HEADERS });
+        if (res && res.ok) s = res.text() || "";
+    } catch (e) { s = ""; }
+    if (!s) { try { s = Http.get(url).headers(FETCH_HEADERS).string() || ""; } catch (e2) { s = ""; } }
 
     if (!s || s.indexOf("Just a moment") !== -1 || s.indexOf("challenge-platform") !== -1 || s.indexOf("cf-browser-verification") !== -1) {
         var browser = null;
