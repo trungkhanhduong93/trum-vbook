@@ -80,8 +80,13 @@ function parseItems(doc) {
         }
         if (!name) continue;
 
-        var badge = selFirst(card, ".tgt-badge");
-        var desc = badge ? badge.text().trim() : "";
+        // Số chương mới nhất (≈ tổng số chap) hiển thị dưới tên
+        var chapEl = selFirst(card, ".tgt-card-chap span");
+        var desc = chapEl ? chapEl.text().trim() : "";
+        if (!desc) {
+            var badge = selFirst(card, ".tgt-badge");
+            desc = badge ? badge.text().trim() : "";
+        }
 
         items.push({ name: name, cover: cover, link: link, description: desc, host: HOST });
     }

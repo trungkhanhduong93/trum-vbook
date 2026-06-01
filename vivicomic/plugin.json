@@ -2,7 +2,7 @@
   "metadata": {
     "name": "ViviComic",
     "author": "tkd1793",
-    "version": 1,
+    "version": 2,
     "source": "https://vivicomic.com",
     "regexp": "(www\\.)?vivicomic\\.com\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
     "description": "Đọc truyện Manga, Manhwa, Manhua trên ViviComic",

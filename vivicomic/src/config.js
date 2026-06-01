@@ -79,7 +79,8 @@ function parseItems(doc) {
         }
         if (!name) continue;
 
-        var chapEl = selFirst(card, ".comic-card-chapter") || selFirst(card, ".chapter-name");
+        // Số chương mới nhất (≈ tổng số chap) hiển thị dưới tên
+        var chapEl = selFirst(card, ".comic-card-stats .chap-link") || selFirst(card, ".chap-link");
         var desc = chapEl ? chapEl.text().trim() : "";
 
         items.push({ name: name, cover: cover, link: link, description: desc, host: HOST });
