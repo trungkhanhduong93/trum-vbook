@@ -1,21 +1,29 @@
 load("config.js");
 
 function execute() {
-    var html = httpGet(BASE_URL + "/the-loai/");
-    if (!html) html = httpGet(BASE_URL + "/");
-    if (!html) return Response.success([]);
-
-    var genres = [];
+    var str = fetchJson(API_BASE + "/the-loai");
+    var list = [];
     var seen = {};
-    var re = /href="([^"]*\/the-loai\/([a-z0-9-]+)\/)"[^>]*>([^<]{1,200})</gi;
-    var m;
-    while ((m = re.exec(html)) !== null) {
-        var slug = m[2];
-        var name = decodeEntities(m[3]);
-        if (!name || !slug || seen[slug]) continue;
-        if (name.length > 25) continue;
-        seen[slug] = true;
-        genres.push({ title: name, input: resolveUrl(m[1]), script: "gen.js" });
+    if (str) {
+        var json = parseJson(str);
+        if (json && json.status === "success" && json.data && json.data.items) {
+            var arr = json.data.items;
+            for (var i = 0; i < arr.length; i++) {
+                var g = arr[i];
+                var slug = g && g.slug ? String(g.slug) : "";
+                var name = g && g.name ? trimText(g.name) : "";
+                if (!slug || !name || seen[slug]) continue;
+                seen[slug] = true;
+                list.push({ title: name, input: API_BASE + "/the-loai/" + slug, script: "gen.js" });
+            }
+        }
     }
-    return Response.success(genres);
+    if (list.length === 0) {
+        var fb = [["action","Action"],["adventure","Adventure"],["comedy","Comedy"],["drama","Drama"],
+            ["fantasy","Fantasy"],["manhua","Manhua"],["manhwa","Manhwa"],["martial-arts","Martial Arts"],
+            ["ngon-tinh","Ngôn Tình"],["romance","Romance"],["chuyen-sinh","Chuyển Sinh"],["xuyen-khong","Xuyên Không"],
+            ["truyen-mau","Truyện Màu"],["webtoon","Webtoon"],["tu-tien","Tu Tiên"]];
+        for (var j = 0; j < fb.length; j++) list.push({ title: fb[j][1], input: API_BASE + "/the-loai/" + fb[j][0], script: "gen.js" });
+    }
+    return Response.success(list);
 }
