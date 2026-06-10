@@ -2,7 +2,7 @@
 // luottruyen.com (KHÔNG số) là redirector vĩnh viễn → luôn nhảy về
 // mirror mới nhất (vd hiện tại luottruyen7.com). Mặc định dưới đây chỉ
 // là fallback nhanh; resolveBaseUrl() sẽ tự cập nhật domain thật.
-var DEFAULT_BASE = "https://luottruyen7.com";
+var DEFAULT_BASE = "https://luottruyen8.com";
 var REDIRECTOR = "https://luottruyen.com";
 
 var BASE_URL = DEFAULT_BASE;
