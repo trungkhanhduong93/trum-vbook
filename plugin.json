@@ -189,22 +189,10 @@
       "tag": "nsfw"
     },
     {
-      "name": "CuuTruyen",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip",
-      "version": 2,
-      "source": "https://cuutruyen.cc",
-      "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-z0-9-]+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",
-      "description": "Đọc truyện trên trang Cứu Truyện",
-      "type": "comic",
-      "locale": "vi_VN"
-    },
-    {
       "name": "TruyenGGVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/plugin.zip",
-      "version": 5,
+      "version": 6,
       "source": "https://truyenggvn.com",
       "regexp": "(www\\.)?truyenggvn\\.com",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenggvn/icon.png",
@@ -228,7 +216,7 @@
       "name": "LuotTruyenNew",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/plugin.zip",
-      "version": 18,
+      "version": 19,
       "source": "https://luottruyen.net",
       "regexp": "(www\\.)?luottruyen\\.net\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/icon.png",
