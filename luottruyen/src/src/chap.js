@@ -84,7 +84,9 @@ function execute(url) {
         if (seen[src]) continue;
         seen[src] = true;
 
-        images.push(src);
+        // Sử dụng Jetpack Photon (WordPress CDN proxy) để tải ảnh cực nhanh
+        var proxyUrl = "https://i0.wp.com/" + src.replace(/https?:\/\//i, "");
+        images.push(proxyUrl);
     }
 
     // If no images found, check for login requirement (matching Tachiyomi)
