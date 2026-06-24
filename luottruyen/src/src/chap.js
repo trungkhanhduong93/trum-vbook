@@ -84,13 +84,7 @@ function execute(url) {
         if (seen[src]) continue;
         seen[src] = true;
 
-        images.push({
-            url: src,
-            headers: {
-                "User-Agent": FETCH_HEADERS["User-Agent"],
-                "Referer": BASE_URL + "/"
-            }
-        });
+        images.push("https://wsrv.nl/?url=" + src);
     }
 
     // If no images found, check for login requirement (matching Tachiyomi)

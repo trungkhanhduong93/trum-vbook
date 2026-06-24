@@ -2,7 +2,7 @@
   "metadata": {
     "name": "LuotTruyen",
     "author": "tkd1793",
-    "version": 15,
+    "version": 16,
     "source": "https://luottruyen8.com",
     "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
     "description": "Lượt Truyện - Đọc truyện tranh online",

@@ -2,7 +2,7 @@
   "metadata": {
     "name": "LuotTruyenNew",
     "author": "tkd1793",
-    "version": 14,
+    "version": 15,
     "source": "https://luottruyen.net",
     "regexp": "(www\\.)?luottruyen\\.net\\/[a-z0-9-]+\\/?$",
     "description": "Đọc truyện trên trang Lướt Truyện",
