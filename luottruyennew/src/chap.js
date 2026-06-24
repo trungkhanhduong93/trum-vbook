@@ -24,6 +24,12 @@ function execute(url) {
         if (src.indexOf("/icon") >= 0) continue;
 
         var finalSrc = resolveUrl(src);
+        
+        // Proxy qua corsproxy.io vi cdn3t.com chan OkHttp/Cloudflare
+        if (finalSrc.indexOf("cdn3t.com") !== -1) {
+            finalSrc = "https://corsproxy.io/?url=" + encodeURIComponent(finalSrc);
+        }
+
         if (seen[finalSrc]) continue;
         seen[finalSrc] = true;
         images.push(finalSrc);
