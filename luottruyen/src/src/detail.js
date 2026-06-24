@@ -2,9 +2,27 @@ load("config.js");
 
 function execute(url) {
     syncBaseFromUrl(url);
-    var res = fetchRetry(url);
-    if (!res || !res.ok) return Response.error("Không tải được trang truyện");
-    var doc = res.html();
+
+    // MỞ BROWSER 1 LẦN DUY NHẤT Ở TRANG CHI TIẾT ĐỂ LẤY COOKIE CLOUDFLARE CHO TOÀN BỘ ẢNH BÊN TRONG
+    var doc = null;
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.launch(url, 10000); // 10s là đủ nhả Cookie
+        var html = browser.html();
+        if (html) {
+            doc = html;
+        }
+    } catch(e) {}
+    if (browser) { try { browser.close(); } catch(e){} }
+
+    // Fallback nếu browser lỗi
+    if (!doc) {
+        var res = fetchRetry(url);
+        if (!res || !res.ok) return Response.error("Không tải được trang truyện");
+        doc = res.html();
+    }
+    
     if (!doc) return Response.error("Không parse được HTML");
 
     // ─── Title ────────────────────────────────────────────────────────────

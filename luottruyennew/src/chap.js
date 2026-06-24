@@ -31,9 +31,7 @@ function execute(url) {
         if (seen[finalSrc]) continue;
         seen[finalSrc] = true;
         
-        // Sử dụng Jetpack Photon (WordPress CDN proxy) để vượt rate limit của CDN truyện. Tốc độ cực nhanh.
-        var proxyUrl = "https://i0.wp.com/" + finalSrc.replace(/https?:\/\//i, "");
-        images.push(proxyUrl);
+        images.push(finalSrc);
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");

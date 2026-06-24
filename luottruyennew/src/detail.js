@@ -9,7 +9,21 @@ function execute(url) {
         url = url.replace(/-\d+$/, "");
     }
 
-    var doc = fetchRetry(url);
+    // MỞ BROWSER 1 LẦN DUY NHẤT Ở TRANG CHI TIẾT ĐỂ LẤY COOKIE CLOUDFLARE CHO TOÀN BỘ ẢNH BÊN TRONG
+    var doc = null;
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.launch(url, 10000); // 10s là đủ nhả Cookie
+        var html = browser.html();
+        if (html) {
+            doc = html;
+        }
+    } catch(e) {}
+    if (browser) { try { browser.close(); } catch(e){} }
+
+    // Fallback nếu browser lỗi
+    if (!doc) doc = fetchRetry(url);
     if (!doc) return Response.error("Không tải được chi tiết truyện");
 
     // Title
