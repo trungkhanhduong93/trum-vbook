@@ -13,17 +13,17 @@ function execute(url) {
     if (!doc) return Response.error("Không tải được chi tiết truyện");
 
     // Title
-    var titleEl = doc.selectFirst("h1[itemprop=name]");
-    if (!titleEl) titleEl = doc.selectFirst("h1");
+    var titleEl = doc.select("h1[itemprop=name]").first();
+    if (!titleEl) titleEl = doc.select("h1").first();
     var title = titleEl ? trimText(titleEl.text()) : "";
 
     // Cover
-    var coverEl = doc.selectFirst("div.poster img[itemprop=image]");
-    if (!coverEl) coverEl = doc.selectFirst("div.poster img");
+    var coverEl = doc.select("div.poster img[itemprop=image]").first();
+    if (!coverEl) coverEl = doc.select("div.poster img").first();
     var cover = coverEl ? resolveUrl(coverEl.attr("src") || coverEl.attr("data-src") || "") : "";
 
     // Description
-    var descEl = doc.selectFirst("div[itemprop=description]");
+    var descEl = doc.select("div[itemprop=description]").first();
     var description = descEl ? trimText(descEl.text()) : "";
 
     // Author - find the line with fa-user icon

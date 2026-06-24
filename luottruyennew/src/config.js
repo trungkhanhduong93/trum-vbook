@@ -43,11 +43,24 @@ function fetchRetry(url) {
         browser = Engine.newBrowser();
         browser.launch(url, 25000);
         var browserDoc = browser.html();
+        
+        var rawHtml = "";
+        if (browserDoc) {
+            try { rawHtml = browserDoc.outerHtml(); } 
+            catch (ex) { 
+                try { rawHtml = browserDoc.html(); } 
+                catch (ex2) { rawHtml = String(browserDoc); } 
+            }
+        }
+        
         browser.close();
         browser = null;
-        return browserDoc;
+        
+        if (rawHtml) {
+            return Html.parse(rawHtml);
+        }
     } catch (e) {
         if (browser) { try { browser.close(); } catch (err) {} }
-        return null;
     }
+    return null;
 }
