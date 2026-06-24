@@ -84,7 +84,13 @@ function execute(url) {
         if (seen[src]) continue;
         seen[src] = true;
 
-        images.push(src);
+        images.push({
+            url: src,
+            headers: {
+                "User-Agent": FETCH_HEADERS["User-Agent"],
+                "Referer": BASE_URL + "/"
+            }
+        });
     }
 
     // If no images found, check for login requirement (matching Tachiyomi)
