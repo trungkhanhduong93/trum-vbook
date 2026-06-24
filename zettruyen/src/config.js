@@ -31,7 +31,7 @@ function fetchJson(url) {
     try {
         if (typeof fetch !== "undefined") {
             let res = fetch(url, { headers: JSON_HEADERS });
-            if (res && res.ok) return res.string();
+            if (res && res.ok) return res.text();
         }
         return Http.get(url).headers(JSON_HEADERS).string();
     } catch (e) {
