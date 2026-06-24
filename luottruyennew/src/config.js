@@ -6,6 +6,14 @@ function trimText(s) {
     return s ? String(s).replace(/^\s+|\s+$/g, "") : "";
 }
 
+// Rhino-Jsoup an toàn: KHÔNG dùng selectFirst()/Elements.first().
+// Luôn select() rồi lấy phần tử đầu qua size()/get(0).
+function selFirst(el, css) {
+    if (!el) return null;
+    var items = el.select(css);
+    return (items && items.size() > 0) ? items.get(0) : null;
+}
+
 function resolveUrl(href) {
     if (!href) return "";
     href = trimText(href);

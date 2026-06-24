@@ -18,26 +18,26 @@ function execute(url, page) {
     var items = [];
     var added = {};
 
-    // Homepage listing: div#contentstory div.inner div.item
-    var cards = doc.select("div.inner > div.item");
+    // Lưới truyện chính: div.inner > div.item (dùng descendant cho chắc tương thích)
+    var cards = doc.select("div.inner div.item");
+    if (!cards || cards.size() === 0) cards = doc.select("div.item");
+
     for (var i = 0; i < cards.size(); i++) {
         var card = cards.get(i);
 
-        // Get cover link
-        var coverA = card.select("div.cover a").first();
-        if (!coverA) coverA = card.select("a").first();
+        // Link truyện
+        var coverA = selFirst(card, "div.cover a");
+        if (!coverA) coverA = selFirst(card, "a");
         if (!coverA) continue;
 
         var link = coverA.attr("href");
         if (!link) continue;
         link = resolveUrl(link);
-
-        // Skip duplicates
         if (added[link]) continue;
         added[link] = true;
 
-        // Get cover image
-        var imgEl = card.select("img").first();
+        // Ảnh bìa
+        var imgEl = selFirst(card, "img");
         var cover = "";
         if (imgEl) {
             cover = imgEl.attr("src") || imgEl.attr("data-src") || "";
@@ -46,35 +46,22 @@ function execute(url, page) {
             }
             cover = resolveUrl(cover);
         }
-
-        // Skip logos/icons
         if (cover && (cover.indexOf("logo") !== -1 || cover.indexOf("/icon") !== -1)) continue;
 
-        // Get title
+        // Tên truyện
         var name = "";
-        var nameEl = card.select("h3.name a").first();
-        if (!nameEl) nameEl = card.select("h3 a").first();
-        if (!nameEl) nameEl = card.select("div.info h3 a").first();
-        if (nameEl) {
-            name = trimText(nameEl.text());
-        } else {
-            // Fallback: caption h3 or img alt
-            var captionH3 = card.select("div.caption h3").first();
-            if (captionH3) {
-                name = trimText(captionH3.text());
-            } else if (imgEl) {
-                name = imgEl.attr("alt") || "";
-            }
-            if (!name) {
-                name = coverA.attr("title") || "";
-            }
-        }
+        var nameEl = selFirst(card, "div.info h3 a");
+        if (!nameEl) nameEl = selFirst(card, "h3 a");
+        if (!nameEl) nameEl = selFirst(card, "h3");
+        if (nameEl) name = trimText(nameEl.text());
+        if (!name) name = trimText(coverA.attr("title") || "");
+        if (!name && imgEl) name = trimText(imgEl.attr("alt") || "");
 
-        // Get latest chapter
-        var chap = "";
-        var chapEl = card.select("a.chapter-name").first();
-        if (!chapEl) chapEl = card.select("div.caption p").first();
-        if (chapEl) chap = trimText(chapEl.text());
+        // Chương mới nhất
+        var chapEl = selFirst(card, "div.info ul li a");
+        if (!chapEl) chapEl = selFirst(card, "a.chapter-name");
+        if (!chapEl) chapEl = selFirst(card, "div.caption p");
+        var chap = chapEl ? trimText(chapEl.text()) : "";
 
         if (name && link) {
             items.push({
@@ -87,21 +74,18 @@ function execute(url, page) {
         }
     }
 
-    // Pagination
+    // Phân trang: tìm số trang lớn hơn trang hiện tại
     var next = "";
     var pageLinks = doc.select("div.pagination a");
     for (var j = 0; j < pageLinks.size(); j++) {
-        var href = pageLinks.get(j).attr("href");
+        var href = pageLinks.get(j).attr("href") || "";
         var m = href.match(/page=(\d+)/);
         if (m && parseInt(m[1]) > p) {
             next = m[1];
             break;
         }
     }
-    // Fallback: if items exist and no explicit next, check if page had full results
-    if (!next && items.length >= 20) {
-        next = String(p + 1);
-    }
+    if (!next && items.length >= 20) next = String(p + 1);
 
     return Response.success(items, next);
 }

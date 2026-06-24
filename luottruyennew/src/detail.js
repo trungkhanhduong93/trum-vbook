@@ -15,17 +15,17 @@ function execute(url) {
     if (!doc) return Response.error("Không tải được chi tiết truyện");
 
     // Title
-    var titleEl = doc.select("h1[itemprop=name]").first();
-    if (!titleEl) titleEl = doc.select("h1").first();
+    var titleEl = selFirst(doc, "h1[itemprop=name]");
+    if (!titleEl) titleEl = selFirst(doc, "h1");
     var title = titleEl ? trimText(titleEl.text()) : "";
 
     // Cover
-    var coverEl = doc.select("div.poster img[itemprop=image]").first();
-    if (!coverEl) coverEl = doc.select("div.poster img").first();
+    var coverEl = selFirst(doc, "div.poster img[itemprop=image]");
+    if (!coverEl) coverEl = selFirst(doc, "div.poster img");
     var cover = coverEl ? resolveUrl(coverEl.attr("src") || coverEl.attr("data-src") || "") : "";
 
     // Description
-    var descEl = doc.select("div[itemprop=description]").first();
+    var descEl = selFirst(doc, "div[itemprop=description]");
     var description = descEl ? trimText(descEl.text()) : "";
 
     // Author - find the line with fa-user icon
@@ -33,9 +33,9 @@ function execute(url) {
     var lines = doc.select("div.book-meta div.line");
     for (var i = 0; i < lines.size(); i++) {
         var line = lines.get(i);
-        var icon = line.select("i.fa-user").first();
+        var icon = selFirst(line, "i.fa-user");
         if (icon) {
-            var resultEl = line.select("span.result").first();
+            var resultEl = selFirst(line, "span.result");
             if (resultEl) {
                 author = trimText(resultEl.text());
             }
