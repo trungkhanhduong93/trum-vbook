@@ -57,11 +57,24 @@ function execute(url, page) {
         if (!name) name = trimText(coverA.attr("title") || "");
         if (!name && imgEl) name = trimText(imgEl.attr("alt") || "");
 
-        // Chương mới nhất
-        var chapEl = selFirst(card, "div.info ul li a");
-        if (!chapEl) chapEl = selFirst(card, "a.chapter-name");
-        if (!chapEl) chapEl = selFirst(card, "div.caption p");
-        var chap = chapEl ? trimText(chapEl.text()) : "";
+        // Số chương mới nhất — hiện cạnh tên truyện để biết truyện tới chap mấy.
+        // Trang listing có: <p class="line"><span>Số chương</span>: 33</p>
+        var chap = "";
+        var pls = card.select("p.line");
+        for (var k = 0; k < pls.size(); k++) {
+            var lt = trimText(pls.get(k).text());
+            if (lt.indexOf("Số chương") !== -1) {
+                var mm = lt.match(/(\d+(?:[.,]\d+)?)/);
+                if (mm) chap = "Chương " + mm[1];
+                break;
+            }
+        }
+        // Fallback cho layout trang chủ kiểu cũ
+        if (!chap) {
+            var chapEl = selFirst(card, "a.chapter-name");
+            if (!chapEl) chapEl = selFirst(card, "div.caption p");
+            if (chapEl) chap = trimText(chapEl.text());
+        }
 
         if (name && link) {
             items.push({

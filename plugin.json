@@ -117,7 +117,7 @@
       "name": "Mimimoe",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip",
-      "version": 6,
+      "version": 7,
       "source": "https://mimimoe.moe",
       "regexp": "mimimoe\\.moe\\/manga\\/[0-9]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/icon.png",
@@ -201,22 +201,10 @@
       "locale": "vi_VN"
     },
     {
-      "name": "ViviComic",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vivicomic/plugin.zip",
-      "version": 2,
-      "source": "https://vivicomic.com",
-      "regexp": "(www\\.)?vivicomic\\.com\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vivicomic/icon.png",
-      "description": "Đọc truyện Manga, Manhwa, Manhua trên ViviComic",
-      "type": "comic",
-      "locale": "vi_VN"
-    },
-    {
       "name": "LuotTruyenNew",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/plugin.zip",
-      "version": 22,
+      "version": 23,
       "source": "https://luottruyen.net",
       "regexp": "(www\\.)?luottruyen\\.net\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/icon.png",

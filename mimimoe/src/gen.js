@@ -1,23 +1,33 @@
 load("config.js");
 
-var PAGE_SIZE = 24;
-
 function execute(input, page) {
     var p = page ? parseInt(page) : 1;
-    var offset = (p - 1) * PAGE_SIZE;
 
-    // input is a path like "/manga?sort=latest" or "/manga/top/all-time"
+    // API phân trang bằng ?page=N (limit/offset bị BỎ QUA). page_size cố định 24.
     var path = input || "/manga";
     var sep = path.indexOf("?") >= 0 ? "&" : "?";
-    var url = path + sep + "limit=" + PAGE_SIZE + "&offset=" + offset;
-
-    var res = apiFetch(url);
+    var res = apiFetch(path + sep + "page=" + p);
     if (!res || !res.ok) return Response.success([], null);
 
-    var items = parseListResponse(res);
+    var items = [];
+    var hasNext = false;
+    try {
+        var data = JSON.parse(res.text());
+        var arr = (data && data.items) ? data.items : data;
+        if (arr && arr.length) {
+            for (var i = 0; i < arr.length; i++) {
+                var it = buildItem(arr[i]);
+                if (it) items.push(it);
+            }
+        }
+        if (data && typeof data.has_next !== "undefined") {
+            hasNext = !!data.has_next;
+        } else if (data && data.total_pages) {
+            hasNext = p < parseInt(data.total_pages);
+        } else {
+            hasNext = items.length > 0;
+        }
+    } catch (e) {}
 
-    var next = null;
-    if (items.length >= PAGE_SIZE) next = String(p + 1);
-
-    return Response.success(items, next);
+    return Response.success(items, hasNext ? String(p + 1) : null);
 }
