@@ -24,15 +24,24 @@ function fetchRetry(url) {
         }).html();
     } catch (e) {}
 
+    var html = doc ? doc.html() : "";
     var title = doc ? doc.select("title").text() : "";
-    if (doc && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
+    
+    var isCloudflare = html.indexOf("cf-challenge") !== -1 || 
+                       html.indexOf("cf-browser-verification") !== -1 || 
+                       html.indexOf("Just a moment") !== -1 ||
+                       title.indexOf("Just a moment") !== -1 || 
+                       title.indexOf("Cloudflare") !== -1 ||
+                       title.indexOf("Attention Required") !== -1;
+
+    if (doc && !isCloudflare) {
         return doc;
     }
 
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        browser.launch(url, 15000);
+        browser.launch(url, 25000);
         var browserDoc = browser.html();
         browser.close();
         browser = null;

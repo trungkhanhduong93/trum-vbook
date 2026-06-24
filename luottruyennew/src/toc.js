@@ -5,6 +5,7 @@ function execute(url) {
     url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
     if (url.indexOf("/truyen-tranh/") !== -1) {
         url = url.replace("/truyen-tranh/", "/");
+        url = url.replace(/\/$/, "");
         url = url.replace(/-\d+$/, "");
     }
 
