@@ -31,8 +31,7 @@ function execute(url) {
         if (seen[finalSrc]) continue;
         seen[finalSrc] = true;
         
-        // VBook engine requires string arrays. Wrap with wsrv.nl proxy to bypass CDN speed limits.
-        images.push("https://wsrv.nl/?url=" + finalSrc);
+        images.push(finalSrc);
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");

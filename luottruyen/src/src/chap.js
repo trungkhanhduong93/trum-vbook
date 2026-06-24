@@ -84,7 +84,7 @@ function execute(url) {
         if (seen[src]) continue;
         seen[src] = true;
 
-        images.push("https://wsrv.nl/?url=" + src);
+        images.push(src);
     }
 
     // If no images found, check for login requirement (matching Tachiyomi)
