@@ -16,50 +16,23 @@ function resolveUrl(href) {
 function fetchRetry(url) {
     var doc = null;
     try {
+        if (typeof fetch !== "undefined") {
+            var res = fetch(url, {
+                headers: {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                    "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
+                    "Referer": BASE_URL + "/"
+                }
+            });
+            if (res && res.ok) return res.html();
+        }
+        
         doc = Http.get(url).headers({
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
             "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
             "Referer": BASE_URL + "/"
         }).html();
     } catch (e) {}
 
-    var html = doc ? doc.html() : "";
-    var title = doc ? doc.select("title").text() : "";
-    
-    var isCloudflare = html.indexOf("cf-challenge") !== -1 || 
-                       html.indexOf("cf-browser-verification") !== -1 || 
-                       html.indexOf("Just a moment") !== -1 ||
-                       title.indexOf("Just a moment") !== -1 || 
-                       title.indexOf("Cloudflare") !== -1 ||
-                       title.indexOf("Attention Required") !== -1;
-
-    if (doc && !isCloudflare) {
-        return doc;
-    }
-
-    var browser = null;
-    try {
-        browser = Engine.newBrowser();
-        browser.launch(url, 8000);
-        var browserDoc = browser.html();
-        
-        var rawHtml = "";
-        if (browserDoc) {
-            try { rawHtml = browserDoc.outerHtml(); } 
-            catch (ex) { 
-                try { rawHtml = browserDoc.html(); } 
-                catch (ex2) { rawHtml = String(browserDoc); } 
-            }
-        }
-        
-        browser.close();
-        browser = null;
-        
-        if (rawHtml) {
-            return Html.parse(rawHtml);
-        }
-    } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
-    }
-    return null;
+    return doc;
 }

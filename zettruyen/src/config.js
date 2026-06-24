@@ -16,52 +16,25 @@ let JSON_HEADERS = {
 };
 
 function fetchRetry(url) {
-    let doc = null;
     try {
-        doc = Http.get(url).headers(HTML_HEADERS).html();
-    } catch (e) {}
-
-    if (doc) {
-        let titles = doc.select("title");
-        let title = titles.size() > 0 ? titles.get(0).text() : "";
-        if (title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
-            return doc;
+        if (typeof fetch !== "undefined") {
+            let res = fetch(url, { headers: HTML_HEADERS });
+            if (res && res.ok) return res.html();
         }
-    }
-
-    let browser = null;
-    try {
-        browser = Engine.newBrowser();
-        browser.launch(url, 15000);
-        let browserDoc = browser.html();
-        browser.close();
-        return browserDoc;
+        return Http.get(url).headers(HTML_HEADERS).html();
     } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
         return null;
     }
 }
 
 function fetchJson(url) {
-    let str = "";
     try {
-        str = Http.get(url).headers(JSON_HEADERS).string();
-    } catch (e) {}
-
-    if (str && str.charAt(0) === "{") return str;
-    if (str && str.indexOf('Just a moment') === -1 && str.indexOf('Cloudflare') === -1) {
-        return str;
-    }
-
-    let browser = null;
-    try {
-        browser = Engine.newBrowser();
-        browser.launch(url, 15000);
-        let browserDoc = browser.html();
-        browser.close();
-        return browserDoc ? browserDoc.select("body").text() : null;
+        if (typeof fetch !== "undefined") {
+            let res = fetch(url, { headers: JSON_HEADERS });
+            if (res && res.ok) return res.string();
+        }
+        return Http.get(url).headers(JSON_HEADERS).string();
     } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
         return null;
     }
 }
