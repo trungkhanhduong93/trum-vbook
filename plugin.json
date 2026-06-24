@@ -228,7 +228,7 @@
       "name": "LuotTruyenNew",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/plugin.zip",
-      "version": 8,
+      "version": 9,
       "source": "https://luottruyen.net",
       "regexp": "(www\\.)?luottruyen\\.net\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/icon.png",

@@ -26,7 +26,7 @@ function execute(url) {
         var finalSrc = resolveUrl(src);
         
         // Proxy qua corsproxy.io vi cdn3t.com chan OkHttp/Cloudflare
-        if (finalSrc.indexOf("cdn3t.com") !== -1) {
+        if (finalSrc.indexOf("cdn3t.com") !== -1 || finalSrc.indexOf("static3t.com") !== -1) {
             finalSrc = "https://corsproxy.io/?url=" + encodeURIComponent(finalSrc);
         }
 
