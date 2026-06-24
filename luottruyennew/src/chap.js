@@ -30,7 +30,14 @@ function execute(url) {
 
         if (seen[finalSrc]) continue;
         seen[finalSrc] = true;
-        images.push(finalSrc);
+        
+        images.push({
+            url: finalSrc,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+                "Referer": BASE_URL + "/"
+            }
+        });
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
