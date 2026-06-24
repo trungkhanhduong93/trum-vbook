@@ -5,9 +5,11 @@ function execute(url, page) {
     var fetchUrl = "";
 
     if (url.indexOf("http") === 0) {
-        fetchUrl = url + (url.indexOf("?") >= 0 ? "&" : "?") + "page=" + p;
+        // Trang duyệt (/truyen-moi, /truyen-hot) 302-redirect khi gặp ?page=1.
+        // Chỉ thêm tham số page từ trang 2 trở đi để tránh redirect làm rỗng list.
+        fetchUrl = (p > 1) ? (url + (url.indexOf("?") >= 0 ? "&" : "?") + "page=" + p) : url;
     } else {
-        fetchUrl = BASE_URL + "/tim-kiem?s=" + encodeURIComponent(url) + "&page=" + p;
+        fetchUrl = BASE_URL + "/tim-kiem?s=" + encodeURIComponent(url) + (p > 1 ? "&page=" + p : "");
     }
 
     var doc = fetchRetry(fetchUrl);
