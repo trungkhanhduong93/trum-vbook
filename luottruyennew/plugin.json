@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "LuotTruyenNew",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://luottruyen.net",
+    "regexp": "(www\\.)?luottruyen\\.net\\/[a-z0-9-]+\\/?$",
+    "description": "Đọc truyện trên trang Lướt Truyện",
+    "local": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "search": "search.js",
+    "detail": "detail.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
