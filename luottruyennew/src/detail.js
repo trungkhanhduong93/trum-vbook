@@ -3,6 +3,10 @@ load("config.js");
 function execute(url) {
     if (url.indexOf("/") === 0) url = BASE_URL + url;
     url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
+    if (url.indexOf("/truyen-tranh/") !== -1) {
+        url = url.replace("/truyen-tranh/", "/");
+        url = url.replace(/-\d+$/, "");
+    }
 
     var doc = fetchRetry(url);
     if (!doc) return Response.error("Không tải được chi tiết truyện");
