@@ -2,7 +2,7 @@
   "metadata": {
     "name": "TruyenQQ",
     "author": "tkd1793",
-    "version": 3,
+    "version": 4,
     "source": "https://truyenqqko.com",
     "regexp": "truyenqq[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+-\\d+\\/?$",
     "description": "Đọc truyện trên TruyenQQ",
