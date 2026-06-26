@@ -39,12 +39,19 @@ function fetchRetry(url) {
         return doc;
     }
 
-    // Fallback to browser
-    let browser = Engine.newBrowser();
-    browser.launch(url, 15000);
-    let browserDoc = browser.html();
-    browser.close();
-    return browserDoc;
+    // Fallback to browser (wrapped safely)
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.launch(url, 15000);
+        var browserDoc = browser.html();
+        browser.close();
+        browser = null;
+        return browserDoc;
+    } catch (e) {
+        if (browser) { try { browser.close(); } catch (err) {} }
+        return doc;
+    }
 }
 
 // Parse story cards from listing pages: ul.list_grid > li

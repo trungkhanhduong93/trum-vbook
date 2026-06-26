@@ -13,26 +13,8 @@ function trimText(s) {
 }
 
 function fetchJson(url) {
-    var str = "";
     try {
-        str = Http.get(url).headers(JSON_HEADERS).string();
-    } catch (e) {}
-
-    if (str && str.charAt(0) === "{") return str;
-    if (str && str.indexOf("Just a moment") === -1 && str.indexOf("Cloudflare") === -1) {
-        return str;
-    }
-
-    var browser = null;
-    try {
-        browser = Engine.newBrowser();
-        browser.launch(url, 15000);
-        var doc = browser.html();
-        browser.close();
-        browser = null;
-        return doc ? doc.select("body").text() : null;
-    } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
-        return null;
-    }
+        var s = Http.get(url).headers(JSON_HEADERS).string();
+        return s && s.charAt(0) === "{" ? s : null;
+    } catch (e) { return null; }
 }
