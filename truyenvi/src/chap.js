@@ -21,17 +21,22 @@ function execute(url) {
     var data = [];
     var seen = {};
 
-    // Ảnh chapter: <img src="https://s{N}.truyenvi.com/Library/.../w__{slug}_page{N}.jpg" ...>
     var re = /src="(https?:\/\/s[0-9]+\.truyenvi\.com\/Library\/[^"]+\/w__[^"]+_page[0-9]+\.[a-z]+)"/g;
     var m;
     while ((m = re.exec(html)) !== null) {
         var link = m[1];
         if (!seen[link]) {
             seen[link] = true;
-            data.push(link);
+            data.push(toPhoton(link, data.length));
         }
     }
 
     if (data.length === 0) return null;
     return Response.success(data);
+}
+
+function toPhoton(url, idx) {
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + (idx % 3) + ".wp.com/";
+    return "https://" + host + bare + "?w=1000&quality=82";
 }

@@ -22,7 +22,7 @@ function execute(url) {
         if (link.indexOf("/images/covers/") !== -1) continue;
         if (!seen[link]) {
             seen[link] = true;
-            data.push(link);
+            data.push(toPhoton(link, data.length));
         }
     }
 
@@ -34,11 +34,17 @@ function execute(url) {
             if (link2.indexOf("/dcn/") === -1) continue;
             if (!seen[link2]) {
                 seen[link2] = true;
-                data.push(link2);
+                data.push(toPhoton(link2, data.length));
             }
         }
     }
 
     if (data.length === 0) return null;
     return Response.success(data);
+}
+
+function toPhoton(url, idx) {
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + (idx % 3) + ".wp.com/";
+    return "https://" + host + bare + "?w=1000&quality=82";
 }
