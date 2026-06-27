@@ -21,13 +21,13 @@ function execute(url) {
     var data = [];
     var seen = {};
 
-    var re = /src="(https?:\/\/s[0-9]+\.truyenvi\.com\/Library\/[^"]+\/w__[^"]+_page[0-9]+\.[a-z]+)"/g;
+    var re = /src="(https?:\/\/s[0-9]+\.truyenvi\.com\/Library\/[^"]+_page[0-9]+\.(?:jpg|png|webp|jpeg))"/g;
     var m;
     while ((m = re.exec(html)) !== null) {
         var link = m[1];
         if (!seen[link]) {
             seen[link] = true;
-            data.push(toProxy(link));
+            data.push(toPhoton(link, data.length));
         }
     }
 
@@ -35,6 +35,8 @@ function execute(url) {
     return Response.success(data);
 }
 
-function toProxy(url) {
-    return "https://external-content.duckduckgo.com/iu/?u=" + encodeURIComponent(url);
+function toPhoton(url, idx) {
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + (idx % 3) + ".wp.com/";
+    return "https://" + host + bare + "?w=1000&quality=82";
 }

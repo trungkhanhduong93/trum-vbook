@@ -2,7 +2,7 @@
   "metadata": {
     "name": "metruyen",
     "author": "tkd1793",
-    "version": 3,
+    "version": 4,
     "source": "https://metruyen18.net",
     "regexp": "metruyen18\\.net\\/truyen\\/[a-z0-9-]+$",
     "description": "Đọc truyện trên trang Mê Truyện 18",
