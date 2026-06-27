@@ -27,7 +27,7 @@ function execute(url) {
         var link = m[1];
         if (!seen[link]) {
             seen[link] = true;
-            data.push(toPhoton(link, data.length));
+            data.push(toProxy(link));
         }
     }
 
@@ -35,8 +35,6 @@ function execute(url) {
     return Response.success(data);
 }
 
-function toPhoton(url, idx) {
-    var bare = url.replace(/^https?:\/\//i, "");
-    var host = "i" + (idx % 3) + ".wp.com/";
-    return "https://" + host + bare + "?w=1000&quality=82";
+function toProxy(url) {
+    return "https://external-content.duckduckgo.com/iu/?u=" + encodeURIComponent(url);
 }
