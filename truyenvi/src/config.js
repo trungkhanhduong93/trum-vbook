@@ -63,8 +63,11 @@ function parseMangaCards(html) {
         var nameM = block.match(/class="rdthumbs"[^>]*title="([^"]+)"/);
         var name = nameM ? nameM[1].trim() : "";
 
+        var chapM = block.match(/Số chương:\s*(\d+)/);
+        var desc = chapM ? "Chương " + chapM[1] : "";
+
         if (!link || !name) continue;
-        list.push({ name: name, link: link, cover: cover, host: SITE_URL });
+        list.push({ name: name, link: link, cover: cover, description: desc, host: SITE_URL });
     }
     return list;
 }
