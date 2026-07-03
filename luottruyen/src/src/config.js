@@ -1,8 +1,7 @@
 // ─── Domain (tự dò khi luottruyen đổi link) ─────────────────────────
-// luottruyen.com (KHÔNG số) là redirector vĩnh viễn → luôn nhảy về
-// mirror mới nhất (vd hiện tại luottruyen7.com). Mặc định dưới đây chỉ
-// là fallback nhanh; resolveBaseUrl() sẽ tự cập nhật domain thật.
-var DEFAULT_BASE = "https://luottruyen10.com";
+// luottruyen11.com là domain mặc định mới. Khi link bị đổi/không truy
+// cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ 11->12->13->14...
+var DEFAULT_BASE = "https://luottruyen11.com";
 var REDIRECTOR = "https://luottruyen.com";
 
 var BASE_URL = DEFAULT_BASE;
@@ -42,13 +41,27 @@ function syncBaseFromUrl(url) {
     if (origin && origin !== BASE_URL) setBase(origin);
 }
 
-// Tự dò domain thật qua redirector (dùng cho home/search/genre — nơi
-// không có sẵn URL đầu vào). Chỉ dò 1 lần / lần chạy.
+// Trích xuất số domain từ URL hoặc origin (vd luottruyen11.com -> 11)
+function extractDomainNumber(originOrUrl) {
+    if (!originOrUrl) return 11;
+    var m = String(originOrUrl).match(/luottruyen(\d+)\.com/i);
+    return m ? parseInt(m[1], 10) : 11;
+}
+
+// Thay thế domain luottruyenXX.com trong URL thành targetDomain
+function swapDomainTo(url, targetDomain) {
+    if (!url) return targetDomain;
+    if (url.indexOf("http") !== 0) {
+        return targetDomain + (url.charAt(0) === "/" ? url : "/" + url);
+    }
+    return String(url).replace(/^(https?:\/\/)luottruyen\d*\.com/i, targetDomain);
+}
+
+// Tự dò domain thật qua redirector luottruyen.com
 function resolveBaseUrl() {
     if (__LT_RESOLVED) return;
     __LT_RESOLVED = true;
 
-    // Cho phép override thủ công qua CONFIG_URL của vbook
     try {
         if (typeof CONFIG_URL !== "undefined" && CONFIG_URL) {
             var co = luotOrigin(CONFIG_URL) || String(CONFIG_URL).replace(/\/+$/, "");
@@ -61,9 +74,6 @@ function resolveBaseUrl() {
         var res = fetch(REDIRECTOR + "/", FETCH_OPTIONS);
         if (!res) return;
 
-        // 1) Ưu tiên đọc HTML trang đích: canonical/og:url luôn trỏ về
-        //    domain thật mới nhất (vd luottruyen7.com), kể cả khi res.url
-        //    chỉ trả về domain redirector.
         var doc = res.html();
         if (doc) {
             var cano = selFirst(doc, "link[rel=canonical]");
@@ -81,19 +91,57 @@ function resolveBaseUrl() {
             }
         }
 
-        // 2) Cuối cùng: URL sau redirect nếu engine có expose
         var fromFinal = luotOrigin(res.url);
         if (fromFinal) { setBase(fromFinal); return; }
-    } catch (e) {
-        // Im lặng — giữ DEFAULT_BASE làm fallback
+    } catch (e) {}
+}
+
+// Tự rà soát lũy tiến các link luottruyen11.com, luottruyen12.com, 13, 14...
+// khi link hiện tại không truy cập được.
+function autoProbeDomains(url) {
+    var startNum = extractDomainNumber(BASE_URL);
+    if (startNum < 11) startNum = 11;
+    var maxNum = startNum + 15; // Rà soát đến 15 số tiếp theo (vd 11 -> 26)
+
+    for (var n = startNum; n <= maxNum; n++) {
+        var targetDomain = "https://luottruyen" + n + ".com";
+        var testUrl = swapDomainTo(url, targetDomain);
+        try {
+            var opts = {
+                headers: {
+                    "User-Agent": FETCH_HEADERS["User-Agent"],
+                    "Accept": FETCH_HEADERS["Accept"],
+                    "Accept-Language": FETCH_HEADERS["Accept-Language"],
+                    "Referer": targetDomain + "/"
+                }
+            };
+            var res = fetch(testUrl, opts);
+            if (res && res.ok) {
+                var doc = res.html();
+                if (doc) {
+                    setBase(targetDomain);
+                    return res;
+                }
+            }
+        } catch (e) {}
     }
+
+    // Secondary fallback: thử qua redirector luottruyen.com
+    try {
+        resolveBaseUrl();
+        var resRedir = fetch(swapDomain(url), FETCH_OPTIONS);
+        if (resRedir && resRedir.ok) return resRedir;
+    } catch (e) {}
+
+    return null;
 }
 
 // ─── Helper functions ──────────────────────────────────────────────
 
 function selFirst(el, css) {
+    if (!el) return null;
     var items = el.select(css);
-    return items.size() > 0 ? items.get(0) : null;
+    return items && items.size() > 0 ? items.get(0) : null;
 }
 
 function resolveUrl(url) {
@@ -105,21 +153,17 @@ function resolveUrl(url) {
 // Đổi domain trong URL sang BASE_URL hiện hành
 function swapDomain(url) {
     if (!url) return url;
-    return String(url).replace(/^(https?:\/\/)luottruyen\d*\.com/i, BASE_URL);
+    return swapDomainTo(url, BASE_URL);
 }
 
 function fetchRetry(url) {
     var res = fetch(url, FETCH_OPTIONS);
     if (res && res.ok) return res;
 
-    // Lỗi mạng / 5xx (không phải 4xx) → có thể nguồn vừa đổi domain.
-    // Tự dò domain mới rồi gọi lại đúng domain. Chỉ tốn thêm request
-    // khi THẬT SỰ lỗi → đường đi bình thường vẫn nhanh (1 request).
-    if (!res || (!res.ok && !(res.status >= 400 && res.status < 500))) {
-        resolveBaseUrl();
-        var res2 = fetch(swapDomain(url), FETCH_OPTIONS);
-        if (res2) return res2;
-    }
+    // Link không truy cập được / lỗi → tự động rà soát qua luottruyen11, 12, 13, 14...
+    var probedRes = autoProbeDomains(url);
+    if (probedRes) return probedRes;
+
     return res;
 }
 
@@ -194,3 +238,4 @@ function getNextPage(doc, currentPage) {
     }
     return null;
 }
+
