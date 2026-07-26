@@ -4,7 +4,7 @@ function execute(url) {
     var bookId = url.split('/').pop();
     if (!bookId) return null;
 
-    var apiUrl = API + "/chapters/" + bookId + "?order=desc&take=5000";
+    var apiUrl = API + "/books/" + bookId + "/chapters?order=desc&take=5000";
 
     var response = fetch(apiUrl);
     if (!response || !response.ok) return null;
@@ -15,15 +15,16 @@ function execute(url) {
     } catch (e) {
         return null;
     }
-    if (!data || !data.chapters) return null;
+    if (!data || !data.data || !data.data.chapters) return null;
 
-    var chapters = data.chapters;
+    var chapters = data.data.chapters;
     var list = [];
     for (var i = 0; i < chapters.length; i++) {
-        var book = chapters[i];
+        var ch = chapters[i];
+        var chName = ch.title || ("Chương " + ch.chapterNumber);
         list.push({
-            name: "Chapter " + book.num,
-            url: url + "/chapter-" + book.num + "-" + book.chapterNumber,
+            name: chName,
+            url: url + "/" + ch.chapterId,
             host: BASE_URL
         });
     }

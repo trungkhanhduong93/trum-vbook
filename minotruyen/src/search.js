@@ -7,15 +7,15 @@ function execute(key, page) {
     var url = API + "/books?category=" + TYPE + "&take=" + LIMIT + "&page=" + p +
               "&q=" + encodeURIComponent(String(key).trim());
     var data = jsonGet(url);
-    if (!data || !data.books) return Response.success([], null);
+    if (!data || !data.data || !data.data.books) return Response.success([], null);
 
     var list = [];
-    for (var i = 0; i < data.books.length; i++) {
-        var c = mapBook(data.books[i]);
+    for (var i = 0; i < data.data.books.length; i++) {
+        var c = mapBook(data.data.books[i]);
         if (c) list.push(c);
     }
 
-    var total = data.countBook || 0;
+    var total = (data.meta && typeof data.meta.itemCount === 'number') ? data.meta.itemCount : 0;
     var next = (p * LIMIT < total) ? String(p + 1) : null;
     return Response.success(list, next);
 }

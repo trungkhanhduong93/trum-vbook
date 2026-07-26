@@ -3,14 +3,12 @@ load('config.js');
 function execute(url) {
     var sUrl = String(url).replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
 
-    // ── Đường nhanh: API cloudkk + giải mã AES (KHÔNG browser) ──
     var ids = parseChapterIds(sUrl);
     if (ids) {
-        var imgs = fetchChapterImagesApi(ids.chapterNumber, ids.bookId);
+        var imgs = fetchChapterImagesApi(ids.chapterId, ids.bookId);
         if (imgs && imgs.length) return Response.success(imgs);
     }
 
-    // ── Fallback: render bằng browser (phòng khi API đổi / passphrase xoay) ──
     return browserFallback(sUrl);
 }
 
