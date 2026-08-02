@@ -24,7 +24,6 @@ def pack_plugin(plugin_name):
     os.chdir('..')
 
 pack_plugin('truyenvi')
-pack_plugin('metruyen')
 pack_plugin('minotruyen')
 pack_plugin('minomanga')
 pack_plugin('minohen')
