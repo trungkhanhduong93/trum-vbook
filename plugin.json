@@ -203,10 +203,10 @@
       "name": "FastScan",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/fastscan/plugin.zip",
-      "version": 5,
+      "version": 6,
       "source": "https://fastscan.org",
       "regexp": "(www\\.)?fastscan\\.org\\/[a-z0-9-]+-\\d+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/fastscan/icon.png",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/fastscan/icon_v6.png",
       "description": "Đọc truyện trên trang FastScan",
       "type": "comic",
       "locale": "vi_VN"

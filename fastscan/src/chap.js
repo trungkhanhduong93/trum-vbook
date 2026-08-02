@@ -7,7 +7,14 @@ function execute(url) {
     var images = [];
     var seen = {};
 
-    var imgEls = doc.select("img");
+    // Ảnh chương nằm trong .chapter_content .page-chapter. Quét toàn bộ <img>
+    // sẽ lọt avatar googleusercontent (URL không chứa chữ "avatar") và gif quảng cáo.
+    // KHÔNG fallback về doc.select("img"): có chương rỗng thật (vd
+    // /tuyet-the-vo-than/chuong-1136), fallback sẽ trả logo + favicon + gif
+    // tracking ra làm "trang truyện" thay vì báo lỗi tử tế.
+    var imgEls = doc.select(".chapter_content .page-chapter img");
+    if (!imgEls || imgEls.size() === 0) imgEls = doc.select(".page-chapter img");
+
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 

@@ -1,6 +1,13 @@
 var BASE_URL = "https://fastscan.org";
 var HOST = "https://fastscan.org";
 
+var FETCH_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
+    "Referer": BASE_URL + "/"
+};
+
 function selFirst(el, css) {
     if (!el) return null;
     var items = el.select(css);
@@ -24,49 +31,41 @@ function withPage(url, page) {
     return url + "?page=" + page;
 }
 
+// Chỉ nhận diện challenge qua <title> — KHÔNG dùng outerHtml(): trang detail
+// nặng ~700KB, dựng nguyên chuỗi trong Rhino vừa chậm vừa dễ chết ngầm.
+function isChallenge(doc) {
+    if (!doc) return true;
+    var title = "";
+    try { title = doc.select("title").text(); } catch (e) {}
+    return title.indexOf("Just a moment") !== -1 ||
+           title.indexOf("Cloudflare") !== -1 ||
+           title.indexOf("Attention Required") !== -1;
+}
+
 function fetchRetry(url) {
-    var response = null;
+    var doc = null;
     try {
-        response = Http.get(url).headers({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": BASE_URL + "/"
-        }).html();
+        doc = Http.get(url).headers(FETCH_HEADERS).html();
     } catch (e) {}
 
-    var needBrowser = false;
-    if (!response) {
-        needBrowser = true;
-    } else {
-        var htmlStr = response.outerHtml();
-        if (!htmlStr || 
-            htmlStr.indexOf("Just a moment...") >= 0 || 
-            htmlStr.indexOf("challenge-platform") >= 0 || 
-            htmlStr.indexOf("cf-browser-verification") >= 0 ||
-            htmlStr.indexOf("/cdn-cgi/challenge") >= 0 ||
-            htmlStr.indexOf("Checking your browser") >= 0 ||
-            htmlStr.indexOf("Access denied") >= 0) {
-            needBrowser = true;
-        } else {
-            var itemsCheck = response.select(".book_avatar, .list_grid li, ul.list_grid li");
-            if (!itemsCheck || itemsCheck.size() === 0) {
-                if (url.indexOf("/danh-sach/") >= 0 || url.indexOf("/the-loai/") >= 0 || url.indexOf("/tim-kiem") >= 0) {
-                    needBrowser = true;
-                }
-            }
-        }
+    if (doc && !isChallenge(doc)) return doc;
+
+    // Browser chỉ chạy khi thật sự bị chặn. Đã đo: fastscan.org trả HTML sạch
+    // cho request thường (kể cả không User-Agent), nên nhánh này gần như không dùng.
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        try { browser.setUserAgent(FETCH_HEADERS["User-Agent"]); } catch (e2) {}
+        browser.launch(url, 15000);
+        var bdoc = browser.html();
+        browser.close();
+        browser = null;
+        if (bdoc) return bdoc;
+    } catch (err) {
+        if (browser) { try { browser.close(); } catch (e3) {} }
     }
 
-    if (needBrowser) {
-        try {
-            var browser = Engine.newBrowser();
-            browser.launch(url, 15000);
-            var browserDoc = browser.html();
-            browser.close();
-            return browserDoc;
-        } catch (err) {}
-    }
-
-    return response;
+    return doc;
 }
 
 function parseItems(doc) {
@@ -121,14 +120,17 @@ function parseItems(doc) {
     return items;
 }
 
+// Phân trang của fastscan nằm trong div.page_redirect (KHÔNG phải .pagination).
 function getNextPage(doc, currentPage) {
     if (!doc) return null;
     var nextPage = currentPage + 1;
-    var pageLinks = doc.select(".pagination a, ul.pagination a");
+    var pageLinks = doc.select(".page_redirect a");
     for (var i = 0; i < pageLinks.size(); i++) {
         var a = pageLinks.get(i);
-        var href = a.attr("href") || "";
-        if (href.indexOf("page=" + nextPage) >= 0) {
+        var href = String(a.attr("href") || "");
+        // So khớp đúng số trang: indexOf("page=2") sẽ dính nhầm "page=206".
+        var m = href.match(/[?&]page=(\d+)/);
+        if (m && parseInt(m[1], 10) >= nextPage) {
             return nextPage.toString();
         }
     }

@@ -6,7 +6,9 @@ function execute(keyword, page) {
     var p = page ? parseInt(page) : 1;
     var kw = encodeURIComponent(keyword.trim()).replace(/%20/g, "+");
 
-    var url = BASE_URL + "/tim-kiem?keyword=" + kw;
+    // Tham số tìm kiếm thật của fastscan là ?q= — ?keyword= bị server bỏ qua
+    // và trả về danh sách mặc định (kết quả sai hoàn toàn).
+    var url = BASE_URL + "/tim-kiem?q=" + kw;
     url = withPage(url, p);
 
     var doc = fetchRetry(url);

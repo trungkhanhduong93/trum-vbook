@@ -25,21 +25,24 @@ function execute(url) {
     if (!authorEl) authorEl = selFirst(doc, ".author");
     if (authorEl) author = authorEl.text().trim();
 
-    // Status
+    // Status — trang ghi "Hoàn Thành" (T hoa), so sánh phải hạ chữ thường.
     var statusText = "Đang cập nhật";
     var ongoing = true;
-    var infoEl = selFirst(doc, ".book_info");
-    if (infoEl) {
-        var infoTxt = infoEl.text();
-        if (infoTxt.indexOf("Hoàn thành") >= 0 || infoTxt.indexOf("Full") >= 0) {
+    var statusEl = selFirst(doc, "li.status");
+    if (!statusEl) statusEl = selFirst(doc, ".list-info");
+    if (statusEl) {
+        var infoTxt = String(statusEl.text()).toLowerCase();
+        if (infoTxt.indexOf("hoàn thành") >= 0 || infoTxt.indexOf("full") >= 0) {
             statusText = "Hoàn thành";
             ongoing = false;
         }
     }
 
-    // Genres
+    // Genres — chỉ lấy trong .list01 của truyện. KHÔNG fallback quét toàn trang:
+    // có truyện thật sự không gắn thể loại nào (vd em-san-long-lam-ban-gai-thu-hai-7619),
+    // fallback sẽ nuốt nguyên mega-menu 62 thể loại của site gán vào truyện đó.
+    var genreLinks = doc.select(".list01 a[href*='/the-loai/']");
     var genres = [];
-    var genreLinks = doc.select("a[href*='/the-loai/']");
     var gSeen = {};
     for (var i = 0; i < genreLinks.size(); i++) {
         var gl = genreLinks.get(i);
@@ -65,7 +68,7 @@ function execute(url) {
     if (statusText) detailParts.push("Tình trạng: " + statusText);
     if (author) detailParts.push("Tác giả: " + author);
 
-    var chapLinks = doc.select("a[href*='/chuong-']");
+    var chapLinks = doc.select(".list_chapter a[href*='/chuong-']");
     if (chapLinks) {
         var totalChaps = 0;
         var cSeen = {};

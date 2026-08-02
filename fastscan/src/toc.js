@@ -5,7 +5,10 @@ function execute(url) {
     if (!doc) return Response.error("Không tải được mục lục");
 
     var chapters = [];
-    var links = doc.select("a[href*='/chuong-']");
+    // Bám .list_chapter: quét toàn trang sẽ dính chương của truyện khác ở
+    // sidebar "đề cử" và 2 nút "Đọc từ đầu"/"Đọc tiếp".
+    var links = doc.select(".list_chapter a[href*='/chuong-']");
+    if (!links || links.size() === 0) links = doc.select(".works-chapter-item a[href*='/chuong-']");
     var seen = {};
 
     for (var i = 0; i < links.size(); i++) {
