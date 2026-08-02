@@ -32,7 +32,21 @@ function execute(url) {
         });
     }
 
-    if (chapters.length === 0) return Response.error("Không tìm thấy chương truyện");
+    // Đo trên 84 truyện: 14 truyện "gãy mục lục" đều là lỗi phía site, không phải
+    // selector sai — 13 truyện site chưa đăng chương nào (div.works-chapter-list
+    // rỗng, ngoài danh sách ghi "Đang cập nhật"), 1 truyện site trả 500. Báo đúng
+    // nguyên nhân để khỏi tưởng plugin hỏng rồi cài đi cài lại.
+    if (chapters.length === 0) {
+        var title = "";
+        try { title = String(doc.select("title").text()); } catch (e) {}
+        if (title.indexOf("Missing required parameter") >= 0 || title.indexOf("[Route:") >= 0) {
+            return Response.error("FastScan đang lỗi server ở truyện này (500) — không phải lỗi plugin");
+        }
+        if (doc.select(".works-chapter-list").size() > 0) {
+            return Response.error("FastScan chưa đăng chương nào cho truyện này");
+        }
+        return Response.error("Không tìm thấy chương truyện");
+    }
 
     // Reversing latest-first order to get chronological order for VBook
     chapters.reverse();

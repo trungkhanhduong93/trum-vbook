@@ -2,12 +2,17 @@ load("config.js");
 
 // ─── Nén ảnh qua wsrv.nl ────────────────────────────────────────────────────
 // Ảnh gốc nằm trên Backblaze B2 sau Cloudflare, không có bản webp/avif, không
-// content-negotiation, không host dự phòng. Đo được: thu về 720px + JPEG q65
-// còn ~55% dung lượng, mắt thường trên điện thoại không phân biệt được.
-// Trên 4G yếu (~240KB/s) nhanh hơn ~36%, mạng nghẽn (~90KB/s) nhanh hơn ~60%.
-// Trên wifi mạnh thì hoà (TTFB của proxy ăn đúng phần tiết kiệm) — không hại.
+// content-negotiation, không host dự phòng. Đo được (so với dung lượng gốc):
+//   JPEG q65 720px  -> 54-79%
+//   WebP q65 720px  -> 37-52%   ← đang dùng, nhìn không phân biệt được với gốc
+//
+// h=16000&fit=inside là CHỐT AN TOÀN, không được bỏ: WebP trần 16383px. Truyện
+// webtoon có ảnh strip dọc 900x30000px, thiếu chốt này wsrv trả HTTP 400 và
+// GÃY ẢNH TOÀN BỘ chương. Có chốt thì strip tự co còn 493x16000 (23% dung lượng
+// gốc, hơi mềm nhưng xem được) — các ảnh thường không bị đụng tới.
+// we = không phóng to ảnh vốn đã hẹp hơn 720px.
 var IMG_PROXY = "https://wsrv.nl/?url=";
-var IMG_OPTS = "&w=720&output=jpg&q=65";
+var IMG_OPTS = "&w=720&h=16000&fit=inside&we&output=webp&q=65";
 
 function stripScheme(u) {
     return String(u).replace(/^https?:\/\//, "");
@@ -22,7 +27,7 @@ function proxyUrl(u) {
 // Chết hoặc lỗi -> trả URL trần, chậm hơn nhưng luôn xem được.
 function proxyAlive(sampleUrl) {
     try {
-        var res = fetch(IMG_PROXY + stripScheme(sampleUrl) + "&w=16&output=jpg&q=20", {
+        var res = fetch(IMG_PROXY + stripScheme(sampleUrl) + "&w=16&output=webp&q=20", {
             headers: { "User-Agent": FETCH_HEADERS["User-Agent"] }
         });
         return !!(res && res.ok);
