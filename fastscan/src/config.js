@@ -59,9 +59,10 @@ function fetchRetry(url) {
     if (needBrowser) {
         try {
             var browser = Engine.newBrowser();
-            browser.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            var doc = browser.launch(url, 12000);
-            if (doc) return doc;
+            browser.launch(url, 15000);
+            var browserDoc = browser.html();
+            browser.close();
+            return browserDoc;
         } catch (err) {}
     }
 
