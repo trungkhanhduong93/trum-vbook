@@ -2,7 +2,7 @@
   "metadata": {
     "name": "FastScan",
     "author": "tkd1793",
-    "version": 3,
+    "version": 4,
     "source": "https://fastscan.org",
     "regexp": "(www\\.)?fastscan\\.org\\/[a-z0-9-]+-\\d+\\/?$",
     "description": "Đọc truyện trên trang FastScan",

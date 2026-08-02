@@ -25,48 +25,80 @@ function withPage(url, page) {
 }
 
 function fetchRetry(url) {
-    var response = Http.get(url).headers({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": BASE_URL + "/"
-    }).html();
+    var response = null;
+    try {
+        response = Http.get(url).headers({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": BASE_URL + "/"
+        }).html();
+    } catch (e) {}
 
-    if (!response) return null;
-
-    var htmlStr = response.outerHtml();
-    if (htmlStr.indexOf("Just a moment...") >= 0 || htmlStr.indexOf("challenge-platform") >= 0 || htmlStr.indexOf("cf-browser-verification") >= 0) {
-        var browser = Engine.newBrowser();
-        browser.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-        var doc = browser.launch(url, 10000);
-        return doc;
+    var needBrowser = false;
+    if (!response) {
+        needBrowser = true;
+    } else {
+        var htmlStr = response.outerHtml();
+        if (!htmlStr || 
+            htmlStr.indexOf("Just a moment...") >= 0 || 
+            htmlStr.indexOf("challenge-platform") >= 0 || 
+            htmlStr.indexOf("cf-browser-verification") >= 0 ||
+            htmlStr.indexOf("/cdn-cgi/challenge") >= 0 ||
+            htmlStr.indexOf("Checking your browser") >= 0 ||
+            htmlStr.indexOf("Access denied") >= 0) {
+            needBrowser = true;
+        } else {
+            var itemsCheck = response.select(".book_avatar, .list_grid li, ul.list_grid li");
+            if (!itemsCheck || itemsCheck.size() === 0) {
+                if (url.indexOf("/danh-sach/") >= 0 || url.indexOf("/the-loai/") >= 0 || url.indexOf("/tim-kiem") >= 0) {
+                    needBrowser = true;
+                }
+            }
+        }
     }
+
+    if (needBrowser) {
+        try {
+            var browser = Engine.newBrowser();
+            browser.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            var doc = browser.launch(url, 12000);
+            if (doc) return doc;
+        } catch (err) {}
+    }
+
     return response;
 }
 
 function parseItems(doc) {
     var items = [];
+    if (!doc) return items;
     var seen = {};
 
-    var storyEls = doc.select("li");
+    var storyEls = doc.select(".list_grid li, ul.list_grid li, .list-stories li, ul.list-stories li");
+    if (!storyEls || storyEls.size() === 0) {
+        storyEls = doc.select("li");
+    }
+
     for (var i = 0; i < storyEls.size(); i++) {
         var li = storyEls.get(i);
 
         var aName = selFirst(li, ".book_name a");
         if (!aName) aName = selFirst(li, "h3 a");
+        if (!aName) aName = selFirst(li, ".book_avatar a");
         if (!aName) continue;
 
-        var name = aName.text().trim();
+        var name = aName.attr("title") || aName.text().trim();
         var link = aName.attr("href") || "";
         if (!name || !link) continue;
 
         link = resolveUrl(link);
-        if (link.indexOf("/the-loai/") >= 0 || link.indexOf("/danh-sach/") >= 0 || link.indexOf("/tim-kiem") >= 0) continue;
+        if (link.indexOf("/the-loai/") >= 0 || link.indexOf("/danh-sach/") >= 0 || link.indexOf("/tim-kiem") >= 0 || link.indexOf("/thong-bao") >= 0 || link === BASE_URL || link === BASE_URL + "/") continue;
 
         var imgEl = selFirst(li, ".book_avatar img");
         if (!imgEl) imgEl = selFirst(li, "img");
 
         var cover = "";
         if (imgEl) {
-            cover = imgEl.attr("data-src") || imgEl.attr("src") || "";
+            cover = imgEl.attr("data-src") || imgEl.attr("data-original") || imgEl.attr("src") || "";
             cover = resolveUrl(cover);
         }
 
@@ -89,6 +121,7 @@ function parseItems(doc) {
 }
 
 function getNextPage(doc, currentPage) {
+    if (!doc) return null;
     var nextPage = currentPage + 1;
     var pageLinks = doc.select(".pagination a, ul.pagination a");
     for (var i = 0; i < pageLinks.size(); i++) {
