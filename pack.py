@@ -28,5 +28,6 @@ pack_plugin('minotruyen')
 pack_plugin('minomanga')
 pack_plugin('minohen')
 pack_plugin('toptruyen')
+pack_plugin('fastscan')
 
 
