@@ -1,50 +1,23 @@
 load("config.js");
 
-// ─── Nén ảnh qua wsrv.nl ────────────────────────────────────────────────────
-// Ảnh gốc nằm trên Backblaze B2 sau Cloudflare, không có bản webp/avif, không
-// content-negotiation, không host dự phòng. Chỉ còn cách đổi codec.
+// ─── KHÔNG proxy ảnh. Trả URL trần. ─────────────────────────────────────────
+// v7-v9 từng đẩy ảnh qua wsrv.nl để nén. Đã đo lại tử tế (4 chương 49/48/81/89
+// ảnh, mỗi nhánh 7 ảnh thuộc dải chỉ số riêng, đảo thứ tự giữa các vòng):
 //
-// KHÔNG thu nhỏ ảnh. Ảnh gốc vốn chỉ rộng 800-900px, mà màn hình điện thoại
-// ~1080px — v8 thu về 720px nên bị kéo giãn, nhìn thấy mờ rõ. w=900 kèm we
-// (không phóng to) khiến mọi ảnh thường GIỮ NGUYÊN kích thước gốc: chỉ nén lại
-// bằng WebP, không hề resample. Độ nét đến từ ĐỘ PHÂN GIẢI chứ không phải mức
-// nén, nên hạ q xuống 62 vẫn sắc nét y hệt gốc khi dán lên 1080px, mà còn
-// 40-56% dung lượng (q75 thì 46-65%).
+//   wifi không bóp : URL trần 20,1s  vs  proxy 24,7s  -> TRẦN nhanh hơn 23%
+//   4G yếu 240KB/s : URL trần 34,8s  vs  proxy 31,6s  -> proxy nhanh hơn 9%
 //
-// h=16000&fit=inside là CHỐT AN TOÀN, không được bỏ: WebP trần 16383px. Truyện
-// webtoon có ảnh strip dọc 900x29180px, thiếu chốt này wsrv trả HTTP 400 và
-// GÃY ẢNH TOÀN BỘ chương. Có chốt thì riêng strip co còn 493x16000 (25% dung
-// lượng gốc) — ảnh thường không bị đụng tới. Lưu ý fit=inside cần CẢ w lẫn h;
-// chỉ đưa mỗi h thì wsrv cũng trả 400.
-var IMG_PROXY = "https://wsrv.nl/?url=";
-var IMG_OPTS = "&w=900&h=16000&fit=inside&we&output=webp&q=62";
-
-function stripScheme(u) {
-    return String(u).replace(/^https?:\/\//, "");
-}
-
-function proxyUrl(u) {
-    return IMG_PROXY + stripScheme(u) + IMG_OPTS;
-}
-
-// wsrv.nl chết mà vẫn trả URL proxy thì GÃY ẢNH TOÀN BỘ -> ping trước.
-// Ping bằng ảnh demo của chính wsrv (~78B, nằm sẵn trong cache của nó): đo được
-// 0,2-0,4s. Bản trước ping qua CDN gốc, bắt wsrv tải nguyên ảnh thật về nên tốn
-// ~3,4s MỖI chương — đắt hơn cả phần tiết kiệm được.
-// Đánh đổi đã biết: cách này bắt được ca wsrv sập, KHÔNG bắt được ca wsrv còn
-// sống nhưng bị riêng CDN ảnh chặn IP. Ca đó nếu xảy ra sẽ gãy ảnh và phải vá tay.
-var PROXY_PING = "https://wsrv.nl/?url=wsrv.nl/lichtenstein.jpg&w=8&output=webp&q=20";
-
-function proxyAlive() {
-    try {
-        var res = fetch(PROXY_PING, {
-            headers: { "User-Agent": FETCH_HEADERS["User-Agent"] }
-        });
-        return !!(res && res.ok);
-    } catch (e) {
-        return false;
-    }
-}
+// Đổi 9% trên 4G yếu không đáng: mất 23% trên wifi, ảnh phải nén lại lần hai,
+// và ôm thêm một điểm chết đơn lẻ (wsrv sập hoặc bị CDN ảnh chặn IP là gãy
+// toàn bộ ảnh). Lợi thế của proxy vốn lớn hơn ở v8, nhưng bản sửa mờ v9 phải
+// giữ nguyên độ phân giải nên dung lượng lên 66% — ăn gần hết phần lợi đó.
+//
+// Đã thử và loại hết các đường khác: bản .webp/.avif ở origin (404) ·
+// content-negotiation (không có) · Photon i0.wp.com (400) · host ảnh dự phòng
+// (không có). Phần chờ còn lại là TTFB 1,5-2,5s/ảnh của Backblaze B2 sau
+// Cloudflare lúc edge chưa nóng — nằm ngoài tầm plugin.
+//
+// Nhắc lại luật cứng: chỉ trả URL trần, KHÔNG nối "|Referer=" vào URL ảnh.
 
 function execute(url) {
     var doc = fetchRetry(url);
@@ -84,12 +57,5 @@ function execute(url) {
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
-
-    if (proxyAlive()) {
-        for (var j = 0; j < images.length; j++) {
-            images[j] = proxyUrl(images[j]);
-        }
-    }
-
     return Response.success(images);
 }
