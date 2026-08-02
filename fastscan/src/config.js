@@ -71,7 +71,7 @@ function parseItems(doc) {
         }
 
         var chapEl = selFirst(li, ".last_chapter a");
-        var lastChap = chapEl ? chapEl.text().trim() : "";
+        var lastChap = chapEl ? chapEl.text().trim().replace(/\s+/g, ' ') : "";
 
         if (seen[link]) continue;
         seen[link] = true;

@@ -64,6 +64,22 @@ function execute(url) {
     var detailParts = [];
     if (statusText) detailParts.push("Tình trạng: " + statusText);
     if (author) detailParts.push("Tác giả: " + author);
+
+    var chapLinks = doc.select("a[href*='/chuong-']");
+    if (chapLinks) {
+        var totalChaps = 0;
+        var cSeen = {};
+        for (var k = 0; k < chapLinks.size(); k++) {
+            var chHref = chapLinks.get(k).attr("href") || "";
+            var chTxt = chapLinks.get(k).text().trim();
+            if (chHref && chTxt && chTxt !== "Đọc từ đầu" && chTxt !== "Đọc tiếp" && !cSeen[chHref]) {
+                cSeen[chHref] = true;
+                totalChaps++;
+            }
+        }
+        if (totalChaps > 0) detailParts.push("Tổng số chương: " + totalChaps);
+    }
+
     var detail = detailParts.join("<br>");
 
     return Response.success({
