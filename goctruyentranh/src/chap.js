@@ -1,19 +1,15 @@
 load('config.js');
 
-// chap.js: Tải ảnh chương
+// chap.js: Tải ảnh chương (Non-blocking callJs extraction)
 // URL pattern: /truyen/{slug}/chuong-{number}
 
 function execute(url) {
     ensureSiteUrl();
     var sUrl = String(url);
 
-    var chapUrl;
-    if (sUrl.indexOf('http') === 0) {
-        var pathM = sUrl.match(/\/truyen\/.+$/);
-        chapUrl = SITE_URL + (pathM ? pathM[0] : sUrl);
-    } else {
-        chapUrl = SITE_URL + sUrl;
-    }
+    // Luôn ép dùng domain SITE_URL (vui30.com - sạch Cloudflare)
+    var pathM = sUrl.match(/\/truyen\/.+$/);
+    var chapUrl = SITE_URL + (pathM ? pathM[0] : (sUrl.charAt(0) === '/' ? sUrl : '/' + sUrl));
 
     var images = [];
     var browser = null;
@@ -22,31 +18,27 @@ function execute(url) {
         browser = Engine.newBrowser();
         try { browser.setUserAgent(UA); } catch (e) {}
 
-        // Launch và chờ page load
-        browser.launch(chapUrl, 15000);
+        // Launch WebView và chờ AJAX render (10s)
+        browser.launch(chapUrl, 10000);
 
-        // Polling 5s trong callJs để chờ view.js execute setTimeout(500) và render img
+        // Extract ảnh trực tiếp từ DOM (không dùng synchronous while loop gây kẹt Event Loop)
         var result = browser.callJs(
-            '(function() {' +
-            '  var start = Date.now();' +
-            '  while (Date.now() - start < 5000) {' +
-            '    var imgs = document.querySelectorAll("img");' +
-            '    var urls = [];' +
-            '    var seen = {};' +
-            '    for (var i = 0; i < imgs.length; i++) {' +
-            '      var src = imgs[i].src || imgs[i].getAttribute("data-src") || imgs[i].getAttribute("data-original") || "";' +
-            '      src = String(src).trim();' +
-            '      if (!src) continue;' +
-            '      if (src.indexOf("/image/") === -1 && src.indexOf("cdn") === -1) continue;' +
-            '      if (seen[src]) continue;' +
-            '      seen[src] = true;' +
-            '      urls.push(src);' +
-            '    }' +
-            '    if (urls.length > 0) return JSON.stringify(urls);' +
-            '    var t = Date.now(); while (Date.now() - t < 250) {};' +
+            'JSON.stringify((function() {' +
+            '  var imgs = document.querySelectorAll(".image-section img, .main-images img, .main img, img");' +
+            '  var urls = [];' +
+            '  var seen = {};' +
+            '  for (var i = 0; i < imgs.length; i++) {' +
+            '    var src = imgs[i].src || imgs[i].getAttribute("data-src") || imgs[i].getAttribute("data-original") || "";' +
+            '    src = String(src).trim();' +
+            '    if (!src) continue;' +
+            '    if (src.indexOf("/image/") === -1 && src.indexOf("cdn") === -1 && src.indexOf("/c/") === -1) continue;' +
+            '    if (src.indexOf("logo.png") !== -1 || src.indexOf("favicon") !== -1 || src.indexOf("avatar") !== -1) continue;' +
+            '    if (seen[src]) continue;' +
+            '    seen[src] = true;' +
+            '    urls.push(src);' +
             '  }' +
-            '  return "[]";' +
-            '})()'
+            '  return urls;' +
+            '}()))'
         );
 
         browser.close();
@@ -73,7 +65,7 @@ function execute(url) {
     }
 
     if (!images || !images.length) {
-        return Response.error('Không tải được ảnh chương. Vui lòng mở trang nguồn để xác minh Cloudflare.');
+        return Response.error('Không tải được ảnh chương. Vui lòng thử lại sau.');
     }
 
     return Response.success(images);

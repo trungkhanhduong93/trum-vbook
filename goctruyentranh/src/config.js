@@ -1,25 +1,22 @@
 // ============================================================
 // config.js - GocTruyenTranh
-// Domain rotation order: 30, 31, 41, 42, 43... (vui30 & vui31 không dính Cloudflare Turnstile loop)
+// Domain: goctruyentranhvui30.com (sạch Cloudflare Turnstile)
 // ============================================================
 
 var BASE_DOMAIN = 'goctruyentranhvui';
 var TLD = '.com';
-
-// Ưu tiên các domain không bị Cloudflare Turnstile loop (vui30, vui31)
-var PREFER_NUMS = [30, 31, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
-var SITE_URL = '';
+var PREFER_NUMS = [30, 31, 41, 42, 43, 44, 45];
+var SITE_URL = 'https://goctruyentranhvui30.com';
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
 function HEADERS() {
     return {
         'User-Agent': UA,
         'Accept': 'application/json,text/html,*/*',
-        'Referer': (SITE_URL || 'https://goctruyentranhvui30.com') + '/'
+        'Referer': SITE_URL + '/'
     };
 }
 
-// Tự động dò domain khả dụng, ưu tiên domain chạy mượt
 function detectDomain() {
     for (var i = 0; i < PREFER_NUMS.length; i++) {
         var num = PREFER_NUMS[i];
