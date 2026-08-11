@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "name": "FastScan",
+    "name": "CuuTruyen",
     "author": "tkd1793",
-    "version": 11,
-    "source": "https://fastscan.org",
-    "regexp": "(www\\.)?fastscan\\.org\\/[a-z0-9-]+-\\d+\\/?$",
-    "description": "Đọc truyện trên trang FastScan",
+    "version": 3,
+    "source": "https://cuutruyen.cc",
+    "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-f0-9-]+\\/?$",
+    "description": "Đọc truyện trên trang Cứu Truyện",
     "locale": "vi_VN",
     "language": "javascript",
     "type": "comic"
