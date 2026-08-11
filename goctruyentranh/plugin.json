@@ -2,8 +2,8 @@
   "metadata": {
     "name": "GocTruyenTranh",
     "author": "tkd1793",
-    "version": 2,
-    "source": "https://goctruyentranhvui41.com",
+    "version": 3,
+    "source": "https://goctruyentranhvui30.com",
     "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
     "description": "Đọc truyện trên trang Góc Truyện Tranh",
     "locale": "vi_VN",

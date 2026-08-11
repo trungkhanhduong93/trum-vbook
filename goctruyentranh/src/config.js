@@ -1,35 +1,28 @@
 // ============================================================
 // config.js - GocTruyenTranh
-// API: JSON-based (không scrape HTML)
-// Domain pattern: goctruyentranhvui{N}.com  (N tự tăng khi sập)
+// Domain rotation order: 30, 31, 41, 42, 43... (vui30 & vui31 không dính Cloudflare Turnstile loop)
 // ============================================================
 
-// --- Cơ chế tự dò domain ---
-// Khởi đầu từ số đã biết, thử tăng dần đến MAX_NUM
-// Nếu không tìm được sẽ fallback về FALLBACK_NUM
 var BASE_DOMAIN = 'goctruyentranhvui';
 var TLD = '.com';
-var START_NUM = 41;          // Số hiện tại biết đang hoạt động
-var MAX_SCAN = 20;           // Quét tối đa 20 số tiếp theo
-var SITE_URL = '';           // Sẽ được set bởi detectDomain()
-var API_SUFFIX = '/api';
 
-var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36';
+// Ưu tiên các domain không bị Cloudflare Turnstile loop (vui30, vui31)
+var PREFER_NUMS = [30, 31, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
+var SITE_URL = '';
+var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
 function HEADERS() {
     return {
         'User-Agent': UA,
         'Accept': 'application/json,text/html,*/*',
-        'Referer': SITE_URL + '/'
+        'Referer': (SITE_URL || 'https://goctruyentranhvui30.com') + '/'
     };
 }
 
-// Hàm tự dò domain khả dụng
-// Ưu tiên: số lớn nhất tìm được (mới nhất) hay số nhỏ nhất hoạt động
+// Tự động dò domain khả dụng, ưu tiên domain chạy mượt
 function detectDomain() {
-    // Thử từ START_NUM tăng dần
-    for (var i = 0; i <= MAX_SCAN; i++) {
-        var num = START_NUM + i;
+    for (var i = 0; i < PREFER_NUMS.length; i++) {
+        var num = PREFER_NUMS[i];
         var candidate = 'https://' + BASE_DOMAIN + num + TLD;
         try {
             var s = Http.get(candidate + '/api/comic?page=1')
@@ -38,15 +31,11 @@ function detectDomain() {
             if (s && s.indexOf('"status":true') !== -1) {
                 return candidate;
             }
-        } catch (e) {
-            // Không có hoặc timeout -> thử số tiếp theo
-        }
+        } catch (e) {}
     }
-    // Fallback: thử lại từ đầu phòng trường hợp mạng tạm lỗi
-    return 'https://' + BASE_DOMAIN + START_NUM + TLD;
+    return 'https://' + BASE_DOMAIN + '30' + TLD;
 }
 
-// Khởi tạo domain (gọi một lần, các script con gọi ensureSiteUrl())
 var _domainReady = false;
 function ensureSiteUrl() {
     if (!_domainReady || !SITE_URL) {
@@ -55,7 +44,6 @@ function ensureSiteUrl() {
     }
 }
 
-// Helper: chuẩn hoá URL ảnh (tương đối → tuyệt đối)
 function absUrl(url) {
     if (!url) return '';
     var s = String(url).trim();
@@ -64,14 +52,12 @@ function absUrl(url) {
     return SITE_URL + (s.charAt(0) === '/' ? s : '/' + s);
 }
 
-// Helper: selFirst (KHÔNG dùng selectFirst - bẫy #5)
 function selFirst(el, css) {
     if (!el) return null;
     var items = el.select(css);
     return (items && items.size() > 0) ? items.get(0) : null;
 }
 
-// API GET JSON
 function apiGet(path) {
     ensureSiteUrl();
     try {
@@ -85,14 +71,12 @@ function apiGet(path) {
     }
 }
 
-// Map một comic item từ API /api/comic?page=N
 function mapComicCard(c) {
     if (!c || !c.nameEn || !c.name) return null;
     var slug = String(c.nameEn).trim();
     var name = String(c.name).trim();
     if (!slug || !name) return null;
 
-    // Latest chapter info từ chapterLatest (string space-separated)
     var desc = '';
     if (c.chapterLatest) {
         var parts = String(c.chapterLatest).split(' ');
@@ -113,7 +97,6 @@ function mapComicCard(c) {
     };
 }
 
-// Kiểm tra trang tiếp theo: nếu comics trả đủ 30 thì có page sau
 function calcNextPage(items, pageNum) {
     if (!items || items.length < 30) return null;
     return String(parseInt(pageNum, 10) + 1);
