@@ -2,23 +2,13 @@ load('config.js');
 
 // chap.js: Tải ảnh chương
 // URL pattern: /truyen/{slug}/chuong-{number}
-//
-// PHÂN TÍCH:
-// - Site tải ảnh hoàn toàn qua JS + session token (/api/chapter/loadAll cần token)
-// - Token được JS tạo trong view_addition.js (bị Cloudflare protect khi fetch tĩnh)
-// - Giải pháp: Engine.newBrowser().launch() để render JS,
-//   sau đó callJs() để extract src ảnh sau khi render xong
-//
-// FALLBACK: Nếu browser không có hoặc timeout → trả error tử tế
 
 function execute(url) {
     ensureSiteUrl();
     var sUrl = String(url);
 
-    // Đảm bảo URL dùng đúng domain đang hoạt động
     var chapUrl;
     if (sUrl.indexOf('http') === 0) {
-        // Thay domain cũ bằng domain hiện tại
         var pathM = sUrl.match(/\/truyen\/.+$/);
         chapUrl = SITE_URL + (pathM ? pathM[0] : sUrl);
     } else {
@@ -30,32 +20,33 @@ function execute(url) {
 
     try {
         browser = Engine.newBrowser();
-        // Tắt UA nếu có thể (không bắt buộc)
         try { browser.setUserAgent(UA); } catch (e) {}
 
-        // Launch và chờ JS render xong (15s)
+        // Launch và chờ page load
         browser.launch(chapUrl, 15000);
 
-        // Sau khi JS render, ảnh sẽ được inject vào DOM
-        // Extract tất cả img[src] trong trang
+        // Polling 5s trong callJs để chờ view.js execute setTimeout(500) và render img
         var result = browser.callJs(
-            'JSON.stringify((function() {' +
-            '  var imgs = document.querySelectorAll("img");' +
-            '  var urls = [];' +
-            '  var seen = {};' +
-            '  for (var i = 0; i < imgs.length; i++) {' +
-            '    var src = imgs[i].src || "";' +
-            '    if (!src) src = imgs[i].getAttribute("data-src") || "";' +
-            '    if (!src) src = imgs[i].getAttribute("data-original") || "";' +
-            '    src = src.trim();' +
-            '    if (!src) continue;' +
-            '    if (src.indexOf("/image/") === -1) continue;' +  // Chỉ lấy ảnh chapter
-            '    if (seen[src]) continue;' +
-            '    seen[src] = true;' +
-            '    urls.push(src);' +
+            '(function() {' +
+            '  var start = Date.now();' +
+            '  while (Date.now() - start < 5000) {' +
+            '    var imgs = document.querySelectorAll("img");' +
+            '    var urls = [];' +
+            '    var seen = {};' +
+            '    for (var i = 0; i < imgs.length; i++) {' +
+            '      var src = imgs[i].src || imgs[i].getAttribute("data-src") || imgs[i].getAttribute("data-original") || "";' +
+            '      src = String(src).trim();' +
+            '      if (!src) continue;' +
+            '      if (src.indexOf("/image/") === -1 && src.indexOf("cdn") === -1) continue;' +
+            '      if (seen[src]) continue;' +
+            '      seen[src] = true;' +
+            '      urls.push(src);' +
+            '    }' +
+            '    if (urls.length > 0) return JSON.stringify(urls);' +
+            '    var t = Date.now(); while (Date.now() - t < 250) {};' +
             '  }' +
-            '  return urls;' +
-            '}()))'
+            '  return "[]";' +
+            '})()'
         );
 
         browser.close();
@@ -65,10 +56,8 @@ function execute(url) {
             try {
                 var parsed = JSON.parse(String(result));
                 if (parsed && parsed.length) {
-                    // Lọc thêm: bỏ ảnh cover/thumbnail (thường là /image/ + slug nhưng không có số trang)
                     for (var i = 0; i < parsed.length; i++) {
                         var imgUrl = String(parsed[i]).trim();
-                        // Chỉ lấy URL tuyệt đối
                         if (imgUrl.indexOf('http') !== 0) {
                             imgUrl = SITE_URL + (imgUrl.charAt(0) === '/' ? imgUrl : '/' + imgUrl);
                         }
@@ -84,7 +73,7 @@ function execute(url) {
     }
 
     if (!images || !images.length) {
-        return Response.error('Không tải được ảnh chương. Vui lòng thử lại sau.');
+        return Response.error('Không tải được ảnh chương. Vui lòng mở trang nguồn để xác minh Cloudflare.');
     }
 
     return Response.success(images);

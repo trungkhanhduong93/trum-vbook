@@ -1,10 +1,7 @@
 load('config.js');
 
-// toc.js: Mục lục chương
+// toc.js: Mục lục chương (Tải tức thì, không bị loop 100 lần)
 // URL pattern: /truyen/{slug}
-// API: GET /api/comic/{slug}  → result.chapters (21 chương/trang, limit=21)
-// Nếu chapters < limit thì hết; nếu = limit thì cần fetch trang tiếp
-// Chapter URL: /truyen/{slug}/chuong-{number}
 
 function execute(url) {
     ensureSiteUrl();
@@ -14,49 +11,48 @@ function execute(url) {
     if (!m) return Response.error('URL truyện không hợp lệ.');
     var slug = m[1];
 
-    // Fetch tất cả chapters qua phân trang
-    var allChapters = [];
-    var page = 1;
-    var limit = 21;
-    var maxPages = 100; // tránh vòng lặp vô hạn
-
-    while (page <= maxPages) {
-        // Trang 1: API URL gốc, trang sau: thêm ?chapterPage=N
-        var apiPath = '/api/comic/' + slug;
-        if (page > 1) {
-            apiPath = apiPath + '?chapterPage=' + page;
-        }
-        var json = apiGet(apiPath);
-        if (!json || !json.status || !json.result) break;
-
-        var d = json.result;
-        var chapters = d.chapters;
-        if (!chapters || !chapters.length) break;
-
-        // Cập nhật limit nếu server trả khác
-        if (d.limit) limit = d.limit;
-
-        for (var i = 0; i < chapters.length; i++) {
-            var ch = chapters[i];
-            if (!ch || !ch.numberChapter) continue;
-            allChapters.push({
-                name: 'Chương ' + String(ch.numberChapter),
-                url: '/truyen/' + slug + '/chuong-' + String(ch.numberChapter),
-                host: SITE_URL
-            });
-        }
-
-        // Nếu nhận ít hơn limit → hết trang
-        if (chapters.length < limit) break;
-        page++;
+    // Lấy thông tin truyện để tìm số chương mới nhất
+    var json = apiGet('/api/comic/' + slug);
+    if (!json || !json.status || !json.result) {
+        return Response.error('Không tải được mục lục truyện.');
     }
 
-    if (!allChapters.length) {
+    var chapters = json.result.chapters;
+    if (!chapters || !chapters.length) {
         return Response.error('Truyện chưa có chương nào.');
     }
 
-    // API trả chapters mới nhất trước → đảo ngược để chương 1 đứng đầu
-    allChapters.reverse();
+    // Tìm số chương cao nhất trong mảng trả về
+    var maxNum = 0;
+    for (var i = 0; i < chapters.length; i++) {
+        var num = parseInt(chapters[i].numberChapter, 10);
+        if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+        }
+    }
+
+    if (maxNum <= 0) {
+        // Fallback: dùng danh sách mảng chapters trực tiếp
+        var list = [];
+        for (var j = chapters.length - 1; j >= 0; j--) {
+            list.push({
+                name: 'Chương ' + String(chapters[j].numberChapter),
+                url: '/truyen/' + slug + '/chuong-' + String(chapters[j].numberChapter),
+                host: SITE_URL
+            });
+        }
+        return Response.success(list);
+    }
+
+    // Tạo danh sách đầy đủ từ Chương 1 tới Chương maxNum
+    var allChapters = [];
+    for (var c = 1; c <= maxNum; c++) {
+        allChapters.push({
+            name: 'Chương ' + String(c),
+            url: '/truyen/' + slug + '/chuong-' + String(c),
+            host: SITE_URL
+        });
+    }
 
     return Response.success(allChapters);
 }
