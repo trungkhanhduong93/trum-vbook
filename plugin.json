@@ -210,6 +210,18 @@
       "description": "Đọc truyện trên trang Cứu Truyện",
       "type": "comic",
       "locale": "vi_VN"
+    },
+    {
+      "name": "GocTruyenTranh",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip",
+      "version": 1,
+      "source": "https://goctruyentranhvui41.com",
+      "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/icon.png",
+      "description": "Đọc truyện trên trang Góc Truyện Tranh",
+      "type": "comic",
+      "locale": "vi_VN"
     }
   ]
 }
