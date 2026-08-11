@@ -215,7 +215,7 @@
       "name": "GocTruyenTranh",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip",
-      "version": 5,
+      "version": 6,
       "source": "https://goctruyentranhvui30.com",
       "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/icon.png",

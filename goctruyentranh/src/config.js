@@ -1,12 +1,12 @@
 // ============================================================
 // config.js - GocTruyenTranh
-// Domain: goctruyentranhvui30.com (sạch Cloudflare Turnstile)
+// Domain auto-detect (41 -> 42 -> 43...)
 // ============================================================
 
 var BASE_DOMAIN = 'goctruyentranhvui';
 var TLD = '.com';
-var PREFER_NUMS = [30, 31, 41, 42, 43, 44, 45];
-var SITE_URL = 'https://goctruyentranhvui30.com';
+var PREFER_NUMS = [41, 42, 43, 44, 45, 30, 31];
+var SITE_URL = 'https://goctruyentranhvui41.com';
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
 function HEADERS() {
@@ -30,7 +30,7 @@ function detectDomain() {
             }
         } catch (e) {}
     }
-    return 'https://' + BASE_DOMAIN + '30' + TLD;
+    return 'https://' + BASE_DOMAIN + '41' + TLD;
 }
 
 var _domainReady = false;
@@ -49,23 +49,46 @@ function absUrl(url) {
     return SITE_URL + (s.charAt(0) === '/' ? s : '/' + s);
 }
 
-function selFirst(el, css) {
-    if (!el) return null;
-    var items = el.select(css);
-    return (items && items.size() > 0) ? items.get(0) : null;
-}
+function parseHtmlCards(doc) {
+    var list = [];
+    var map = {};
+    if (!doc) return list;
 
-function apiGet(path) {
-    ensureSiteUrl();
-    try {
-        var s = Http.get(SITE_URL + path)
-            .headers(HEADERS())
-            .string();
-        if (!s) return null;
-        return JSON.parse(s);
-    } catch (e) {
-        return null;
+    var aList = doc.select("a[href^='/truyen/']");
+    if (!aList || aList.size() === 0) return list;
+
+    for (var i = 0; i < aList.size(); i++) {
+        var a = aList.get(i);
+        var href = String(a.attr("href") || '').trim();
+        if (!href || href === '/truyen/theo-doi' || href === '/truyen/luot-su' || href.indexOf('/chuong-') !== -1) continue;
+
+        if (!map[href]) {
+            map[href] = { name: '', link: href, description: '', cover: '', host: SITE_URL };
+        }
+
+        var img = a.select("img").first();
+        if (img) {
+            var cover = String(img.attr("data-original") || img.attr("data-src") || img.attr("src") || '').trim();
+            if (cover && cover.indexOf("bg2.gif") === -1 && cover.indexOf("logo") === -1) {
+                map[href].cover = absUrl(cover);
+            }
+            var alt = String(img.attr("alt") || '').trim();
+            if (alt && alt.indexOf("/image/") === -1 && !map[href].name) {
+                map[href].name = alt;
+            }
+        }
+
+        var spanName = a.select(".name, .title").first();
+        if (spanName) {
+            var txt = String(spanName.text() || '').trim();
+            if (txt) map[href].name = txt;
+        }
     }
+
+    for (var k in map) {
+        if (map[k].name) list.push(map[k]);
+    }
+    return list;
 }
 
 function mapComicCard(c) {
@@ -81,9 +104,6 @@ function mapComicCard(c) {
             desc = 'Chương ' + parts[0];
         }
     }
-    if (!desc && c.updateDate) {
-        desc = String(c.updateDate);
-    }
 
     return {
         name: name,
@@ -92,9 +112,4 @@ function mapComicCard(c) {
         cover: c.photo ? absUrl(String(c.photo)) : '',
         host: SITE_URL
     };
-}
-
-function calcNextPage(items, pageNum) {
-    if (!items || items.length < 30) return null;
-    return String(parseInt(pageNum, 10) + 1);
 }

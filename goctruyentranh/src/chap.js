@@ -1,13 +1,13 @@
 load('config.js');
 
-// chap.js: Tải ảnh chương (Non-blocking callJs extraction)
+// chap.js: Tải ảnh chương
 // URL pattern: /truyen/{slug}/chuong-{number}
 
 function execute(url) {
     ensureSiteUrl();
     var sUrl = String(url);
 
-    // Luôn ép dùng domain SITE_URL (vui30.com - sạch Cloudflare)
+    // Chuẩn hóa path URL và luôn ép dùng SITE_URL
     var pathM = sUrl.match(/\/truyen\/.+$/);
     var chapUrl = SITE_URL + (pathM ? pathM[0] : (sUrl.charAt(0) === '/' ? sUrl : '/' + sUrl));
 
@@ -18,10 +18,10 @@ function execute(url) {
         browser = Engine.newBrowser();
         try { browser.setUserAgent(UA); } catch (e) {}
 
-        // Launch WebView và chờ AJAX render (10s)
-        browser.launch(chapUrl, 10000);
+        // Launch WebView và chờ AJAX render (8s)
+        browser.launch(chapUrl, 8000);
 
-        // Extract ảnh trực tiếp từ DOM (không dùng synchronous while loop gây kẹt Event Loop)
+        // Extract ảnh trực tiếp từ DOM (dạng non-blocking array return)
         var result = browser.callJs(
             'JSON.stringify((function() {' +
             '  var imgs = document.querySelectorAll(".image-section img, .main-images img, .main img, img");' +
@@ -32,7 +32,7 @@ function execute(url) {
             '    src = String(src).trim();' +
             '    if (!src) continue;' +
             '    if (src.indexOf("/image/") === -1 && src.indexOf("cdn") === -1 && src.indexOf("/c/") === -1) continue;' +
-            '    if (src.indexOf("logo.png") !== -1 || src.indexOf("favicon") !== -1 || src.indexOf("avatar") !== -1) continue;' +
+            '    if (src.indexOf("logo.png") !== -1 || src.indexOf("favicon") !== -1 || src.indexOf("avatar") !== -1 || src.indexOf("bg2.gif") !== -1) continue;' +
             '    if (seen[src]) continue;' +
             '    seen[src] = true;' +
             '    urls.push(src);' +
