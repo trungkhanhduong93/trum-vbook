@@ -1,6 +1,6 @@
 // ============================================================
 // config.js - GocTruyenTranh
-// Domain auto-detect (41 -> 42 -> 43...)
+// Link: https://goctruyentranhvui41.com/trang-chu
 // ============================================================
 
 var BASE_DOMAIN = 'goctruyentranhvui';
@@ -49,6 +49,37 @@ function absUrl(url) {
     return SITE_URL + (s.charAt(0) === '/' ? s : '/' + s);
 }
 
+function extractSlug(url) {
+    if (!url) return '';
+    var s = String(url).trim();
+    var qIdx = s.indexOf('?');
+    if (qIdx !== -1) s = s.substring(0, qIdx);
+    var hIdx = s.indexOf('#');
+    if (hIdx !== -1) s = s.substring(0, hIdx);
+    while (s.length > 0 && s.charAt(s.length - 1) === '/') {
+        s = s.substring(0, s.length - 1);
+    }
+    var tIdx = s.indexOf('/truyen/');
+    if (tIdx !== -1) {
+        return s.substring(tIdx + 8);
+    }
+    var parts = s.split('/');
+    return parts[parts.length - 1];
+}
+
+function apiGet(path) {
+    ensureSiteUrl();
+    try {
+        var s = Http.get(SITE_URL + path)
+            .headers(HEADERS())
+            .string();
+        if (!s) return null;
+        return JSON.parse(s);
+    } catch (e) {
+        return null;
+    }
+}
+
 function parseHtmlCards(doc) {
     var list = [];
     var map = {};
@@ -60,7 +91,19 @@ function parseHtmlCards(doc) {
     for (var i = 0; i < aList.size(); i++) {
         var a = aList.get(i);
         var href = String(a.attr("href") || '').trim();
-        if (!href || href === '/truyen/theo-doi' || href === '/truyen/luot-su' || href.indexOf('/chuong-') !== -1) continue;
+        if (!href || href === '/truyen/theo-doi' || href === '/truyen/luot-su') continue;
+
+        // Nếu là link tới chương (/chuong-XX), cập nhật description (số chương) cho truyện cha
+        if (href.indexOf('/chuong-') !== -1) {
+            var parentHref = href.substring(0, href.indexOf('/chuong-'));
+            if (map[parentHref]) {
+                var chapTxt = String(a.text() || '').trim();
+                if (chapTxt && !map[parentHref].description) {
+                    map[parentHref].description = chapTxt;
+                }
+            }
+            continue;
+        }
 
         if (!map[href]) {
             map[href] = { name: '', link: href, description: '', cover: '', host: SITE_URL };
