@@ -1,7 +1,7 @@
 // ─── Domain (tự dò khi TopTruyen đổi link) ─────────────────────────
-// www.toptruyenzone9.com là domain mặc định mới. Khi link bị đổi/không truy
-// cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ zone9 -> zone10 -> zone11...
-var DEFAULT_BASE = "https://www.toptruyenzone9.com";
+// www.toptruyenzone10.com là domain mặc định mới. Khi link bị đổi/không truy
+// cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ zone10 -> zone11 -> zone12...
+var DEFAULT_BASE = "https://www.toptruyenzone10.com";
 
 var BASE_URL = DEFAULT_BASE;
 var HOST = DEFAULT_BASE;
@@ -35,11 +35,11 @@ function syncBaseFromUrl(url) {
     if (origin && origin !== BASE_URL) setBase(origin);
 }
 
-// Trích xuất số domain từ URL hoặc origin (vd toptruyenzone9.com -> 9)
+// Trích xuất số domain từ URL hoặc origin (vd toptruyenzone10.com -> 10)
 function extractDomainNumber(originOrUrl) {
-    if (!originOrUrl) return 9;
+    if (!originOrUrl) return 10;
     var m = String(originOrUrl).match(/toptruyenzone(\d+)\.com/i);
-    return m ? parseInt(m[1], 10) : 9;
+    return m ? parseInt(m[1], 10) : 10;
 }
 
 // Thay thế domain toptruyenzoneN.com trong URL thành targetDomain
@@ -51,11 +51,11 @@ function swapDomainTo(url, targetDomain) {
     return String(url).replace(/^https?:\/\/(www\.)?toptruyenzone\d*\.com/i, targetDomain);
 }
 
-// Tự rà soát lũy tiến các domain toptruyenzone9.com, 10, 11... khi link hiện tại không truy cập được.
+// Tự rà soát lũy tiến các domain toptruyenzone10.com, 11, 12... khi link hiện tại không truy cập được.
 function autoProbeDomains(url) {
     var startNum = extractDomainNumber(BASE_URL);
-    if (startNum < 9) startNum = 9;
-    var maxNum = startNum + 15; // Rà soát đến 15 số tiếp theo (vd 9 -> 24)
+    if (startNum < 10) startNum = 10;
+    var maxNum = startNum + 15; // Rà soát đến 15 số tiếp theo (vd 10 -> 25)
 
     for (var n = startNum; n <= maxNum; n++) {
         var targetDomain = "https://www.toptruyenzone" + n + ".com";

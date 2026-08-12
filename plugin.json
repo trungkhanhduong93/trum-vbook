@@ -68,9 +68,9 @@
     {
       "name": "TopTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/plugin.zip",
-      "version": 14,
-      "source": "https://www.toptruyenzone9.com",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/plugin.zip?v=15",
+      "version": 15,
+      "source": "https://www.toptruyenzone10.com",
       "regexp": "toptruyenzone\\d*\\.com\\/truyen-tranh\\/[a-z0-9-]+-?\\d*\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/icon.png",
       "description": "Äá»c truyá»‡n trÃªn trang TopTruyen",
