@@ -1,7 +1,16 @@
+> ⚠️ **GocTruyenTranh: Tài liệu handoff mới nhất là [`goctruyentranh/HANDOVER.md`](goctruyentranh/HANDOVER.md)** (Đã lên v9, commit `cca6af2`).
+
+# TECHNICAL HANDOFF REPORT (FOR CLAUDE) - GOCTRUYENTRANH ISSUE (v9)
+
+- **Plugin:** `GocTruyenTranh` (`goctruyentranh/`)
+- **Version hiện tại trên Git:** `v9` (Commit `cca6af2`)
+- **Vấn đề User báo:** Bấm vào xem ảnh bị kẹt màn hình "xác minh con người" (Cloudflare Turnstile loop) không thoát được.
+- **Tệp handoff chi tiết:** Xem [`goctruyentranh/HANDOVER.md`](goctruyentranh/HANDOVER.md).
+
+---
+
 > ⚠️ **FastScan: tài liệu chính thức nay là [`fastscan/README.md`](fastscan/README.md)** (đã lên v10, đầy đủ số liệu đo).
 > Phần FastScan bên dưới giữ lại làm lịch sử điều tra, đừng dùng làm nguồn sự thật.
-
-> **[UPDATE TRẠNG THÁI MỚI NHẤT] Handoff này đã được cập nhật cho Task sửa lỗi FastScan.** Báo cáo cũ được dồn xuống dưới cùng.
 
 # TECHNICAL HANDOFF REPORT (FOR CLAUDE) - FASTSCAN ISSUE
 
