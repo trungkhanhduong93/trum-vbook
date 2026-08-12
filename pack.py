@@ -29,6 +29,5 @@ pack_plugin('minomanga')
 pack_plugin('minohen')
 pack_plugin('toptruyen')
 pack_plugin('cuutruyen')
-pack_plugin('goctruyentranh')
 
 
