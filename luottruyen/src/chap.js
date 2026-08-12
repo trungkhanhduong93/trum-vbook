@@ -72,7 +72,39 @@ function extractImagesFromDoc(doc) {
     return images;
 }
 
-function chapViaBrowser(url) {
+var LOGIN_MSG = "LuotTruyen đã khoá toàn bộ chương sau đăng nhập Google. "
+    + "Hãy mở chính chương này bằng WebView ngay trong app (menu nguồn → mở trang web), "
+    + "đăng nhập Gmail tại đó rồi quay lại đọc. Đăng nhập bằng Chrome ngoài app không dùng được.";
+
+// Từ 12/08/2026 mọi URL chương đều 302 về /Account/Login khi chưa đăng nhập.
+// Tường đăng nhập nhận diện được cả trên trang login đầy đủ lẫn body 302 rút gọn.
+function isLoginWall(doc) {
+    if (!doc) return false;
+    if (selFirst(doc, ".login-page-wrapper")) return true;
+    if (selFirst(doc, "a[href*='/Account/Google']")) return true;
+    if (selFirst(doc, "a[href*='/Account/Login']")) return true;
+    return false;
+}
+
+// fetchRetry() trả về Response chứ không phải Document → phải .html().
+// Không dùng fetchRetry ở đây: tường đăng nhập làm res.ok = false, kéo theo
+// autoProbeDomains() rà 16 domain chết (mỗi domain timeout vài giây) vô ích.
+// Chỉ rà domain khi thật sự không lấy nổi HTML nào về.
+function fetchChapterDoc(url) {
+    var doc = null;
+    try {
+        var res = fetch(url, FETCH_OPTIONS);
+        if (res) doc = res.html();
+    } catch (e) {}
+    if (doc) return doc;
+
+    var probed = autoProbeDomains(url);
+    if (!probed) return null;
+    try { return probed.html(); } catch (e) {}
+    return null;
+}
+
+function chapDocViaBrowser(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
@@ -82,11 +114,7 @@ function chapViaBrowser(url) {
         var bDoc = browser.html();
         browser.close();
         browser = null;
-
-        if (bDoc) {
-            var bImgs = extractImagesFromDoc(bDoc);
-            if (bImgs && bImgs.length > 0) return bImgs;
-        }
+        return bDoc;
     } catch (e) {
         if (browser) {
             try { browser.close(); } catch(err) {}
@@ -98,8 +126,10 @@ function chapViaBrowser(url) {
 function execute(url) {
     syncBaseFromUrl(url);
 
-    // 1. Direct Jsoup fetch
-    var doc = fetchRetry(url);
+    // 1. Direct Jsoup fetch — chỉ ăn khi phiên HTTP đã có cookie đăng nhập.
+    //    Luôn thử bóc ảnh trước rồi mới xét tường đăng nhập: nếu trang thật có
+    //    ảnh mà vẫn còn link /Account/Login ở header thì không được bỏ nhầm.
+    var doc = fetchChapterDoc(url);
     if (doc) {
         var images = extractImagesFromDoc(doc);
         if (images && images.length > 0) {
@@ -107,20 +137,22 @@ function execute(url) {
         }
     }
 
-    // 2. WebAssembly / LazyLoad / Logged-in Session WebView Fallback
-    var browserImgs = chapViaBrowser(url);
-    if (browserImgs && browserImgs.length > 0) {
-        return Response.success(browserImgs);
+    // 2. WebView giữ cookie phiên đã đăng nhập trong app — đường duy nhất đọc
+    //    được chương từ khi nguồn bắt buộc đăng nhập Google.
+    var bDoc = chapDocViaBrowser(url);
+    if (bDoc) {
+        var bImgs = extractImagesFromDoc(bDoc);
+        if (bImgs && bImgs.length > 0) {
+            return Response.success(bImgs);
+        }
+        // WebView cũng bị chặn → phiên trong app chưa đăng nhập
+        if (isLoginWall(bDoc)) {
+            return Response.error(LOGIN_MSG);
+        }
     }
 
-    if (doc) {
-        var loginHint = selFirst(doc, "a[href*='/Account/Login']");
-        if (!loginHint) loginHint = selFirst(doc, "a[href*='/dang-nhap']");
-        if (!loginHint) loginHint = selFirst(doc, ".login-page-wrapper");
-
-        if (loginHint) {
-            return Response.error("Vui lòng mở Webview đăng nhập lại tài khoản LuotTruyen");
-        }
+    if (isLoginWall(doc)) {
+        return Response.error(LOGIN_MSG);
     }
 
     return Response.error("Không tìm thấy ảnh chương. Vui lòng kiểm tra lại trang nguồn.");
