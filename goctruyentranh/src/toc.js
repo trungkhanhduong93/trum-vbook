@@ -45,37 +45,20 @@ function execute(url) {
         return Response.error('Truyện chưa có chương nào.');
     }
 
-    // Tìm số chương cao nhất trong mảng trả về
-    var maxNum = 0;
-    for (var i = 0; i < chapters.length; i++) {
-        var num = parseInt(chapters[i].numberChapter, 10);
-        if (!isNaN(num) && num > maxNum) {
-            maxNum = num;
-        }
-    }
+    // Map danh sách chương thực tế từ API (đảo ngược từ cũ nhất -> mới nhất)
+    var list = [];
+    var seenNum = {};
+    for (var j = chapters.length - 1; j >= 0; j--) {
+        var cNum = String(chapters[j].numberChapter || '').trim();
+        if (!cNum || seenNum[cNum]) continue;
+        seenNum[cNum] = true;
 
-    if (maxNum <= 0) {
-        // Fallback: dùng danh sách mảng chapters trực tiếp
-        var list = [];
-        for (var j = chapters.length - 1; j >= 0; j--) {
-            list.push({
-                name: 'Chương ' + String(chapters[j].numberChapter),
-                url: '/truyen/' + slug + '/chuong-' + String(chapters[j].numberChapter),
-                host: SITE_URL
-            });
-        }
-        return Response.success(list);
-    }
-
-    // Tạo danh sách đầy đủ từ Chương 1 tới Chương maxNum
-    var allChapters = [];
-    for (var c = 1; c <= maxNum; c++) {
-        allChapters.push({
-            name: 'Chương ' + String(c),
-            url: '/truyen/' + slug + '/chuong-' + String(c),
+        list.push({
+            name: 'Chương ' + cNum,
+            url: '/truyen/' + slug + '/chuong-' + cNum,
             host: SITE_URL
         });
     }
 
-    return Response.success(allChapters);
+    return Response.success(list);
 }
