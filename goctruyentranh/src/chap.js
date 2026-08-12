@@ -2,8 +2,11 @@ load('config.js');
 
 // chap.js: Tải ảnh chương
 // Site lấy ảnh bằng POST /api/chapter/loadAll với {comicId, chapterNumber, nameEn}
-// (xem /contents/v2/js/view_addition.js -> doLoadChapter). API cần cookie usid.
+// (xem /contents/v2/js/view_addition.js -> doLoadChapter). API cần cookie X-TOKEN.
 // URL pattern: /truyen/{slug}/chuong-{number}
+//
+// VBook Http client không parse được X-TOKEN (server gửi 2 cookie trên cùng 1
+// Set-Cookie header). Nên phải gọi API qua WebView (apiPostSession).
 
 // VBook nuốt Response.error của chap.js và tự hiện "không tải được ảnh, bấm trang
 // nguồn để xác minh bạn là con người" — câu đó khiến người đọc tưởng dính Cloudflare.
@@ -22,17 +25,9 @@ function noticeImage(lines) {
 }
 
 // API trả URL ảnh trên CDN vn2/vn3.gtt-bk.pro. CDN đó trả 403 nếu thiếu Referer,
-// và chỉ nhận Referer thuộc goctruyentranhvui*.com (Referer = chính gtt-bk.pro
-// cũng 403). Nhưng CHÍNH DOMAIN SITE phục vụ đúng những ảnh đó qua cùng path:
-// đo 4 truyện, ảnh nào cũng 200, đúng kích thước, tốc độ ngang CDN (cold, đảo
-// thứ tự, 2 nhóm ảnh rời nhau).
-//
-// Nên trả URL trên domain site, vì hai lẽ:
-//   - image loader thường đặt Referer theo host của chính URL ảnh; khi đó domain
-//     site vừa khớp, còn gtt-bk.pro thì tự 403.
-//   - đó là đường mà mọi request khác của plugin đã đi được, tránh rủi ro CDN lạ
-//     bị nhà mạng chặn.
-// Vẫn là URL trần — không nối "|Referer=" (luật cứng).
+// và chỉ nhận Referer thuộc goctruyentranhvui*.com. CHÍNH DOMAIN SITE phục vụ
+// đúng những ảnh đó qua cùng path — và VBook ImageLoader sẽ tự đặt Referer theo
+// host URL ảnh. Nên trả URL trên domain site cho an toàn.
 function siteImage(url) {
     var s = String(url || '').trim();
     if (!s) return '';
@@ -42,35 +37,23 @@ function siteImage(url) {
     return m ? SITE_URL + m[1] : s;
 }
 
-// Một lần gọi API ảnh. Tách riêng để retry được khi phiên hết hạn.
-function loadChapter(postData) {
-    var resStr = Http.post(SITE_URL + '/api/chapter/loadAll')
-        .headers(HEADERS())
-        .body(postData)
-        .contentType('application/x-www-form-urlencoded; charset=UTF-8')
-        .string();
-
-    return resStr ? JSON.parse(resStr) : null;
-}
-
 function execute(url) {
     ensureSiteUrl();
     var sUrl = String(url);
 
-    // slug truyện, KHÔNG lấy cả đuôi /chuong-N — API detail là /api/comic/{slug}
+    // slug truyện, KHÔNG lấy cả đuôi /chuong-N
     var slug = comicSlug(sUrl);
     if (!slug) return Response.error('URL chương không hợp lệ.');
 
-    // Neo cuối đường dẫn để slug có chữ "chuong-" không cướp mất số chương thật
     var match = extractSlug(sUrl).match(/\/chuong-([0-9.]+)$/i);
     if (!match) return Response.error('Không đọc được số chương từ đường dẫn.');
     var chapNum = match[1];
 
-    // comicId là bắt buộc: thiếu nó server trả "Không có dữ liệu."
+    // comicId bắt buộc — API detail không cần cookie
     var jsonDetail = apiGet('/api/comic/' + slug);
     if (!jsonDetail || !jsonDetail.status || !jsonDetail.result || !jsonDetail.result.id) {
         return Response.success(noticeImage([
-            '[GTT-DETAIL] Khong lay duoc',
+            '[GTT] Khong lay duoc',
             'thong tin truyen',
             '',
             slug,
@@ -81,43 +64,12 @@ function execute(url) {
     var comicId = String(jsonDetail.result.id);
     var nameEn = jsonDetail.result.nameEn ? String(jsonDetail.result.nameEn) : slug;
 
-    ensureSession();
-
     var postData = 'comicId=' + encodeURIComponent(comicId) +
                    '&chapterNumber=' + encodeURIComponent(chapNum) +
                    '&nameEn=' + encodeURIComponent(nameEn);
 
-    var res = null;
-
-    // try RIÊNG cho đường HTTP: Http.post ném lỗi thì cũng không được cướp mất
-    // nhánh WebView bên dưới (bug này chính là cái làm hiện "lỗi mạng khi gọi API"
-    // trong khi WebView vẫn dùng được — mục lục đi qua nó vẫn chạy).
-    if (!httpSessionBroken()) {
-        try {
-            res = loadChapter(postData);
-
-            // status:false thường là cookie usid đã hết hạn -> lấy phiên mới, thử lại 1 lần
-            if (res && !res.status) {
-                resetSession();
-                ensureSession();
-                res = loadChapter(postData);
-            }
-        } catch (e1) {
-            res = null;
-        }
-        if (!res || !res.status) markHttpSessionBroken();
-    }
-
-    // Http không giữ được cookie -> mượn WebView gọi hộ.
-    if (!res || !res.status) {
-        var raw = browserApi(
-            xhrSnippet('POST', '/api/chapter/loadAll', postData) +
-            'return x.responseText;'
-        );
-        if (raw) {
-            try { res = JSON.parse(raw); } catch (eb) { res = null; }
-        }
-    }
+    // Gọi loadAll qua WebView (đường duy nhất hoạt động vì cần cookie X-TOKEN)
+    var res = apiPostSession('/api/chapter/loadAll', postData);
 
     if (!res || !res.status || !res.result) {
         var why = (res && res.messages && res.messages.length) ? String(res.messages[0]) : '';
@@ -131,8 +83,8 @@ function execute(url) {
 
     var r = res.result;
 
-    // codeState theo handleOutput() của site: 01 = bắt đăng nhập, 02 = hết lượt đọc,
-    // 03 = phiên hỏng. Chương bị khoá được đánh dấu type="TRIPLE" (xem toc.js).
+    // codeState theo handleOutput() của site:
+    // 01 = bắt đăng nhập, 02 = hết lượt đọc, 03 = phiên hỏng
     if (r.codeState === '01') {
         return Response.success(noticeImage([
             'Chuong ' + chapNum + ' can dang nhap',
@@ -179,12 +131,7 @@ function execute(url) {
         ]));
     }
 
-    // TẠM THỜI (sẽ gỡ khi xác nhận ảnh chạy): dải mỏng đầu chương để phân biệt
-    // "plugin không lấy được ảnh" với "plugin lấy được nhưng app không tải nổi".
-    // Thấy dải này mà bên dưới trống = app bị chặn ở khâu tải ảnh, không phải
-    // lỗi plugin.
-    var images = [noticeUrl('900x120', ['v16 - lay duoc ' + imgs.length + ' anh'])];
-
+    var images = [];
     for (var i = 0; i < imgs.length; i++) {
         var imgUrl = siteImage(imgs[i]);
         if (imgUrl) images.push(imgUrl);

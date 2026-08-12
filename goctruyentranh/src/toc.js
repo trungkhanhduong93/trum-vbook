@@ -3,49 +3,18 @@ load('config.js');
 // toc.js: Mục lục chương
 // /api/comic/{slug} chỉ trả 21 chương mới nhất (server ép limit). Toàn bộ chương
 // nằm ở /api/comic/{comicId}/chapter?offset=0&limit=-1 — MỘT request là đủ,
-// nhưng bắt buộc có cookie session.
+// nhưng bắt buộc có cookie X-TOKEN (Path=/api).
 //
-// Chương nào bắt đăng nhập thì API đánh dấu sẵn bằng type = "TRIPLE" — cờ này
-// CHÍNH XÁC, không phải suy từ vị trí chương. Đã đối chiếu với loadAll:
-//   dai-quan-gia  775/800/850/873 TRIPLE -> khoá · 870 NORMAL -> 48 ảnh
-//   dao-quy       52/92 TRIPLE -> khoá   · 60/71/91 NORMAL -> có ảnh
-//   truyện đã hoàn thành (toan-chuc-phap-su, dai-vuong-tha-mang, cau-be-shotgun)
-//   có 0 chương TRIPLE -> đọc được toàn bộ.
-// Chương khoá nằm RẢI RÁC chứ không phải "21 chương mới nhất".
+// Chương nào bắt đăng nhập thì API đánh dấu bằng type = "TRIPLE" — cờ này
+// CHÍNH XÁC, đã đối chiếu với loadAll trên nhiều truyện.
 // URL pattern: /truyen/{slug}
 
-function chapterCall(comicId, offset) {
-    var j = apiGet('/api/comic/' + comicId + '/chapter?offset=' + offset + '&limit=-1');
-    if (j && j.status && j.result && j.result.chapters && j.result.chapters.length) {
-        return j.result.chapters;
-    }
-    return [];
-}
-
-// Ba lớp, vì đây là chỗ duy nhất quyết định mục lục đủ hay thiếu:
-//   1. offset=0 -> trả trọn bộ trong một request
-//   2. phiên hết hạn thì lấy cookie mới rồi thử lại
-//   3. Http của app không giữ nổi cookie -> mượn WebView
-function allChapters(comicId, latest, limit) {
+// Gọi API chapter qua WebView. Trả chuỗi gọn "so|type,so|type,..." cho khỏi
+// vượt giới hạn callJs với truyện vài nghìn chương.
+function fetchAllChapters(comicId) {
     if (!comicId) return [];
 
-    var out;
-    if (!httpSessionBroken()) {
-        ensureSession();
-        out = chapterCall(comicId, 0);
-        if (out.length) return out;
-
-        resetSession();
-        ensureSession();
-        out = chapterCall(comicId, 0);
-        if (out.length) return out;
-
-        markHttpSessionBroken();
-    }
-
-    // Mượn WebView. Trả về chuỗi gọn
-    // "so|type,so|type,..." cho khỏi vượt giới hạn callJs với truyện vài nghìn chương.
-    var raw = browserApi(
+    var raw = browserCallJs(
         xhrSnippet('GET', '/api/comic/' + comicId + '/chapter?offset=0&limit=-1', '') +
         'var j=JSON.parse(x.responseText);' +
         'var a=(j.result&&j.result.chapters)||[];var o=[];' +
@@ -68,6 +37,7 @@ function execute(url) {
     var slug = comicSlug(url);
     if (!slug) return Response.error('URL truyện không hợp lệ.');
 
+    // API detail không cần cookie
     var json = apiGet('/api/comic/' + slug);
     if (!json || !json.status || !json.result) {
         return Response.error('Không tải được mục lục truyện.');
@@ -75,8 +45,8 @@ function execute(url) {
 
     var latest = json.result.chapters || [];
 
-    // Toàn bộ chương; nếu cả ba lớp đều hỏng thì ít nhất còn khối chương mới nhất.
-    var all = allChapters(json.result.id, latest, json.result.limit);
+    // Lấy toàn bộ chương qua WebView; nếu hỏng thì ít nhất còn 21 chương mới nhất
+    var all = fetchAllChapters(json.result.id);
     if (!all.length) all = latest;
     if (!all.length) return Response.error('Truyện chưa có chương nào.');
 

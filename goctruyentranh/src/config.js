@@ -77,67 +77,64 @@ function comicSlug(url) {
     return (idx !== -1) ? s.substring(0, idx) : s;
 }
 
-// Các API cần session: /api/comic/{id}/chapter và /api/chapter/loadAll.
-// Không có cookie usid thì server trả "Phiên làm việc đã hết hạn".
-// /lien-he là trang nhẹ nhất có Set-Cookie usid (55KB, so với /trang-chu 600KB).
-var _sessionReady = false;
-function ensureSession() {
-    if (_sessionReady) return;
-    ensureSiteUrl();
-    try {
-        Http.get(SITE_URL + '/lien-he').headers(HEADERS()).string();
-    } catch (e) {}
-    _sessionReady = true;
-}
-
-// Cookie usid sống ~13 tiếng. Hết hạn thì API trả status:false — gọi cái này rồi
-// ensureSession() để lấy cookie mới.
-function resetSession() {
-    _sessionReady = false;
-}
-
-// Http của app không giữ nổi cookie thì mọi API cần session đều hỏng như nhau.
-// Biết rồi thì lần sau khỏi thử lại cho tốn request.
-var _httpSessionBroken = false;
-function markHttpSessionBroken() { _httpSessionBroken = true; }
-function httpSessionBroken() { return _httpSessionBroken; }
-
-// ── Đường dự phòng khi Http của Vbook không giữ được cookie ─────────────────
-// Hai API xương sống của nguồn này (/api/comic/{id}/chapter và /api/chapter/loadAll)
-// đòi cookie X-TOKEN (Path=/api). Nếu cookie jar của app không hoạt động thì
-// Http.get/post luôn nhận "Phiên làm việc đã hết hạn" — mục lục tụt về 21 chương
-// và chương không có ảnh. Token đó KHÔNG lộ ở HTML hay body nên plugin không thể
-// tự gửi tay.
+// ── WebView Session ─────────────────────────────────────────────────────────
+// Hai API xương sống (/api/comic/{id}/chapter và /api/chapter/loadAll) đòi
+// cookie X-TOKEN (Path=/api). Server trả 2 cookie trên CÙNG MỘT Set-Cookie
+// header — VBook Http client chỉ parse được usid, mất X-TOKEN.
+// WebView tự quản cookie store riêng và giữ được cả hai. Nên tất cả API cần
+// session phải đi qua WebView XHR.
 //
-// WebView thì có cookie store riêng và tự quản. Nên mượn nó chạy XHR ĐỒNG BỘ
-// cùng origin: launch một trang nhẹ (/lien-he, 55KB, không dính redirect
-// https->http;usid= như trang chương), rồi gọi API từ trong trang.
-// callJs trả chuỗi nên phía JS phải tự rút gọn dữ liệu trước khi trả về.
-function browserApi(jsBody) {
-    var browser = null;
+// Cache browser instance: launch /lien-he (55KB, nhẹ nhất) lần đầu, các lần
+// sau chỉ gọi callJs() — nhanh hơn rất nhiều so với launch lại.
+var _browser = null;
+
+function ensureBrowser() {
+    if (_browser) return _browser;
     try {
-        browser = Engine.newBrowser();
-        try { browser.setUserAgent(UA); } catch (e1) {}
-        browser.launch(SITE_URL + '/lien-he', 15000);
-
-        var out = browser.callJs('(function(){try{' + jsBody + '}catch(e){return "";}}())');
-
-        browser.close();
-        browser = null;
-        return out ? String(out) : '';
+        _browser = Engine.newBrowser();
+        try { _browser.setUserAgent(UA); } catch (e1) {}
+        _browser.launch(SITE_URL + '/lien-he', 15000);
+        return _browser;
     } catch (e2) {
-        if (browser) { try { browser.close(); } catch (e3) {} }
-        return '';
+        if (_browser) { try { _browser.close(); } catch (e3) {} }
+        _browser = null;
+        return null;
     }
 }
 
-// Đoạn JS dùng lại cho cả GET lẫn POST: XHR đồng bộ, cookie do WebView tự gắn.
-//
-// Kèm luôn header Authorization nếu có — đây đúng là cách site tự làm
-// (beforeAuth trong /contents/v2/js/common.js đọc localStorage."Authorization").
-// Nghĩa là nếu người dùng đã đăng nhập trong WebView của app (mở "Trang nguồn"
-// rồi đăng nhập Google/Facebook), thì token nằm sẵn ở localStorage cùng origin
-// và các chương bị khoá cũng mở ra. Chưa đăng nhập thì bỏ qua, chạy như khách.
+function closeBrowser() {
+    if (_browser) {
+        try { _browser.close(); } catch (e) {}
+        _browser = null;
+    }
+}
+
+// Gọi JS trong WebView. Nếu thất bại (browser bị hủy), thử launch lại 1 lần.
+function browserCallJs(jsBody) {
+    var wrapped = '(function(){try{' + jsBody + '}catch(e){return "";}})();';
+    var browser = ensureBrowser();
+    if (!browser) return '';
+    try {
+        var out = browser.callJs(wrapped);
+        return out ? String(out) : '';
+    } catch (e) {
+        // Browser có thể bị hủy bởi hệ thống → thử launch lại
+        closeBrowser();
+        browser = ensureBrowser();
+        if (!browser) return '';
+        try {
+            var out2 = browser.callJs(wrapped);
+            return out2 ? String(out2) : '';
+        } catch (e2) {
+            closeBrowser();
+            return '';
+        }
+    }
+}
+
+// Đoạn JS chung cho XHR đồng bộ trong WebView.
+// Kèm header Authorization nếu người dùng đã đăng nhập (mở "Trang nguồn" rồi
+// đăng nhập Google/Facebook — token nằm ở localStorage cùng origin).
 function xhrSnippet(method, path, body) {
     var js = 'var x=new XMLHttpRequest();' +
              'x.open("' + method + '","' + path + '",false);';
@@ -150,6 +147,27 @@ function xhrSnippet(method, path, body) {
     return js;
 }
 
+// API GET cần session — qua WebView XHR
+function apiGetSession(path) {
+    var raw = browserCallJs(
+        xhrSnippet('GET', path, '') +
+        'return x.responseText;'
+    );
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+// API POST cần session — qua WebView XHR
+function apiPostSession(path, body) {
+    var raw = browserCallJs(
+        xhrSnippet('POST', path, body) +
+        'return x.responseText;'
+    );
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+// API GET không cần session — qua Http bình thường (detail, search, listing)
 function apiGet(path) {
     ensureSiteUrl();
     try {
@@ -176,7 +194,6 @@ function parseHtmlCards(doc) {
         var href = String(a.attr("href") || '').trim();
         if (!href || href === '/truyen/theo-doi' || href === '/truyen/luot-su') continue;
 
-        // Nếu là link tới chương (/chuong-XX), cập nhật description (số chương) cho truyện cha
         if (href.indexOf('/chuong-') !== -1) {
             var parentHref = href.substring(0, href.indexOf('/chuong-'));
             while (parentHref.length > 1 && parentHref.charAt(parentHref.length - 1) === '/') {
@@ -229,7 +246,12 @@ function mapComicCard(c) {
 
     var desc = '';
     if (c.chapterLatest) {
-        var parts = String(c.chapterLatest).split(' ');
+        // chapterLatest can be array or string
+        var latest = c.chapterLatest;
+        if (typeof latest === 'object' && latest.length) {
+            latest = latest[0];
+        }
+        var parts = String(latest).split(' ');
         if (parts.length > 0 && parts[0]) {
             desc = 'Chương ' + parts[0];
         }
