@@ -49,7 +49,7 @@ function execute(input, page) {
         var list = parseHtmlCards(doc);
         if (!list || !list.length) return Response.success([], null);
 
-        var next = (list.length >= 15) ? String(parseInt(page, 10) + 1) : null;
+        var next = (list.length > 0) ? String(parseInt(page, 10) + 1) : null;
         return Response.success(list, next);
     } catch (e) {
         return Response.error('Lỗi khi nạp trang ' + page);

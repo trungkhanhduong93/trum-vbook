@@ -96,10 +96,14 @@ function parseHtmlCards(doc) {
         // Nếu là link tới chương (/chuong-XX), cập nhật description (số chương) cho truyện cha
         if (href.indexOf('/chuong-') !== -1) {
             var parentHref = href.substring(0, href.indexOf('/chuong-'));
-            if (map[parentHref]) {
+            while (parentHref.length > 1 && parentHref.charAt(parentHref.length - 1) === '/') {
+                parentHref = parentHref.substring(0, parentHref.length - 1);
+            }
+            var targetKey = map[parentHref] ? parentHref : (map[parentHref + '/'] ? parentHref + '/' : null);
+            if (targetKey) {
                 var chapTxt = String(a.text() || '').trim();
-                if (chapTxt && !map[parentHref].description) {
-                    map[parentHref].description = chapTxt;
+                if (chapTxt && !map[targetKey].description) {
+                    map[targetKey].description = chapTxt;
                 }
             }
             continue;

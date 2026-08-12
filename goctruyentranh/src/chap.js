@@ -6,22 +6,70 @@ load('config.js');
 function execute(url) {
     ensureSiteUrl();
     var sUrl = String(url);
+    var slug = extractSlug(sUrl);
+    if (!slug) return Response.error('URL chương không hợp lệ.');
 
-    // Chuẩn hóa path URL và luôn ép dùng SITE_URL
-    var pathM = sUrl.match(/\/truyen\/.+$/);
-    var chapUrl = SITE_URL + (pathM ? pathM[0] : (sUrl.charAt(0) === '/' ? sUrl : '/' + sUrl));
+    // Trích xuất số chương từ URL (ví dụ: /chuong-56 -> 56)
+    var match = sUrl.match(/chuong-([0-9.]+)/i);
+    var chapNum = match ? match[1] : '1';
 
+    // Lấy comicId và nameEn chuẩn từ API comic detail
+    var comicId = '';
+    var nameEn = slug;
+    var jsonDetail = apiGet('/api/comic/' + slug);
+    if (jsonDetail && jsonDetail.status && jsonDetail.result) {
+        if (jsonDetail.result.id) comicId = String(jsonDetail.result.id);
+        if (jsonDetail.result.nameEn) nameEn = String(jsonDetail.result.nameEn);
+    }
+
+    // 1. Phương pháp ưu tiên: Gọi API POST /api/chapter/loadAll (Nhanh, không bị Cloudflare loop)
+    try {
+        // Tải trang HTML chương trước để khởi tạo session / cookies
+        Http.get(SITE_URL + '/truyen/' + slug + '/chuong-' + chapNum)
+            .headers(HEADERS())
+            .string();
+
+        var postData = 'comicId=' + encodeURIComponent(comicId) +
+                       '&chapterNumber=' + encodeURIComponent(chapNum) +
+                       '&nameEn=' + encodeURIComponent(nameEn);
+
+        var resStr = Http.post(SITE_URL + '/api/chapter/loadAll')
+            .headers(HEADERS())
+            .body(postData)
+            .contentType('application/x-www-form-urlencoded; charset=UTF-8')
+            .string();
+
+        if (resStr) {
+            var jsonRes = JSON.parse(resStr);
+            if (jsonRes && jsonRes.status && jsonRes.result && jsonRes.result.data) {
+                var imgs = jsonRes.result.data;
+                if (imgs && imgs.length > 0) {
+                    var cleanImgs = [];
+                    for (var k = 0; k < imgs.length; k++) {
+                        var imgUrl = String(imgs[k]).trim();
+                        if (imgUrl) cleanImgs.push(absUrl(imgUrl));
+                    }
+                    if (cleanImgs.length > 0) {
+                        return Response.success(cleanImgs);
+                    }
+                }
+            }
+        }
+    } catch (e1) {}
+
+    // 2. Fallback: Dùng Engine.newBrowser() nếu API loadAll không khả dụng
     var images = [];
     var browser = null;
 
     try {
-        browser = Engine.newBrowser();
-        try { browser.setUserAgent(UA); } catch (e) {}
+        var pathM = sUrl.match(/\/truyen\/.+$/);
+        var chapUrl = SITE_URL + (pathM ? pathM[0] : (sUrl.charAt(0) === '/' ? sUrl : '/' + sUrl));
 
-        // Launch WebView và chờ AJAX render (8s)
+        browser = Engine.newBrowser();
+        try { browser.setUserAgent(UA); } catch (e2) {}
+
         browser.launch(chapUrl, 8000);
 
-        // Extract ảnh trực tiếp từ DOM (dạng non-blocking array return)
         var result = browser.callJs(
             'JSON.stringify((function() {' +
             '  var imgs = document.querySelectorAll(".image-section img, .main-images img, .main img, img");' +
@@ -45,22 +93,16 @@ function execute(url) {
         browser = null;
 
         if (result) {
-            try {
-                var parsed = JSON.parse(String(result));
-                if (parsed && parsed.length) {
-                    for (var i = 0; i < parsed.length; i++) {
-                        var imgUrl = String(parsed[i]).trim();
-                        if (imgUrl.indexOf('http') !== 0) {
-                            imgUrl = SITE_URL + (imgUrl.charAt(0) === '/' ? imgUrl : '/' + imgUrl);
-                        }
-                        images.push(imgUrl);
-                    }
+            var parsed = JSON.parse(String(result));
+            if (parsed && parsed.length) {
+                for (var i = 0; i < parsed.length; i++) {
+                    images.push(absUrl(String(parsed[i]).trim()));
                 }
-            } catch (e2) {}
+            }
         }
     } catch (err) {
         if (browser) {
-            try { browser.close(); } catch (e) {}
+            try { browser.close(); } catch (e3) {}
         }
     }
 
@@ -70,3 +112,4 @@ function execute(url) {
 
     return Response.success(images);
 }
+
