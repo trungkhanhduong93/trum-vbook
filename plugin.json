@@ -203,7 +203,7 @@
       "name": "CuuTruyen",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip",
-      "version": 4,
+      "version": 5,
       "source": "https://cuutruyen.cc",
       "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-f0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",

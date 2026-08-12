@@ -8,6 +8,20 @@ var HEADERS = {
     "Referer": SITE_URL + "/"
 };
 
+// Site bọc mọi ảnh chương qua worker Cloudflare này. GIỮ NGUYÊN, đừng bóc ra trả
+// thẳng mangadex.network: mạng di động VN chặn mangadex.network, worker thì không
+// (đã trả giá ở v3→v4). Prefix này hardcode vì đường nhanh không tải HTML chương
+// nữa — site đổi worker thì sửa đúng một dòng ở đây.
+var IMG_PROXY = "https://dex.cdn-07077.workers.dev/?url=";
+
+// Chapter id của cuutruyen chính là chapter id MangaDex (đã đối chiếu khớp tuyệt
+// đối 45/45 URL). at-home trả 6,6KB JSON thay cho 662KB HTML trang chương.
+var MDX_AT_HOME = "https://api.mangadex.org/at-home/server/";
+
+function proxiedImage(innerUrl) {
+    return IMG_PROXY + encodeURIComponent(innerUrl);
+}
+
 // Rhino-Jsoup của Vbook KHÔNG có selectFirst() — luôn đi qua helper này.
 function selFirst(el, css) {
     if (!el) return null;
