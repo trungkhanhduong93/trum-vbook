@@ -8,13 +8,38 @@ load('config.js');
 // VBook nuốt Response.error của chap.js và tự hiện "không tải được ảnh, bấm trang
 // nguồn để xác minh bạn là con người" — câu đó khiến người đọc tưởng dính Cloudflare.
 // Nên với các lỗi CÓ THẬT NGUYÊN NHÂN, trả về một trang ảnh ghi rõ lý do.
-function noticeImage(lines) {
+function noticeUrl(size, lines) {
     var text = '';
     for (var i = 0; i < lines.length; i++) {
         text += (i ? '\n' : '') + lines[i];
     }
-    return ['https://placehold.co/900x1300/111827/f9fafb/png?font=roboto&text=' +
-            encodeURIComponent(text)];
+    return 'https://placehold.co/' + size + '/111827/f9fafb/png?font=roboto&text=' +
+           encodeURIComponent(text);
+}
+
+function noticeImage(lines) {
+    return [noticeUrl('900x1300', lines)];
+}
+
+// API trả URL ảnh trên CDN vn2/vn3.gtt-bk.pro. CDN đó trả 403 nếu thiếu Referer,
+// và chỉ nhận Referer thuộc goctruyentranhvui*.com (Referer = chính gtt-bk.pro
+// cũng 403). Nhưng CHÍNH DOMAIN SITE phục vụ đúng những ảnh đó qua cùng path:
+// đo 4 truyện, ảnh nào cũng 200, đúng kích thước, tốc độ ngang CDN (cold, đảo
+// thứ tự, 2 nhóm ảnh rời nhau).
+//
+// Nên trả URL trên domain site, vì hai lẽ:
+//   - image loader thường đặt Referer theo host của chính URL ảnh; khi đó domain
+//     site vừa khớp, còn gtt-bk.pro thì tự 403.
+//   - đó là đường mà mọi request khác của plugin đã đi được, tránh rủi ro CDN lạ
+//     bị nhà mạng chặn.
+// Vẫn là URL trần — không nối "|Referer=" (luật cứng).
+function siteImage(url) {
+    var s = String(url || '').trim();
+    if (!s) return '';
+    if (s.indexOf('http') !== 0) return absUrl(s);
+    if (s.indexOf('gtt-bk.pro') === -1) return s;
+    var m = s.match(/^https?:\/\/[^\/]+(\/.*)$/);
+    return m ? SITE_URL + m[1] : s;
 }
 
 // Một lần gọi API ảnh. Tách riêng để retry được khi phiên hết hạn.
@@ -138,14 +163,15 @@ function execute(url) {
         ]));
     }
 
-    // TẠM THỜI (v11, sẽ gỡ): dải mỏng đầu chương để phân biệt "plugin không lấy được
-    // ảnh" với "plugin lấy được nhưng app không tải nổi ảnh từ CDN gtt-bk.pro".
-    // Thấy dải này mà không thấy trang truyện = CDN chặn app, không phải lỗi plugin.
-    var images = noticeImage(['[GTT-OK] API tra ve ' + imgs.length + ' anh']);
+    // TẠM THỜI (sẽ gỡ khi xác nhận ảnh chạy): dải mỏng đầu chương để phân biệt
+    // "plugin không lấy được ảnh" với "plugin lấy được nhưng app không tải nổi".
+    // Thấy dải này mà bên dưới trống = app bị chặn ở khâu tải ảnh, không phải
+    // lỗi plugin.
+    var images = [noticeUrl('900x120', ['v14 - lay duoc ' + imgs.length + ' anh'])];
 
     for (var i = 0; i < imgs.length; i++) {
-        var imgUrl = String(imgs[i]).trim();
-        if (imgUrl) images.push(absUrl(imgUrl));
+        var imgUrl = siteImage(imgs[i]);
+        if (imgUrl) images.push(imgUrl);
     }
 
     if (!images.length) {

@@ -14,12 +14,35 @@ load('config.js');
 // Chương khoá nằm RẢI RÁC chứ không phải "21 chương mới nhất".
 // URL pattern: /truyen/{slug}
 
-function allChapters(comicId) {
-    if (!comicId) return [];
-    ensureSession();
-    var j = apiGet('/api/comic/' + comicId + '/chapter?offset=0&limit=-1');
-    if (j && j.status && j.result && j.result.chapters) {
+function chapterCall(comicId, offset) {
+    var j = apiGet('/api/comic/' + comicId + '/chapter?offset=' + offset + '&limit=-1');
+    if (j && j.status && j.result && j.result.chapters && j.result.chapters.length) {
         return j.result.chapters;
+    }
+    return [];
+}
+
+// Ba lớp, vì đây là chỗ duy nhất quyết định mục lục đủ hay thiếu:
+//   1. offset=0 -> trả trọn bộ trong một request
+//   2. cookie hỏng thì lấy phiên mới rồi thử lại
+//   3. server không nhận offset=0 thì quay về kiểu site tự dùng (offset={limit})
+//      và ghép với khối chương mới nhất
+function allChapters(comicId, latest, limit) {
+    if (!comicId) return [];
+
+    ensureSession();
+    var out = chapterCall(comicId, 0);
+    if (out.length) return out;
+
+    resetSession();
+    ensureSession();
+    out = chapterCall(comicId, 0);
+    if (out.length) return out;
+
+    var off = limit ? parseInt(limit, 10) : latest.length;
+    if (off) {
+        out = chapterCall(comicId, off);
+        if (out.length) return latest.concat(out);
     }
     return [];
 }
@@ -36,8 +59,8 @@ function execute(url) {
 
     var latest = json.result.chapters || [];
 
-    // Toàn bộ chương; nếu request này hỏng thì ít nhất còn 21 chương mới nhất.
-    var all = allChapters(json.result.id);
+    // Toàn bộ chương; nếu cả ba lớp đều hỏng thì ít nhất còn khối chương mới nhất.
+    var all = allChapters(json.result.id, latest, json.result.limit);
     if (!all.length) all = latest;
     if (!all.length) return Response.error('Truyện chưa có chương nào.');
 
