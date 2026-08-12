@@ -1,80 +1,96 @@
-# HANDOVER REPORT - GOCTRUYENTRANH (GÓC TRUYỆN TRANH)
+# GOCTRUYENTRANH — ghi chú nguồn
 
-> **File này được tổng hợp bởi Gemini Agent dành cho Claude Agent tiếp tục xử lý.**
-> **Phiên bản hiện tại trên Git:** `v9` (Commit `cca6af2`)
-> **Repository:** `trungkhanhduong93/trum-vbook` (`main`)
+> Cập nhật 12/08/2026, bản `v10`. Bản trước (`v9`) có một báo cáo chẩn đoán lỗi là do
+> Cloudflare chặn OkHttp — **chẩn đoán đó sai**, đã đo lại và thay bằng nội dung dưới đây.
 
 ---
 
-## 1. Trạng Thái Hiện Tại (Version 9)
+## 1. Site hoạt động thế nào
 
-| Component | File | Trạng thái / Thay đổi đã làm |
+Site là Spring app, dữ liệu đi qua REST API, **không** phải scrape HTML.
+
+| Việc | Endpoint | Cần cookie? |
 |---|---|---|
-| **Chap (Tải ảnh)** | `src/chap.js` | Đã chuyển sang ưu tiên gọi **`POST /api/chapter/loadAll`** sau khi tải HTML để lấy session cookie (`usid`, `X-TOKEN`). Fallback về `Engine.newBrowser().launch()`. |
-| **Mục lục (TOC)** | `src/toc.js` | **Đã fix bug Ghost Chapters (Chương ma)**: Đã bỏ vòng lặp `for (c=1; c<=maxNum; c++)` tự sinh chương ảo (gây 302/500 redirect). Hiện tại map 100% chương thực tế từ API `/api/comic/{slug}`. |
-| **Phân trang** | `src/gen.js` | Đã sửa điều kiện `next = (list.length > 0)` thay vì `>= 15`, cho phép chuyển qua Trang 2, 3... |
-| **Config & Cards** | `src/config.js` | Đã chuẩn hóa `parentHref` (bỏ `/` thừa) trong `parseHtmlCards()` để giữ số chương ngoài danh sách truyện. |
-| **Plugin Package** | `plugin.json` & `plugin.zip` | Đã bump version **9**, đóng gói `plugin.zip` bằng Python `zipfile` với thư mục entry `src/`. |
+| Danh sách mới cập nhật | `GET /truyen-cap-nhat?p=N` (HTML, 32 truyện/trang) | không |
+| Danh sách / lọc thể loại | `GET /api/v2/search?p=0&categories=ACT&orders=viewCount` (30/trang, `result.next`) | không |
+| Tìm kiếm | `GET /api/comic/search?name=...` (trả tất cả, không phân trang) | không |
+| Chi tiết truyện | `GET /api/comic/{slug}` | không |
+| **Chương còn lại** | `GET /api/comic/{comicId}/chapter?offset={limit}&limit=-1` | **có** |
+| **Ảnh chương** | `POST /api/chapter/loadAll` — form `comicId`, `chapterNumber`, `nameEn` | **có** |
+
+Cookie `usid` lấy bằng một `GET /lien-he` (55KB — nhẹ nhất trong các trang có `Set-Cookie`;
+`/trang-chu` là 600KB). Cookie sống ~13 giờ. Thiếu nó, API trả
+`{"status":false,...,"Phiên làm việc đã hết hạn, vui lòng tải lại."}`.
+
+Nguồn sự thật cho hai endpoint cuối: `/contents/v2/js/detail.js` và
+`/contents/v2/js/view_addition.js` của chính site (file sau bị obfuscate, phải giải mã mới đọc được).
 
 ---
 
-## 2. Phân Tích Sâu Lỗi "Kẹt Xác Minh Con Người" (Cloudflare Turnstile Loop)
+## 2. Hai giới hạn của site — phải biết trước khi sửa
 
-### 🔴 Triệu chứng
-User mở truyện / mở "Trang nguồn" trong VBook app bị popup Cloudflare Turnstile "xác minh con người". Nhấp vào xác minh thì bị lặp lại liên tục không bao giờ xong, dẫn tới không tải được ảnh.
+**`/api/comic/{slug}` luôn chỉ trả 21 chương mới nhất** (`result.limit = 21`, hardcode phía server;
+truyền `limit=1000`, `all=true` đều vô ích). Võ Luyện Đỉnh Phong 3860 chương vẫn chỉ trả 21.
+Phần còn lại nằm ở `/api/comic/{comicId}/chapter?offset=21&limit=-1` — `offset` **phải** bằng
+`result.limit`; để `offset=0` thì trả về rỗng.
 
-### 🔍 Nghiên cứu kỹ thuật của Gemini về Server `goctruyentranhvui41.com`
-1. **Hành vi Chuyển hướng (Redirect Loop) của Server**:
-   - Khi request không có cookie `usid`, server trả về `302 Found`: `https://goctruyentranhvui41.com/truyen/one-piece/chuong-1090` ➔ `http://goctruyentranhvui41.com/truyen/one-piece;usid=XXX`.
-   - **Lưu ý cực kỳ quan trọng**: Server hạ cấp `https` ➔ `http`, đồng thời **tẩy xóa mất phần `/chuong-1090`** trên URL redirect, nối thêm `;usid=XXX` vào sau tên truyện!
-   - `http://...` sau đó lại trả về `301 Moved Permanently` về `https://...`.
-   - Trình duyệt nhúng Android WebView (dùng trong VBook `Engine.newBrowser()` và "Trang nguồn") gặp việc downgrade HTTP/HTTPS và rewrite URL `;usid=` này sẽ khiến widget Cloudflare Turnstile JS **bị lỗi xác minh và lặp vô tận (infinite loop)**.
+**Khoảng 20 chương mới nhất của mỗi truyện bị site khoá, phải đăng nhập mới đọc được.**
+`loadAll` trả `codeState` theo `handleOutput()` của site:
 
-2. **Khám phá API `POST /api/chapter/loadAll`**:
-   - Trong `view_addition.js` của site có API endpoint: `POST /api/chapter/loadAll`.
-   - Payload `application/x-www-form-urlencoded`:
-     - `comicId`: ID truyện (lấy từ `/api/comic/{slug}` -> `result.id`, ví dụ `'0001100684'`)
-     - `chapterNumber`: Số chương (ví dụ `'56'`)
-     - `nameEn`: Slug truyện (ví dụ `'duong-mon-truyen-ky'`)
-   - Yêu cầu Session: Phải thực hiện 1 request `GET` đến trang HTML chương trước (`/truyen/{slug}/chuong-{num}`) để lấy header `Set-Cookie` (`usid`, `X-TOKEN`).
-   - Kết quả thành công: Trả về JSON chứa mảng URL ảnh trực tiếp:
-     `{"status":true, "code":200, "result":{"data":["https://vn3.gtt-bk.pro/image/...", ...]}}`
+| codeState | Nghĩa |
+|---|---|
+| `00` | OK, `result.data` là mảng URL ảnh |
+| `01` | Bắt đăng nhập (site gọi là `requiredAuth`) |
+| `02` | Hết lượt đọc |
+| `03` | Phiên hỏng, site tự gọi `/api/cleanSession` |
+
+Đo trên Võ Luyện Đỉnh Phong: chương 3841–3860 trả `01`, chương 3840 trở xuống trả `00`.
+Plugin **không** đăng nhập — chương `01` thì báo lỗi cho người dùng, không cố lách.
 
 ---
 
-## 3. Vì Sao Trên Máy User Vẫn Báo Kẹt Xác Minh Con Người? (Các Giả Thuyết Cho Claude)
+## 3. Lỗi v9 và cách đã sửa (v10)
 
- Mặc dù Gemini đã code API `POST /api/chapter/loadAll` ở `chap.js`, user vẫn bị lỗi. Claude cần kiểm tra các khả năng sau:
+Triệu chứng người dùng báo: *bấm vào chương không tải được ảnh; bấm "Trang nguồn" thì bị bắt xác
+minh con người mãi không dừng.*
 
-1. **Giả thuyết 1: Cloudflare Challenge theo TLS / JA3 Fingerprint trên OkHttp của VBook**
-   - Giống như bài học ở `FastScan` / Stack 4: Request `Http.get()` của OkHttp trong VBook bị Cloudflare chặn ngay từ request GET đầu tiên (trả về HTML `Just a moment...` / Turnstile page 403/503).
-   - Vì `Http.get()` bị Cloudflare chặn, `resStr` trả về HTML Turnstile chứ không có cookie `usid` ➔ API `POST /api/chapter/loadAll` tiếp theo bị trả về `Phiên làm việc đã hết hạn` hoặc fail ➔ rơi vào Fallback `Engine.newBrowser()` ➔ bị dính Turnstile Loop WebView.
+Nguyên nhân là **hai bug chồng nhau**, cả hai đều nằm trong plugin:
 
-2. **Giả thuyết 2: VBook Chưa Cập Nhật Bản v9 (Cache của `raw.githubusercontent.com`)**
-   - GitHub Raw cache `plugin.json` 5-15 phút. Máy user có thể vẫn đang chạy v6/v7 (chưa có code API `loadAll`).
-   - **Giải pháp**: Nhắc user bật Private DNS `1.1.1.1`, vào VBook xoá plugin và cài lại, hoặc bump version lên `v10` để ép VBook refetch.
+1. `chap.js` gọi `extractSlug()` trên URL chương → nhận `"slug/chuong-92"` chứ không phải slug.
+   `/api/comic/slug/chuong-92` trả 404 → `comicId` rỗng → `loadAll` trả `"Không có dữ liệu."`
+   cho **mọi** chương.
+2. Thất bại đó rơi xuống nhánh `Engine.newBrowser()`. WebView mở trang chương thì dính đúng cái
+   redirect quái của site: `https://.../truyen/x/chuong-N` → **302** `http://.../truyen/x;usid=XXX`
+   (tụt HTTPS→HTTP, **mất luôn phần `/chuong-N`**) → 301 ngược lại HTTPS. Widget Turnstile trong
+   WebView gặp chuỗi này thì lặp xác minh vô tận.
 
-3. **Giả thuyết 3: Bị Nhà Mạng Việt Nam (VNPT/Viettel/FPT) Chặn DNS / SNI**
-   - Tên miền `goctruyentranhvui41.com` hoặc CDN `gtt-bk.pro` có thể bị nhà mạng chặn DNS làm OkHttp fail.
-   - **Dấu hiệu**: Bật 1.1.1.1 / VPN thì tải được bình thường.
+Cộng thêm: `toc.js` chỉ liệt kê 21 chương từ `/api/comic/{slug}` — mà 21 chương đó gần như trùng
+khít vùng bị khoá đăng nhập. Nên kể cả khi sửa được bug 1, người dùng vẫn bấm trúng chương khoá.
 
-4. **Giả thuyết 4: Domain `SITE_URL` bị thay đổi**
-   - Kiểm tra các tên miền phụ: `goctruyentranhvui30.com`, `goctruyentranhvui31.com`, `goctruyentranhvui42.com`, `goctruyentranhvui45.com`.
+Đã sửa: `comicSlug()` cắt đúng slug · ghép hai API để ra đủ chương · **bỏ hẳn nhánh
+`Engine.newBrowser()`** · đọc `codeState` và báo lỗi bằng tiếng người · `ensureSession()` lấy cookie
+qua `/lien-he` · retry một lần khi cookie hết hạn · `extractSlug()` cắt `;usid=...`.
 
----
-
-## 4. Hướng Đề Xuất Cho Claude Tiếp Tục Fix
-
-1. **Kiểm tra Cloudflare Challenge trong `Http.get()`**:
-   - Nếu `Http.get()` trả về chứa `cf-challenge`, `Just a moment`, `cf-browser-verification`:
-   - Cần dùng `Engine.newBrowser().launch(url, 15000)` để bypass CF lấy cookie trước, hoặc tìm domain không bị CF challenge.
-
-2. **Kiểm tra CDN Ảnh**:
-   - Kiểm tra xem mảng ảnh trả về từ `vn3.gtt-bk.pro` hoặc `cdngo.goctruyentranhvui41.com` có cần Referer header hay không.
-   - Nếu CDN bị chặn, thử dùng Proxy ảnh (như Jetpack Photon `https://i0.wp.com/{url-no-scheme}?w=1000&quality=80` hoặc `wsrv.nl`).
-
-3. **Thêm logging / Error Response chi tiết**:
-   - Trả về `Response.error("CF Blocked: " + title)` trong `chap.js` để user báo lại đúng vị trí bị kẹt.
+Kết quả đo lại: mục lục 21 → **3820 mục**, ảnh chương tải bình thường, không còn đường nào gọi browser.
 
 ---
-*Báo cáo được lập bởi Gemini Agent — 2026-08-12.*
+
+## 4. Những chỗ dễ vấp lần sau
+
+- **Đừng đổ tại Cloudflare khi chưa đo.** `Http.get`/`Http.post` gọi API site này bình thường,
+  không hề bị challenge. Cái bị Turnstile là **WebView**, và chỉ khi ta đẩy nó vào đó.
+- URL ảnh (`vn2/vn3.gtt-bk.pro`) là **signed URL có `exp` + `verify`**, hết hạn theo thời gian —
+  đừng kỳ vọng cache lâu. CDN đòi header `Referer`, nhưng **không** được nối `|Referer=` vào URL
+  ảnh; trả URL trần, Vbook tự lo.
+- `buildImage()` của site có thay `/c/code` → `/c/smp` (mobile) / `/c/web`. Quét 3 truyện chưa gặp
+  URL nào dạng đó nên plugin chưa xử lý — nếu sau này ảnh 403, kiểm chỗ này trước.
+- Domain đổi số thường xuyên. `detectDomain()` dò `PREFER_NUMS`; lúc viết bản này `vui41` và `vui42`
+  sống, `43/44/45` chết.
+
+## 5. Còn nợ
+
+`genre.js` và hai mục "Truyện Mới" / "Đang Hot" trong `home.js` đang trỏ vào `/danh-sach?...`, mà
+trang đó render bằng JS nên HTML không có card nào → **luôn rỗng**. Phải chuyển sang
+`/api/v2/search`. Mã thể loại hiện tại cũng sai: `FAN` không tồn tại, `SCL` là *Học Đường* chứ
+không phải Sci-Fi (đúng là `SCF`), `MAA` là *Võ Thuật* chứ không phải Manhua (đúng là `MAU`).
+Bảng mã đầy đủ lấy được từ `data-code` trong HTML `/danh-sach`.
