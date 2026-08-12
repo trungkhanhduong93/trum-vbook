@@ -9,27 +9,14 @@ load('config.js');
 // CHÍNH XÁC, đã đối chiếu với loadAll trên nhiều truyện.
 // URL pattern: /truyen/{slug}
 
-// Gọi API chapter qua WebView. Trả chuỗi gọn "so|type,so|type,..." cho khỏi
-// vượt giới hạn callJs với truyện vài nghìn chương.
 function fetchAllChapters(comicId) {
     if (!comicId) return [];
 
-    var raw = browserCallJs(
-        xhrSnippet('GET', '/api/comic/' + comicId + '/chapter?offset=0&limit=-1', '') +
-        'var j=JSON.parse(x.responseText);' +
-        'var a=(j.result&&j.result.chapters)||[];var o=[];' +
-        'for(var i=0;i<a.length;i++){o.push(a[i].numberChapter+"|"+(a[i].type||""));}' +
-        'return o.join(",");'
-    );
-    if (!raw) return [];
-
-    var parts = raw.split(',');
-    var list = [];
-    for (var k = 0; k < parts.length; k++) {
-        var pair = parts[k].split('|');
-        if (pair[0]) list.push({ numberChapter: pair[0], type: pair[1] || '' });
+    var json = apiGetSession('/api/comic/' + comicId + '/chapter?offset=0&limit=-1');
+    if (json && json.status && json.result && json.result.chapters && json.result.chapters.length) {
+        return json.result.chapters;
     }
-    return list;
+    return [];
 }
 
 function execute(url) {

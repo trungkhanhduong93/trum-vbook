@@ -81,90 +81,63 @@ function comicSlug(url) {
 // Hai API xương sống (/api/comic/{id}/chapter và /api/chapter/loadAll) đòi
 // cookie X-TOKEN (Path=/api). Server trả 2 cookie trên CÙNG MỘT Set-Cookie
 // header — VBook Http client chỉ parse được usid, mất X-TOKEN.
-// WebView tự quản cookie store riêng và giữ được cả hai. Nên tất cả API cần
-// session phải đi qua WebView XHR.
+// WebView tự quản cookie store riêng và giữ được cả hai.
 //
-// Cache browser instance: launch /lien-he (55KB, nhẹ nhất) lần đầu, các lần
-// sau chỉ gọi callJs() — nhanh hơn rất nhiều so với launch lại.
-var _browser = null;
-
-function ensureBrowser() {
-    if (_browser) return _browser;
+// Mượn Engine.newBrowser() launch /lien-he (55KB, nhẹ nhất), sau đó dùng XHR
+// trong WebView để gọi API. Ghi kết quả vào document.body và lấy bằng browser.html().
+function browserApi(method, path, body) {
+    ensureSiteUrl();
+    var browser = null;
     try {
-        _browser = Engine.newBrowser();
-        try { _browser.setUserAgent(UA); } catch (e1) {}
-        _browser.launch(SITE_URL + '/lien-he', 15000);
-        return _browser;
+        browser = Engine.newBrowser();
+        try { browser.setUserAgent(UA); } catch (e1) {}
+        browser.launch(SITE_URL + '/lien-he', 5000);
+
+        var script = "(function() {\n" +
+            "    try {\n" +
+            "        var x = new XMLHttpRequest();\n" +
+            "        x.open('" + method + "', '" + path + "', true);\n" +
+            (method === 'POST' ? "        x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');\n" : "") +
+            "        try {\n" +
+            "            var tk = localStorage.getItem('Authorization');\n" +
+            "            if (tk) x.setRequestHeader('Authorization', tk);\n" +
+            "        } catch(eA) {}\n" +
+            "        x.onload = function() {\n" +
+            "            document.body.innerText = 'VBOOK_RES_START' + (x.responseText || '') + 'VBOOK_RES_END';\n" +
+            "        };\n" +
+            "        x.onerror = function() {\n" +
+            "            document.body.innerText = 'VBOOK_RES_ERR:NETWORK_ERROR';\n" +
+            "        };\n" +
+            "        x.send(" + (body ? "'" + body.replace(/'/g, "\\'") + "'" : "null") + ");\n" +
+            "    } catch(e) {\n" +
+            "        document.body.innerText = 'VBOOK_RES_ERR:' + e.message;\n" +
+            "    }\n" +
+            "})();";
+
+        browser.callJs(script, 3000);
+        var bdoc = browser.html();
+        browser.close();
+        browser = null;
+
+        if (!bdoc) return null;
+        var text = String(bdoc.select("body").text() || '');
+        var match = text.match(/VBOOK_RES_START(.*?)VBOOK_RES_END/);
+        if (match && match[1]) {
+            return JSON.parse(match[1]);
+        }
+        return null;
     } catch (e2) {
-        if (_browser) { try { _browser.close(); } catch (e3) {} }
-        _browser = null;
+        if (browser) { try { browser.close(); } catch (e3) {} }
         return null;
     }
 }
 
-function closeBrowser() {
-    if (_browser) {
-        try { _browser.close(); } catch (e) {}
-        _browser = null;
-    }
-}
-
-// Gọi JS trong WebView. Nếu thất bại (browser bị hủy), thử launch lại 1 lần.
-function browserCallJs(jsBody) {
-    var wrapped = '(function(){try{' + jsBody + '}catch(e){return "";}})();';
-    var browser = ensureBrowser();
-    if (!browser) return '';
-    try {
-        var out = browser.callJs(wrapped);
-        return out ? String(out) : '';
-    } catch (e) {
-        // Browser có thể bị hủy bởi hệ thống → thử launch lại
-        closeBrowser();
-        browser = ensureBrowser();
-        if (!browser) return '';
-        try {
-            var out2 = browser.callJs(wrapped);
-            return out2 ? String(out2) : '';
-        } catch (e2) {
-            closeBrowser();
-            return '';
-        }
-    }
-}
-
-// Đoạn JS chung cho XHR đồng bộ trong WebView.
-// Kèm header Authorization nếu người dùng đã đăng nhập (mở "Trang nguồn" rồi
-// đăng nhập Google/Facebook — token nằm ở localStorage cùng origin).
-function xhrSnippet(method, path, body) {
-    var js = 'var x=new XMLHttpRequest();' +
-             'x.open("' + method + '","' + path + '",false);';
-    if (method === 'POST') {
-        js += 'x.setRequestHeader("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");';
-    }
-    js += 'try{var tk=localStorage.getItem("Authorization");' +
-          'if(tk)x.setRequestHeader("Authorization",tk);}catch(eA){}';
-    js += 'x.send(' + (body ? '"' + body + '"' : 'null') + ');';
-    return js;
-}
-
-// API GET cần session — qua WebView XHR
 function apiGetSession(path) {
-    var raw = browserCallJs(
-        xhrSnippet('GET', path, '') +
-        'return x.responseText;'
-    );
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch (e) { return null; }
+    return browserApi('GET', path, null);
 }
 
-// API POST cần session — qua WebView XHR
 function apiPostSession(path, body) {
-    var raw = browserCallJs(
-        xhrSnippet('POST', path, body) +
-        'return x.responseText;'
-    );
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch (e) { return null; }
+    return browserApi('POST', path, body);
 }
 
 // API GET không cần session — qua Http bình thường (detail, search, listing)
