@@ -19,10 +19,10 @@ function extractImagesFromDoc(doc) {
         imgEls = doc.select(".content-chapter img");
     }
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".reading-detail .page-chapter img[data-index]");
+        imgEls = doc.select(".page-chapter img");
     }
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".box_doc .page-chapter img");
+        imgEls = doc.select(".box_doc img");
     }
     if (!imgEls || imgEls.size() === 0) {
         imgEls = doc.select(".reading-detail img");
@@ -32,9 +32,15 @@ function extractImagesFromDoc(doc) {
         var img = imgEls.get(i);
 
         var src = img.attr("src") || "";
+        if (!src || src.indexOf("data:image") >= 0 || src.indexOf("blank.") >= 0 || src.indexOf("/Content/") >= 0) {
+            src = img.attr("data-original") || "";
+        }
         if (!src) src = img.attr("data-src") || "";
-        if (!src) src = img.attr("data-original") || "";
         if (!src) src = img.attr("data-cdn") || "";
+        if (!src) src = img.attr("data-url") || "";
+        if (!src) src = img.attr("data-lazy-src") || "";
+        if (!src) src = img.attr("data-img") || "";
+        if (!src) src = img.attr("data-path") || "";
         if (!src) continue;
 
         src = src.trim();
@@ -70,47 +76,52 @@ function chapViaBrowser(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        browser.setUserAgent(UserAgent.android());
+        // Do not override userAgent so WebView retains logged-in session cookies
         browser.launch(url, 8);
-        browser.callJs("", 3500);
+        browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 3000);
         var bDoc = browser.html();
         browser.close();
         browser = null;
 
         if (bDoc) {
             var bImgs = extractImagesFromDoc(bDoc);
-            if (bImgs.length > 0) return bImgs;
+            if (bImgs && bImgs.length > 0) return bImgs;
         }
-    } catch (e) {}
+    } catch (e) {
+        if (browser) {
+            try { browser.close(); } catch(err) {}
+        }
+    }
     return null;
 }
 
 function execute(url) {
     syncBaseFromUrl(url);
+
+    // 1. Direct Jsoup fetch
     var doc = fetchRetry(url);
-    if (!doc) {
-        return Response.error("Không tải được trang chương hoặc domain đã bị chặn");
+    if (doc) {
+        var images = extractImagesFromDoc(doc);
+        if (images && images.length > 0) {
+            return Response.success(images);
+        }
     }
 
-    var images = extractImagesFromDoc(doc);
+    // 2. WebAssembly / LazyLoad / Logged-in Session WebView Fallback
+    var browserImgs = chapViaBrowser(url);
+    if (browserImgs && browserImgs.length > 0) {
+        return Response.success(browserImgs);
+    }
 
-    // If 0 images found (due to WebAssembly/JS encryption or login requirement), fallback to WebView execution
-    if (images.length === 0) {
-        var browserImgs = chapViaBrowser(url);
-        if (browserImgs && browserImgs.length > 0) {
-            return Response.success(browserImgs);
-        }
-
+    if (doc) {
         var loginHint = selFirst(doc, "a[href*='/Account/Login']");
         if (!loginHint) loginHint = selFirst(doc, "a[href*='/dang-nhap']");
         if (!loginHint) loginHint = selFirst(doc, ".login-page-wrapper");
 
         if (loginHint) {
-            return Response.error("Vui lòng đăng nhập bằng Webview để xem chương này");
+            return Response.error("Vui lòng mở Webview đăng nhập lại tài khoản LuotTruyen");
         }
-
-        return Response.error("Không tìm thấy ảnh chương");
     }
 
-    return Response.success(images);
+    return Response.error("Không tìm thấy ảnh chương. Vui lòng kiểm tra lại trang nguồn.");
 }
