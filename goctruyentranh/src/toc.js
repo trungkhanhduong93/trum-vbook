@@ -5,9 +5,13 @@ load('config.js');
 // nằm ở /api/comic/{comicId}/chapter?offset=0&limit=-1 — MỘT request là đủ,
 // nhưng bắt buộc có cookie session.
 //
-// Đúng 21 chương mà /api/comic/{slug} trả về cũng chính là các chương site khoá
-// (đo trên 2 truyện: 874-894 khoá / 870 mở). Nên đánh dấu luôn "(khoá)" ở đây,
-// không tốn thêm request nào, để khỏi bấm vào rồi mới biết.
+// Chương nào bắt đăng nhập thì API đánh dấu sẵn bằng type = "TRIPLE" — cờ này
+// CHÍNH XÁC, không phải suy từ vị trí chương. Đã đối chiếu với loadAll:
+//   dai-quan-gia  775/800/850/873 TRIPLE -> khoá · 870 NORMAL -> 48 ảnh
+//   dao-quy       52/92 TRIPLE -> khoá   · 60/71/91 NORMAL -> có ảnh
+//   truyện đã hoàn thành (toan-chuc-phap-su, dai-vuong-tha-mang, cau-be-shotgun)
+//   có 0 chương TRIPLE -> đọc được toàn bộ.
+// Chương khoá nằm RẢI RÁC chứ không phải "21 chương mới nhất".
 // URL pattern: /truyen/{slug}
 
 function allChapters(comicId) {
@@ -37,25 +41,16 @@ function execute(url) {
     if (!all.length) all = latest;
     if (!all.length) return Response.error('Truyện chưa có chương nào.');
 
-    // Chỉ đánh dấu khi truyện thực sự dài hơn khối 21 chương đó — truyện ngắn trả
-    // về đúng toàn bộ chương ở /api/comic/{slug} và KHÔNG hề bị khoá (đã đo trên
-    // truyện 7 chương: chương 0 và 1 đều tải ảnh bình thường).
     var locked = {};
-    var i;
-    if (all.length > latest.length) {
-        for (i = 0; i < latest.length; i++) {
-            var ln = String(latest[i].numberChapter || '').trim();
-            if (ln) locked[ln] = true;
-        }
-    }
-
     var nums = [];
     var seenNum = {};
+    var i;
     for (i = 0; i < all.length; i++) {
         var cNum = String(all[i].numberChapter || '').trim();
         if (!cNum || seenNum[cNum]) continue;
         seenNum[cNum] = true;
         nums.push(cNum);
+        if (String(all[i].type || '') === 'TRIPLE') locked[cNum] = true;
     }
 
     // Chương lẻ kiểu "104.5" vẫn xếp đúng; chương không phải số thì đẩy xuống cuối
