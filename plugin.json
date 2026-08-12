@@ -60,22 +60,10 @@
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/icon.png",
-      "description": "Äá»c truyá»‡n trÃªn trang Mino Hentai",
+      "description": "Ä á» c truyá»‡n trÃªn trang Mino Hentai",
       "type": "comic",
       "locale": "vi_VN",
       "tag": "nsfw"
-    },
-    {
-      "name": "Manga K",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/plugin.zip",
-      "version": 13,
-      "source": "https://mangak.site",
-      "regexp": "(www.)?mangak\\.site\\/story\\/[a-zA-Z0-9-]+$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mangak/icon.png",
-      "description": "Äá»c truyá»‡n trÃªn trang Manga K",
-      "type": "comic",
-      "locale": "vi_VN"
     },
     {
       "name": "TopTruyen",
