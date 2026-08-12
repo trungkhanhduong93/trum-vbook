@@ -6,7 +6,9 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 
 | Người dùng báo | Đọc mục |
 |---|---|
-| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được) |
+| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document) |
+| Màn hình trống, lỗi trống trơn không có thông báo | [17](#17-fetch-trả-response-không-phải-document), [5](#5-selectfirst-và-parent) |
+| "Đăng nhập rồi mà vẫn không đọc được" | [17](#17-fetch-trả-response-không-phải-document) + [06 case study](06-case-study-luottruyen.md) |
 | "Cài xong không chạy gì cả" | [3](#3-zip-thiếu-entry-src), [4](#4-version-không-bump-đủ-3-chỗ) |
 | "Sửa rồi mà vẫn y như cũ" | [4](#4-version-không-bump-đủ-3-chỗ) |
 | Danh sách trống, tìm kiếm trống | [5](#5-selectfirst-và-parent), [7](#7-tham-số-tìm-kiếm-sai--site-trả-danh-sách-mặc-định) |
@@ -158,3 +160,34 @@ Nó **không** xác nhận: Rhino có nuốt cú pháp không · `.parent()`/`se
 ảnh có tải nổi trên mạng di động không · image loader có hiển thị được định dạng đó không.
 
 Báo cáo phải nói rõ mức đã verify. "Đã test xong" khi mới chạy harness là **báo cáo sai sự thật**.
+
+---
+
+## 17. fetch() trả Response, không phải Document
+
+`fetch(url, opts)` và `Http.get(url)` trả về **Response**, không phải Jsoup Document. Phải
+`.html()` mới ra Document:
+
+```javascript
+var res = fetchRetry(url);
+if (!res || !res.ok) return Response.error("Không tải được trang");
+var doc = res.html();          // ← BƯỚC NÀY. Quên là chết.
+```
+
+Quên `.html()` thì `doc.select(...)` ném `TypeError: doc.select is not a function`. Vbook **không
+hiện stack trace** — người dùng chỉ thấy màn hình trống hoặc lỗi trống trơn, y hệt triệu chứng
+của sai selector. Rất dễ chẩn đoán nhầm.
+
+**Đã trả giá thật (luottruyen v25→v27, 12/08/2026):** `chap.js` quên `.html()`, `execute()` chết
+ngay dòng đầu → **nhánh browser fallback phía dưới không bao giờ chạy tới**. Ba bản vá liên tiếp
+sửa đúng vào nhánh đó (thêm fallback, bỏ `setUserAgent`, thêm scroll lazyload) mà không bản nào
+có tác dụng, vì code chưa từng chạy tới đó. Đóng gói 3 lần vô ích. Toàn bộ ca:
+[06-case-study-luottruyen.md](06-case-study-luottruyen.md) mục 7.
+
+**Hai luật rút ra:**
+
+- Sửa hàm dùng chung (`fetchRetry`, `fetchDoc`…) thì **grep ngược mọi call site**, đừng tin là
+  script nào cũng theo cùng một khuôn. Ở luottruyen, 5/6 script làm `res.html()` đúng — đúng cái
+  script thứ 6 là chỗ hỏng.
+- **Nhánh fallback phải có ca test chứng minh nó CHẠY TỚI.** Fallback không bao giờ chạy thì
+  giống hệt fallback không tồn tại, nhưng đọc code lại thấy rất yên tâm.

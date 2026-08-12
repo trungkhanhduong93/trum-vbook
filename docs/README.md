@@ -11,8 +11,9 @@ nguồn mới hoàn chỉnh (home / genre / gen / detail / toc / chap / search),
 | [01-quy-trinh-tao-nguon-moi.md](01-quy-trinh-tao-nguon-moi.md) | **Luôn đọc trước tiên** | 8 bước từ "có link site" tới "đã push", kèm lệnh cụ thể |
 | [02-api-va-gioi-han.md](02-api-va-gioi-han.md) | Trước khi viết dòng code đầu tiên | API Vbook, giới hạn Rhino/Jsoup, những hàm **cấm dùng** |
 | [03-bay-da-tra-gia.md](03-bay-da-tra-gia.md) | Trước khi viết, và lần nữa trước khi push | Bẫy đã làm hỏng bản phát hành thật, kèm triệu chứng để nhận ra |
-| [04-test-harness.md](04-test-harness.md) | Khi code xong, trước khi đóng gói | Chạy thật plugin trên HTML sống mà không cần Android |
-| [05-case-study-cuutruyen.md](05-case-study-cuutruyen.md) | Khi cần một ví dụ đầy đủ để bắt chước | Toàn bộ quyết định khi làm nguồn `cuutruyen.cc`, kể cả cái sai |
+| 04-test-harness.md | *(chưa viết)* | Harness thật đang nằm ở `tools/vbook-harness/`, đọc `run-template.js` |
+| 05-case-study-cuutruyen.md | *(chưa viết)* | — |
+| [06-case-study-luottruyen.md](06-case-study-luottruyen.md) | Khi đụng `luottruyen/`, hoặc cần ví dụ chẩn đoán đầy đủ | Kiến trúc nguồn khó nhất repo + quy trình chẩn đoán "không tải được ảnh", kể cả 3 bản vá sai |
 
 Tài liệu cũ [../VBOOK_PLUGIN_DEVELOPMENT_GUIDE.md](../VBOOK_PLUGIN_DEVELOPMENT_GUIDE.md) (tiếng Anh,
 1342 dòng) vẫn còn giá trị cho **nguồn kiểu API + mã hoá** (case Tcomic: reverse-engineer REST API,
