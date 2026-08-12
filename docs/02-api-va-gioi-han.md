@@ -77,6 +77,21 @@ try {
 `browser.callJs("...")` chạy JS trong trang (dùng ở luottruyen, mangak, mino* để lấy dữ liệu do
 JS sinh ra sau khi tải).
 
+### Browser dùng chung cookie với WebView của app — đã kiểm 12/08/2026
+
+`Engine.newBrowser()` **dùng chung cookie jar với WebView built-in của Vbook**. Người dùng đăng
+nhập trong app một lần thì browser của plugin kế thừa luôn phiên đó.
+
+Đây là **đường cứu duy nhất cho nguồn chặn bằng đăng nhập OAuth** (Google/Facebook — loại không có
+form user/password nên plugin không thể tự POST vào). Điều kiện đủ:
+
+1. Người dùng đăng nhập **trong WebView của app**, không phải Chrome ngoài app (khác cookie jar).
+2. Đường đọc nội dung đi qua `Engine.newBrowser()`, **không** qua `fetch`/`Http` — chưa có bằng
+   chứng Vbook bắc cầu cookie sang HTTP client.
+3. **Đừng gọi `setUserAgent()`** ở nhánh cần phiên đăng nhập.
+
+Ca thật: luottruyen v28 (`chap.js`) — [06-case-study-luottruyen.md](06-case-study-luottruyen.md).
+
 ⚠️ **Luôn `close()` trong cả nhánh lỗi.** Browser không đóng là rò tài nguyên, app đơ dần.
 
 ⚠️ **Đừng để browser thành đường mặc định.** Nó chậm hơn HTTP nhiều lần, và một agent trước đã

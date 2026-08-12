@@ -290,13 +290,25 @@ G. 200 nhưng rỗng                      —                    báo lỗi tử
 
 ---
 
-## 9. Chưa verify được (tính tới v28)
+## 9. Đã xác nhận trên máy thật (12/08/2026, v28)
 
-- **`Engine.newBrowser()` có dùng chung cookie jar với WebView built-in của Vbook không.** Toàn bộ
-  hướng sửa v27/v28 đặt cược vào giả định này. Không test được từ máy dev — cần điện thoại đã đăng
-  nhập Gmail trong app. Nếu giả định sai thì nguồn này **hết đường**, phải bỏ hoặc tìm mirror.
-- **Trang chương lúc đã đăng nhập trông như thế nào.** Bộ selector trong `extractImagesFromDoc` kế
-  thừa từ Tachiyomi + các bản cũ, **chưa ai đối chiếu với HTML thật sau khi site đổi sang bắt
-  đăng nhập**. Có ảnh rồi thì việc đầu tiên là lưu lại một bản HTML chương thật để làm mẫu test.
-- Mức verify của v28: **M3** (chạy thật logic parse trên HTML sống của trang bị chặn), **chưa đạt
-  M4** (chưa thấy ảnh hiện trong app). Xem `03` mục 16.
+✅ **`Engine.newBrowser()` DÙNG CHUNG cookie jar với WebView built-in của Vbook.** Người dùng đăng
+nhập Gmail trong app → v28 hiện ảnh bình thường. Giả định mà cả v27 lẫn v28 đặt cược **là đúng**.
+
+Đây là **một API fact dùng được cho mọi nguồn khác**, không riêng luottruyen: nguồn nào chặn bằng
+đăng nhập mà không có form user/password (OAuth Google/Facebook) thì vẫn cứu được, miễn là
+(a) người dùng đăng nhập **trong WebView của app**, và (b) đường đọc nội dung đi qua
+`Engine.newBrowser()` chứ không phải HTTP client. Xem `02` mục 3.
+
+Mức verify của v28: **M4** — ảnh hiện thật trong app, không phải chỉ harness xanh.
+
+### Còn treo
+
+- **Chưa có mẫu HTML chương lúc đã đăng nhập.** Bộ selector trong `extractImagesFromDoc` vẫn là đồ
+  kế thừa từ Tachiyomi + các bản cũ; nó *chạy được*, nhưng chưa ai đối chiếu với HTML thật sau khi
+  site đổi sang bắt đăng nhập — không biết selector nào đang thật sự ăn, selector nào đã chết. Lần
+  tới mở chương trong app, lưu lại một bản HTML làm mẫu test thì bộ 7 ca ở mục 6 mới đủ ca "đường
+  hạnh phúc" bằng dữ liệu thật.
+- **Đường HTTP (bước 1 của `chap.js`) chưa biết có bao giờ ăn không.** Nếu Vbook không bắc cầu
+  cookie sang HTTP client thì nó vĩnh viễn trượt và tốn thừa 1 request mỗi chương. Chưa đủ bằng
+  chứng để gỡ — gỡ nhầm là mất đường nhanh khi Vbook có bắc cầu.
