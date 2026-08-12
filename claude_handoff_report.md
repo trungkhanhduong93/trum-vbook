@@ -1,6 +1,13 @@
-> ⚠️ **GocTruyenTranh đã bị xoá khỏi repo ngày 12/08/2026** theo yêu cầu chủ repo, sau khi đo được
-> rằng site khoá đúng 21 chương mới nhất của mỗi truyện và chỉ mở khoá khi đăng nhập Google/Facebook —
-> plugin không có đường nào đăng nhập. Bài học kỹ thuật rút ra được ghi ở memory `goctruyentranh-api`.
+> ⚠️ **GocTruyenTranh: Tài liệu handoff mới nhất là [`goctruyentranh/HANDOVER.md`](goctruyentranh/HANDOVER.md)** (Đã lên v9, commit `cca6af2`).
+
+# TECHNICAL HANDOFF REPORT (FOR CLAUDE) - GOCTRUYENTRANH ISSUE (v9)
+
+- **Plugin:** `GocTruyenTranh` (`goctruyentranh/`)
+- **Version hiện tại trên Git:** `v9` (Commit `cca6af2`)
+- **Vấn đề User báo:** Bấm vào xem ảnh bị kẹt màn hình "xác minh con người" (Cloudflare Turnstile loop) không thoát được.
+- **Tệp handoff chi tiết:** Xem [`goctruyentranh/HANDOVER.md`](goctruyentranh/HANDOVER.md).
+
+---
 
 > ⚠️ **FastScan: tài liệu chính thức nay là [`fastscan/README.md`](fastscan/README.md)** (đã lên v10, đầy đủ số liệu đo).
 > Phần FastScan bên dưới giữ lại làm lịch sử điều tra, đừng dùng làm nguồn sự thật.
