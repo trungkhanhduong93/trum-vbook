@@ -98,15 +98,11 @@ function execute(url) {
     // 03 = phiên hỏng. Site khoá khoảng 20 chương mới nhất của mỗi truyện.
     if (r.codeState === '01') {
         return Response.success(noticeImage([
-            '[GTT-01] Chuong ' + chapNum,
-            'bi site khoa',
-            '',
-            'Site bat DANG NHAP tai khoan',
-            'moi cho doc chuong nay.',
-            'Plugin khong dang nhap duoc',
-            '(site chi cho login Google/Facebook).',
-            '',
-            'Hay chon chuong cu hon.'
+            'Chuong ' + chapNum + ' bi site khoa',
+            'Site bat dang nhap moi cho doc',
+            '21 chuong moi nhat',
+            'Cac chuong cu hon van doc binh thuong',
+            '(trong muc luc khong ghi "khoa")'
         ]));
     }
     if (r.codeState === '02') {
