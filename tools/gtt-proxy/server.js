@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+puppeteer.use(StealthPlugin());
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,43 +14,75 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const BASE_URL = 'https://goctruyentranhvui41.com';
-const UA = process.env.CUSTOM_UA || 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+const UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
-// Session Cookie storage
 let cookies = {
+  cf_clearance: '',
   usid: '',
   xtoken: ''
 };
 let lastCookieFetch = 0;
+let isRefreshing = false;
 
-async function refreshSession() {
+async function solveCloudflareSession() {
+  if (isRefreshing) return;
   const now = Date.now();
-  if (cookies.usid && cookies.xtoken && (now - lastCookieFetch < 12 * 3600 * 1000)) {
+  if (cookies.cf_clearance && cookies.usid && cookies.xtoken && (now - lastCookieFetch < 2 * 3600 * 1000)) {
     return;
   }
+
+  isRefreshing = true;
+  console.log('[PUPPETEER] Launching headless browser to solve Cloudflare Turnstile on Render IP...');
+  let browser = null;
+
   try {
-    const res = await axios.get(`${BASE_URL}/lien-he`, {
-      headers: { 'User-Agent': UA, 'Accept': 'text/html' },
-      timeout: 10000
-    });
-    const setCookie = res.headers['set-cookie'] || [];
-    const cookieStr = Array.isArray(setCookie) ? setCookie.join('; ') : String(setCookie);
+    const launchOptions = {
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
+    };
 
-    const mUsid = cookieStr.match(/usid=([^;]+)/);
-    if (mUsid) cookies.usid = mUsid[1];
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
 
-    const mToken = cookieStr.match(/X-TOKEN=([^;]+)/);
-    if (mToken) cookies.xtoken = mToken[1];
+    browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+    await page.setUserAgent(UA);
 
-    lastCookieFetch = now;
-    console.log('[SESSION] Cookie refreshed:', cookies);
+    console.log('[PUPPETEER] Navigating to /lien-he ...');
+    await page.goto(`${BASE_URL}/lien-he`, { waitUntil: 'networkidle2', timeout: 30000 });
+
+    // Wait 5 seconds for Turnstile JS challenge auto-solve
+    await new Promise(r => setTimeout(r, 5000));
+
+    const pageCookies = await page.cookies();
+    for (const c of pageCookies) {
+      if (c.name === 'cf_clearance') cookies.cf_clearance = c.value;
+      if (c.name === 'usid') cookies.usid = c.value;
+      if (c.name === 'X-TOKEN') cookies.xtoken = c.value;
+    }
+
+    lastCookieFetch = Date.now();
+    console.log('[PUPPETEER] Session solved successfully! Cookies:', cookies);
   } catch (err) {
-    console.error('[SESSION] Failed to refresh cookie:', err.message);
+    console.error('[PUPPETEER] Error solving Cloudflare session:', err.message);
+  } finally {
+    if (browser) {
+      try { await browser.close(); } catch (e) {}
+    }
+    isRefreshing = false;
   }
 }
 
 function getHeaders(customHeaders = {}) {
-  // Support manual COOKIE_OVERRIDE env if specified
   if (process.env.COOKIE_OVERRIDE) {
     return {
       'User-Agent': UA,
@@ -58,6 +94,7 @@ function getHeaders(customHeaders = {}) {
   }
 
   const cookieHeader = [
+    cookies.cf_clearance ? `cf_clearance=${cookies.cf_clearance}` : '',
     cookies.usid ? `usid=${cookies.usid}` : '',
     cookies.xtoken ? `X-TOKEN=${cookies.xtoken}` : ''
   ].filter(Boolean).join('; ');
@@ -71,7 +108,6 @@ function getHeaders(customHeaders = {}) {
   };
 }
 
-// Convert CDN URLs (gtt-bk.pro) to SITE_URL so VBook ImageLoader sends matching Referer
 function transformImageUrls(dataArr) {
   if (!Array.isArray(dataArr)) return dataArr;
   return dataArr.map(url => {
@@ -102,27 +138,26 @@ function setCache(key, data, ttlMs = 30 * 60 * 1000) {
 
 // ── ENDPOINTS ────────────────────────────────────────────────────────────────
 
-// Health check / Keep-alive endpoint for UptimeRobot (Fix Blind Spot 2: Cold Start)
 app.get(['/', '/ping', '/health'], (req, res) => {
   res.json({
     status: true,
-    service: 'GocTruyenTranh Micro-Proxy',
+    service: 'GocTruyenTranh Puppeteer Stealth Proxy',
     timestamp: new Date().toISOString(),
-    sessionReady: Boolean(cookies.usid && cookies.xtoken)
+    sessionReady: Boolean(cookies.cf_clearance && cookies.usid && cookies.xtoken)
   });
 });
 
-// 1. Home / Listing: /api/proxy/v2/search
 app.get('/api/proxy/v2/search', async (req, res) => {
   const cacheKey = `search_${req.url}`;
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
+  await solveCloudflareSession();
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/v2/search`, {
       params: req.query,
       headers: getHeaders(),
-      timeout: 10000
+      timeout: 12000
     });
     setCache(cacheKey, apiRes.data);
     res.json(apiRes.data);
@@ -131,17 +166,17 @@ app.get('/api/proxy/v2/search', async (req, res) => {
   }
 });
 
-// 2. Detail: /api/proxy/comic/:slug
 app.get('/api/proxy/comic/:slug', async (req, res) => {
   const slug = req.params.slug;
   const cacheKey = `detail_${slug}`;
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
+  await solveCloudflareSession();
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/comic/${slug}`, {
       headers: getHeaders(),
-      timeout: 10000
+      timeout: 12000
     });
     setCache(cacheKey, apiRes.data);
     res.json(apiRes.data);
@@ -150,13 +185,13 @@ app.get('/api/proxy/comic/:slug', async (req, res) => {
   }
 });
 
-// 3. Search: /api/proxy/comic/search
 app.get('/api/proxy/comic/search', async (req, res) => {
+  await solveCloudflareSession();
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/comic/search`, {
       params: req.query,
       headers: getHeaders(),
-      timeout: 10000
+      timeout: 12000
     });
     res.json(apiRes.data);
   } catch (err) {
@@ -164,19 +199,18 @@ app.get('/api/proxy/comic/search', async (req, res) => {
   }
 });
 
-// 4. TOC (Chapters): /api/proxy/comic/:id/chapter
 app.get('/api/proxy/comic/:id/chapter', async (req, res) => {
   const id = req.params.id;
   const cacheKey = `toc_${id}_${req.query.offset || 0}`;
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  await refreshSession();
+  await solveCloudflareSession();
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/comic/${id}/chapter`, {
       params: req.query,
       headers: getHeaders(),
-      timeout: 10000
+      timeout: 12000
     });
     setCache(cacheKey, apiRes.data);
     res.json(apiRes.data);
@@ -185,23 +219,21 @@ app.get('/api/proxy/comic/:id/chapter', async (req, res) => {
   }
 });
 
-// 5. Chapter Images: /api/proxy/chapter/loadAll
 app.post('/api/proxy/chapter/loadAll', async (req, res) => {
   const { comicId, chapterNumber, nameEn } = req.body;
   const cacheKey = `chap_${comicId}_${chapterNumber}`;
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  await refreshSession();
+  await solveCloudflareSession();
   try {
     const postData = new URLSearchParams({ comicId, chapterNumber, nameEn }).toString();
     const apiRes = await axios.post(`${BASE_URL}/api/chapter/loadAll`, postData, {
       headers: getHeaders({ 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }),
-      timeout: 12000
+      timeout: 15000
     });
 
     let respData = apiRes.data;
-    // Transform CDN URLs so VBook ImageLoader sends matching Referer (Fix Blind Spot 3)
     if (respData && respData.status && respData.result && respData.result.data) {
       respData.result.data = transformImageUrls(respData.result.data);
       setCache(cacheKey, respData, 60 * 60 * 1000);
@@ -214,5 +246,5 @@ app.post('/api/proxy/chapter/loadAll', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`GocTruyenTranh Micro-Proxy listening on port ${PORT}`);
+  console.log(`GocTruyenTranh Puppeteer Stealth Proxy listening on port ${PORT}`);
 });

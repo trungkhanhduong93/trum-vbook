@@ -4,7 +4,7 @@
 // ============================================================
 
 // Thay thế URL Server Proxy của bạn tại đây (ví dụ trên Render/Vercel)
-var PROXY_URL = 'https://gtt-proxy.onrender.com';
+var PROXY_URL = 'https://trum-vbook.onrender.com';
 var SITE_URL = 'https://goctruyentranhvui41.com';
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
