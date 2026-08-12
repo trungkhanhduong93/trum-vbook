@@ -1,20 +1,11 @@
 load("config.js");
 
-function execute(url) {
-    syncBaseFromUrl(url);
-    var doc = fetchRetry(url);
-    if (!doc) {
-        return Response.error("Không tải được trang chương hoặc domain đã bị chặn");
-    }
-    if (!doc) return Response.error("Không parse được HTML");
-
+function extractImagesFromDoc(doc) {
     var images = [];
     var seen = {};
 
-    // Primary selector (Tachiyomi: #view-chapter img)
     var imgEls = doc.select("#view-chapter img");
 
-    // Fallback selectors (matching Tachiyomi's fallback chain)
     if (!imgEls || imgEls.size() === 0) {
         imgEls = doc.select(".reading-detail .page-chapter img");
     }
@@ -40,7 +31,6 @@ function execute(url) {
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 
-        // Try multiple src attributes
         var src = img.attr("src") || "";
         if (!src) src = img.attr("data-src") || "";
         if (!src) src = img.attr("data-original") || "";
@@ -49,7 +39,6 @@ function execute(url) {
 
         src = src.trim();
 
-        // Skip non-content images
         if (src.indexOf("data:image") >= 0) continue;
         if (src.indexOf("logo") >= 0) continue;
         if (src.indexOf("avatar") >= 0) continue;
@@ -60,7 +49,6 @@ function execute(url) {
         if (src.indexOf("1x1") >= 0) continue;
         if (src.indexOf("blank.") >= 0) continue;
 
-        // Resolve URL
         if (src.indexOf("//") === 0) {
             src = "https:" + src;
         } else if (src.indexOf("http") !== 0) {
@@ -69,15 +57,50 @@ function execute(url) {
             }
         }
 
-        // Deduplicate
         if (seen[src]) continue;
         seen[src] = true;
 
         images.push(src);
     }
 
-    // If no images found, check for login requirement (matching Tachiyomi)
+    return images;
+}
+
+function chapViaBrowser(url) {
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        browser.setUserAgent(UserAgent.android());
+        browser.launch(url, 8);
+        browser.callJs("", 3500);
+        var bDoc = browser.html();
+        browser.close();
+        browser = null;
+
+        if (bDoc) {
+            var bImgs = extractImagesFromDoc(bDoc);
+            if (bImgs.length > 0) return bImgs;
+        }
+    } catch (e) {}
+    return null;
+}
+
+function execute(url) {
+    syncBaseFromUrl(url);
+    var doc = fetchRetry(url);
+    if (!doc) {
+        return Response.error("Không tải được trang chương hoặc domain đã bị chặn");
+    }
+
+    var images = extractImagesFromDoc(doc);
+
+    // If 0 images found (due to WebAssembly/JS encryption or login requirement), fallback to WebView execution
     if (images.length === 0) {
+        var browserImgs = chapViaBrowser(url);
+        if (browserImgs && browserImgs.length > 0) {
+            return Response.success(browserImgs);
+        }
+
         var loginHint = selFirst(doc, "a[href*='/Account/Login']");
         if (!loginHint) loginHint = selFirst(doc, "a[href*='/dang-nhap']");
         if (!loginHint) loginHint = selFirst(doc, ".login-page-wrapper");
