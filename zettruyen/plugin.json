@@ -2,9 +2,9 @@
   "metadata": {
     "name": "ZetTruyen",
     "author": "tkd1793",
-    "version": 14,
-    "source": "https://www.zettruyen.top",
-    "regexp": "(www.)?zettruyen\\.top\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
+    "version": 15,
+    "source": "https://www.zettruyen.work",
+    "regexp": "(www.)?zettruyen\\.work\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
     "description": "Đọc truyện trên trang ZetTruyen",
     "local": "vi_VN",
     "language": "javascript",

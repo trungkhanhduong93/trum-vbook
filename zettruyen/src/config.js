@@ -1,4 +1,4 @@
-let BASE_URL = 'https://www.zettruyen.top';
+let BASE_URL = 'https://www.zettruyen.work';
 let REFERER = BASE_URL + '/';
 
 let HTML_HEADERS = {

@@ -99,13 +99,13 @@ function execute(url, page) {
             }
 
             if (data.length === 0) {
-                return Response.success([{name: "Lỗi: doc.select() ra rỗng, html length: " + doc.html().length, link: "https://www.zettruyen.top", cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png", description: "debug"}]);
+                return Response.success([{name: "Lỗi: doc.select() ra rỗng, html length: " + doc.html().length, link: BASE_URL, cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png", description: "debug"}]);
             }
 
             return Response.success(data, next);
         }
-        return Response.success([{name: "Lỗi: fetchRetry trả về doc rỗng (null)", link: "https://www.zettruyen.top", cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png", description: "debug"}]);
+        return Response.success([{name: "Lỗi: fetchRetry trả về doc rỗng (null)", link: BASE_URL, cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png", description: "debug"}]);
     } catch (e) {
-        return Response.success([{name: "Lỗi JS: " + e, link: "https://www.zettruyen.top", cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png", description: "debug"}]);
+        return Response.success([{name: "Lỗi JS: " + e, link: BASE_URL, cover: "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png", description: "debug"}]);
     }
 }
