@@ -83,27 +83,26 @@ async function solveCloudflareSession() {
 }
 
 function getHeaders(customHeaders = {}) {
-  if (process.env.COOKIE_OVERRIDE) {
-    return {
-      'User-Agent': UA,
-      'Accept': 'application/json, text/plain, */*',
-      'Referer': `${BASE_URL}/`,
-      'Cookie': process.env.COOKIE_OVERRIDE,
-      ...customHeaders
-    };
-  }
-
-  const cookieHeader = [
-    cookies.cf_clearance ? `cf_clearance=${cookies.cf_clearance}` : '',
-    cookies.usid ? `usid=${cookies.usid}` : '',
-    cookies.xtoken ? `X-TOKEN=${cookies.xtoken}` : ''
-  ].filter(Boolean).join('; ');
+  const cookieVal = process.env.COOKIE_OVERRIDE
+    ? process.env.COOKIE_OVERRIDE.trim()
+    : [
+        cookies.cf_clearance ? `cf_clearance=${cookies.cf_clearance}` : '',
+        cookies.usid ? `usid=${cookies.usid}` : '',
+        cookies.xtoken ? `X-TOKEN=${cookies.xtoken}` : ''
+      ].filter(Boolean).join('; ');
 
   return {
     'User-Agent': UA,
     'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
     'Referer': `${BASE_URL}/`,
-    ...(cookieHeader ? { 'Cookie': cookieHeader } : {}),
+    'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    ...(cookieVal ? { 'Cookie': cookieVal } : {}),
     ...customHeaders
   };
 }
