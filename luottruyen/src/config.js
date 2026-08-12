@@ -1,7 +1,7 @@
 // ─── Domain (tự dò khi luottruyen đổi link) ─────────────────────────
-// luottruyen11.com là domain mặc định mới. Khi link bị đổi/không truy
-// cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ 11->12->13->14...
-var DEFAULT_BASE = "https://luottruyen11.com";
+// luottruyen16.com là domain mặc định mới. Khi link bị đổi/không truy
+// cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ 16->17->18->19...
+var DEFAULT_BASE = "https://luottruyen16.com";
 var REDIRECTOR = "https://luottruyen.com";
 
 var BASE_URL = DEFAULT_BASE;
@@ -41,11 +41,11 @@ function syncBaseFromUrl(url) {
     if (origin && origin !== BASE_URL) setBase(origin);
 }
 
-// Trích xuất số domain từ URL hoặc origin (vd luottruyen11.com -> 11)
+// Trích xuất số domain từ URL hoặc origin (vd luottruyen16.com -> 16)
 function extractDomainNumber(originOrUrl) {
-    if (!originOrUrl) return 11;
+    if (!originOrUrl) return 16;
     var m = String(originOrUrl).match(/luottruyen(\d+)\.com/i);
-    return m ? parseInt(m[1], 10) : 11;
+    return m ? parseInt(m[1], 10) : 16;
 }
 
 // Thay thế domain luottruyenXX.com trong URL thành targetDomain
@@ -96,12 +96,12 @@ function resolveBaseUrl() {
     } catch (e) {}
 }
 
-// Tự rà soát lũy tiến các link luottruyen11.com, luottruyen12.com, 13, 14...
+// Tự rà soát lũy tiến các link luottruyen16.com, luottruyen17.com, 18, 19...
 // khi link hiện tại không truy cập được.
 function autoProbeDomains(url) {
     var startNum = extractDomainNumber(BASE_URL);
-    if (startNum < 11) startNum = 11;
-    var maxNum = startNum + 15; // Rà soát đến 15 số tiếp theo (vd 11 -> 26)
+    if (startNum < 16) startNum = 16;
+    var maxNum = startNum + 15; // Rà soát đến 15 số tiếp theo (vd 16 -> 31)
 
     for (var n = startNum; n <= maxNum; n++) {
         var targetDomain = "https://luottruyen" + n + ".com";

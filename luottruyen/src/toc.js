@@ -8,10 +8,10 @@ function execute(url) {
     // 1) POST API (nhanh nhất, như Tachiyomi)
     var chapters = tocViaApi(url, storyId);
 
-    // 2) Rỗng → nguồn có thể vừa đổi domain → dò lại rồi gọi đúng domain
+    // 2) Rỗng → nguồn có thể vừa đổi domain → auto probe rồi gọi lại đúng domain
     if (chapters.length === 0) {
-        resolveBaseUrl();
-        chapters = tocViaApi(swapDomain(url), storyId);
+        autoProbeDomains(url);
+        chapters = tocViaApi(swapDomainTo(url, BASE_URL), storyId);
     }
 
     // 3) Vẫn rỗng → render bằng trình duyệt (danh sách chương nạp qua AJAX)
