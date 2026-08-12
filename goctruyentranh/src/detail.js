@@ -6,7 +6,7 @@ load('config.js');
 
 function execute(url) {
     ensureSiteUrl();
-    var slug = extractSlug(url);
+    var slug = comicSlug(url);
     if (!slug) return Response.error('Không nhận được đường dẫn truyện.');
 
     var json = apiGet('/api/comic/' + slug);

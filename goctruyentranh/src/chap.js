@@ -1,115 +1,98 @@
 load('config.js');
 
 // chap.js: Tải ảnh chương
+// Site lấy ảnh bằng POST /api/chapter/loadAll với {comicId, chapterNumber, nameEn}
+// (xem /contents/v2/js/view_addition.js -> doLoadChapter). API cần cookie usid.
 // URL pattern: /truyen/{slug}/chuong-{number}
+
+// Một lần gọi API ảnh. Tách riêng để retry được khi phiên hết hạn.
+function loadChapter(comicId, chapNum, nameEn) {
+    var postData = 'comicId=' + encodeURIComponent(comicId) +
+                   '&chapterNumber=' + encodeURIComponent(chapNum) +
+                   '&nameEn=' + encodeURIComponent(nameEn);
+
+    var resStr = Http.post(SITE_URL + '/api/chapter/loadAll')
+        .headers(HEADERS())
+        .body(postData)
+        .contentType('application/x-www-form-urlencoded; charset=UTF-8')
+        .string();
+
+    return resStr ? JSON.parse(resStr) : null;
+}
 
 function execute(url) {
     ensureSiteUrl();
     var sUrl = String(url);
-    var slug = extractSlug(sUrl);
+
+    // slug truyện, KHÔNG lấy cả đuôi /chuong-N — API detail là /api/comic/{slug}
+    var slug = comicSlug(sUrl);
     if (!slug) return Response.error('URL chương không hợp lệ.');
 
-    // Trích xuất số chương từ URL (ví dụ: /chuong-56 -> 56)
-    var match = sUrl.match(/chuong-([0-9.]+)/i);
-    var chapNum = match ? match[1] : '1';
+    // Neo cuối đường dẫn để slug có chữ "chuong-" không cướp mất số chương thật
+    var match = extractSlug(sUrl).match(/\/chuong-([0-9.]+)$/i);
+    if (!match) return Response.error('Không đọc được số chương từ đường dẫn.');
+    var chapNum = match[1];
 
-    // Lấy comicId và nameEn chuẩn từ API comic detail
-    var comicId = '';
-    var nameEn = slug;
+    // comicId là bắt buộc: thiếu nó server trả "Không có dữ liệu."
     var jsonDetail = apiGet('/api/comic/' + slug);
-    if (jsonDetail && jsonDetail.status && jsonDetail.result) {
-        if (jsonDetail.result.id) comicId = String(jsonDetail.result.id);
-        if (jsonDetail.result.nameEn) nameEn = String(jsonDetail.result.nameEn);
+    if (!jsonDetail || !jsonDetail.status || !jsonDetail.result || !jsonDetail.result.id) {
+        return Response.error('Không lấy được thông tin truyện để tải chương.');
+    }
+    var comicId = String(jsonDetail.result.id);
+    var nameEn = jsonDetail.result.nameEn ? String(jsonDetail.result.nameEn) : slug;
+
+    ensureSession();
+
+    var res = null;
+    try {
+        res = loadChapter(comicId, chapNum, nameEn);
+
+        // status:false thường là cookie usid đã hết hạn -> lấy phiên mới, thử lại 1 lần
+        if (res && !res.status) {
+            resetSession();
+            ensureSession();
+            res = loadChapter(comicId, chapNum, nameEn);
+        }
+    } catch (e) {
+        return Response.error('Lỗi mạng khi tải chương ' + chapNum + '. Thử lại sau.');
     }
 
-    // 1. Phương pháp ưu tiên: Gọi API POST /api/chapter/loadAll (Nhanh, không bị Cloudflare loop)
-    try {
-        // Tải trang HTML chương trước để khởi tạo session / cookies
-        Http.get(SITE_URL + '/truyen/' + slug + '/chuong-' + chapNum)
-            .headers(HEADERS())
-            .string();
+    if (!res || !res.status || !res.result) {
+        var why = (res && res.messages && res.messages.length) ? String(res.messages[0]) : '';
+        return Response.error('Không tải được chương ' + chapNum + '.' + (why ? ' ' + why : ''));
+    }
 
-        var postData = 'comicId=' + encodeURIComponent(comicId) +
-                       '&chapterNumber=' + encodeURIComponent(chapNum) +
-                       '&nameEn=' + encodeURIComponent(nameEn);
+    var r = res.result;
 
-        var resStr = Http.post(SITE_URL + '/api/chapter/loadAll')
-            .headers(HEADERS())
-            .body(postData)
-            .contentType('application/x-www-form-urlencoded; charset=UTF-8')
-            .string();
+    // codeState theo handleOutput() của site: 01 = bắt đăng nhập, 02 = hết lượt đọc,
+    // 03 = phiên hỏng. Site khoá khoảng 20 chương mới nhất của mỗi truyện.
+    if (r.codeState === '01') {
+        return Response.error('Chương ' + chapNum + ' bị site khoá, chỉ đọc được khi đăng nhập tài khoản trên web. Hãy chọn chương cũ hơn.');
+    }
+    if (r.codeState === '02') {
+        return Response.error('Đã hết lượt đọc chương mới trong ngày trên site.');
+    }
+    if (r.codeState === '03') {
+        return Response.error('Phiên làm việc với site bị huỷ. Thử lại sau ít phút.');
+    }
+    if (!r.state) {
+        return Response.error(r.message ? String(r.message) : 'Không tải được chương ' + chapNum + '.');
+    }
 
-        if (resStr) {
-            var jsonRes = JSON.parse(resStr);
-            if (jsonRes && jsonRes.status && jsonRes.result && jsonRes.result.data) {
-                var imgs = jsonRes.result.data;
-                if (imgs && imgs.length > 0) {
-                    var cleanImgs = [];
-                    for (var k = 0; k < imgs.length; k++) {
-                        var imgUrl = String(imgs[k]).trim();
-                        if (imgUrl) cleanImgs.push(absUrl(imgUrl));
-                    }
-                    if (cleanImgs.length > 0) {
-                        return Response.success(cleanImgs);
-                    }
-                }
-            }
-        }
-    } catch (e1) {}
+    var imgs = r.data;
+    if (!imgs || !imgs.length) {
+        return Response.error('Chương ' + chapNum + ' chưa có ảnh.');
+    }
 
-    // 2. Fallback: Dùng Engine.newBrowser() nếu API loadAll không khả dụng
     var images = [];
-    var browser = null;
-
-    try {
-        var pathM = sUrl.match(/\/truyen\/.+$/);
-        var chapUrl = SITE_URL + (pathM ? pathM[0] : (sUrl.charAt(0) === '/' ? sUrl : '/' + sUrl));
-
-        browser = Engine.newBrowser();
-        try { browser.setUserAgent(UA); } catch (e2) {}
-
-        browser.launch(chapUrl, 8000);
-
-        var result = browser.callJs(
-            'JSON.stringify((function() {' +
-            '  var imgs = document.querySelectorAll(".image-section img, .main-images img, .main img, img");' +
-            '  var urls = [];' +
-            '  var seen = {};' +
-            '  for (var i = 0; i < imgs.length; i++) {' +
-            '    var src = imgs[i].src || imgs[i].getAttribute("data-src") || imgs[i].getAttribute("data-original") || "";' +
-            '    src = String(src).trim();' +
-            '    if (!src) continue;' +
-            '    if (src.indexOf("/image/") === -1 && src.indexOf("cdn") === -1 && src.indexOf("/c/") === -1) continue;' +
-            '    if (src.indexOf("logo.png") !== -1 || src.indexOf("favicon") !== -1 || src.indexOf("avatar") !== -1 || src.indexOf("bg2.gif") !== -1) continue;' +
-            '    if (seen[src]) continue;' +
-            '    seen[src] = true;' +
-            '    urls.push(src);' +
-            '  }' +
-            '  return urls;' +
-            '}()))'
-        );
-
-        browser.close();
-        browser = null;
-
-        if (result) {
-            var parsed = JSON.parse(String(result));
-            if (parsed && parsed.length) {
-                for (var i = 0; i < parsed.length; i++) {
-                    images.push(absUrl(String(parsed[i]).trim()));
-                }
-            }
-        }
-    } catch (err) {
-        if (browser) {
-            try { browser.close(); } catch (e3) {}
-        }
+    for (var i = 0; i < imgs.length; i++) {
+        var imgUrl = String(imgs[i]).trim();
+        if (imgUrl) images.push(absUrl(imgUrl));
     }
 
-    if (!images || !images.length) {
-        return Response.error('Không tải được ảnh chương. Vui lòng thử lại sau.');
+    if (!images.length) {
+        return Response.error('Chương ' + chapNum + ' chưa có ảnh.');
     }
 
     return Response.success(images);
 }
-

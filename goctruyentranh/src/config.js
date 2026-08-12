@@ -56,6 +56,9 @@ function extractSlug(url) {
     if (qIdx !== -1) s = s.substring(0, qIdx);
     var hIdx = s.indexOf('#');
     if (hIdx !== -1) s = s.substring(0, hIdx);
+    // Site redirect kèm session vào path: /truyen/abc;usid=XXX
+    var sIdx = s.indexOf(';');
+    if (sIdx !== -1) s = s.substring(0, sIdx);
     while (s.length > 0 && s.charAt(s.length - 1) === '/') {
         s = s.substring(0, s.length - 1);
     }
@@ -65,6 +68,32 @@ function extractSlug(url) {
     }
     var parts = s.split('/');
     return parts[parts.length - 1];
+}
+
+// Slug truyện thuần, kể cả khi url là url chương (/truyen/{slug}/chuong-{n})
+function comicSlug(url) {
+    var s = extractSlug(url);
+    var idx = s.indexOf('/');
+    return (idx !== -1) ? s.substring(0, idx) : s;
+}
+
+// Các API cần session: /api/comic/{id}/chapter và /api/chapter/loadAll.
+// Không có cookie usid thì server trả "Phiên làm việc đã hết hạn".
+// /lien-he là trang nhẹ nhất có Set-Cookie usid (55KB, so với /trang-chu 600KB).
+var _sessionReady = false;
+function ensureSession() {
+    if (_sessionReady) return;
+    ensureSiteUrl();
+    try {
+        Http.get(SITE_URL + '/lien-he').headers(HEADERS()).string();
+    } catch (e) {}
+    _sessionReady = true;
+}
+
+// Cookie usid sống ~13 tiếng. Hết hạn thì API trả status:false — gọi cái này rồi
+// ensureSession() để lấy cookie mới.
+function resetSession() {
+    _sessionReady = false;
 }
 
 function apiGet(path) {
