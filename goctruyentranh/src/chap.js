@@ -43,11 +43,7 @@ function siteImage(url) {
 }
 
 // Một lần gọi API ảnh. Tách riêng để retry được khi phiên hết hạn.
-function loadChapter(comicId, chapNum, nameEn) {
-    var postData = 'comicId=' + encodeURIComponent(comicId) +
-                   '&chapterNumber=' + encodeURIComponent(chapNum) +
-                   '&nameEn=' + encodeURIComponent(nameEn);
-
+function loadChapter(postData) {
     var resStr = Http.post(SITE_URL + '/api/chapter/loadAll')
         .headers(HEADERS())
         .body(postData)
@@ -87,15 +83,33 @@ function execute(url) {
 
     ensureSession();
 
+    var postData = 'comicId=' + encodeURIComponent(comicId) +
+                   '&chapterNumber=' + encodeURIComponent(chapNum) +
+                   '&nameEn=' + encodeURIComponent(nameEn);
+
     var res = null;
     try {
-        res = loadChapter(comicId, chapNum, nameEn);
+        if (!httpSessionBroken()) {
+            res = loadChapter(postData);
 
-        // status:false thường là cookie usid đã hết hạn -> lấy phiên mới, thử lại 1 lần
-        if (res && !res.status) {
-            resetSession();
-            ensureSession();
-            res = loadChapter(comicId, chapNum, nameEn);
+            // status:false thường là cookie usid đã hết hạn -> lấy phiên mới, thử lại 1 lần
+            if (res && !res.status) {
+                resetSession();
+                ensureSession();
+                res = loadChapter(postData);
+            }
+            if (!res || !res.status) markHttpSessionBroken();
+        }
+
+        // Http không giữ được cookie -> mượn WebView gọi hộ.
+        if (!res || !res.status) {
+            var raw = browserApi(
+                xhrSnippet('POST', '/api/chapter/loadAll', postData) +
+                'return x.responseText;'
+            );
+            if (raw) {
+                try { res = JSON.parse(raw); } catch (eb) {}
+            }
         }
     } catch (e) {
         return Response.success(noticeImage([
@@ -120,7 +134,7 @@ function execute(url) {
     var r = res.result;
 
     // codeState theo handleOutput() của site: 01 = bắt đăng nhập, 02 = hết lượt đọc,
-    // 03 = phiên hỏng. Site khoá khoảng 20 chương mới nhất của mỗi truyện.
+    // 03 = phiên hỏng. Chương bị khoá được đánh dấu type="TRIPLE" (xem toc.js).
     if (r.codeState === '01') {
         return Response.success(noticeImage([
             'Chuong ' + chapNum + ' can dang nhap',
@@ -167,7 +181,7 @@ function execute(url) {
     // "plugin không lấy được ảnh" với "plugin lấy được nhưng app không tải nổi".
     // Thấy dải này mà bên dưới trống = app bị chặn ở khâu tải ảnh, không phải
     // lỗi plugin.
-    var images = [noticeUrl('900x120', ['v14 - lay duoc ' + imgs.length + ' anh'])];
+    var images = [noticeUrl('900x120', ['v15 - lay duoc ' + imgs.length + ' anh'])];
 
     for (var i = 0; i < imgs.length; i++) {
         var imgUrl = siteImage(imgs[i]);

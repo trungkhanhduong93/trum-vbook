@@ -24,27 +24,43 @@ function chapterCall(comicId, offset) {
 
 // Ba lớp, vì đây là chỗ duy nhất quyết định mục lục đủ hay thiếu:
 //   1. offset=0 -> trả trọn bộ trong một request
-//   2. cookie hỏng thì lấy phiên mới rồi thử lại
-//   3. server không nhận offset=0 thì quay về kiểu site tự dùng (offset={limit})
-//      và ghép với khối chương mới nhất
+//   2. phiên hết hạn thì lấy cookie mới rồi thử lại
+//   3. Http của app không giữ nổi cookie -> mượn WebView
 function allChapters(comicId, latest, limit) {
     if (!comicId) return [];
 
-    ensureSession();
-    var out = chapterCall(comicId, 0);
-    if (out.length) return out;
+    var out;
+    if (!httpSessionBroken()) {
+        ensureSession();
+        out = chapterCall(comicId, 0);
+        if (out.length) return out;
 
-    resetSession();
-    ensureSession();
-    out = chapterCall(comicId, 0);
-    if (out.length) return out;
+        resetSession();
+        ensureSession();
+        out = chapterCall(comicId, 0);
+        if (out.length) return out;
 
-    var off = limit ? parseInt(limit, 10) : latest.length;
-    if (off) {
-        out = chapterCall(comicId, off);
-        if (out.length) return latest.concat(out);
+        markHttpSessionBroken();
     }
-    return [];
+
+    // Mượn WebView. Trả về chuỗi gọn
+    // "so|type,so|type,..." cho khỏi vượt giới hạn callJs với truyện vài nghìn chương.
+    var raw = browserApi(
+        xhrSnippet('GET', '/api/comic/' + comicId + '/chapter?offset=0&limit=-1', '') +
+        'var j=JSON.parse(x.responseText);' +
+        'var a=(j.result&&j.result.chapters)||[];var o=[];' +
+        'for(var i=0;i<a.length;i++){o.push(a[i].numberChapter+"|"+(a[i].type||""));}' +
+        'return o.join(",");'
+    );
+    if (!raw) return [];
+
+    var parts = raw.split(',');
+    var list = [];
+    for (var k = 0; k < parts.length; k++) {
+        var pair = parts[k].split('|');
+        if (pair[0]) list.push({ numberChapter: pair[0], type: pair[1] || '' });
+    }
+    return list;
 }
 
 function execute(url) {

@@ -96,6 +96,52 @@ function resetSession() {
     _sessionReady = false;
 }
 
+// Http của app không giữ nổi cookie thì mọi API cần session đều hỏng như nhau.
+// Biết rồi thì lần sau khỏi thử lại cho tốn request.
+var _httpSessionBroken = false;
+function markHttpSessionBroken() { _httpSessionBroken = true; }
+function httpSessionBroken() { return _httpSessionBroken; }
+
+// ── Đường dự phòng khi Http của Vbook không giữ được cookie ─────────────────
+// Hai API xương sống của nguồn này (/api/comic/{id}/chapter và /api/chapter/loadAll)
+// đòi cookie X-TOKEN (Path=/api). Nếu cookie jar của app không hoạt động thì
+// Http.get/post luôn nhận "Phiên làm việc đã hết hạn" — mục lục tụt về 21 chương
+// và chương không có ảnh. Token đó KHÔNG lộ ở HTML hay body nên plugin không thể
+// tự gửi tay.
+//
+// WebView thì có cookie store riêng và tự quản. Nên mượn nó chạy XHR ĐỒNG BỘ
+// cùng origin: launch một trang nhẹ (/lien-he, 55KB, không dính redirect
+// https->http;usid= như trang chương), rồi gọi API từ trong trang.
+// callJs trả chuỗi nên phía JS phải tự rút gọn dữ liệu trước khi trả về.
+function browserApi(jsBody) {
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        try { browser.setUserAgent(UA); } catch (e1) {}
+        browser.launch(SITE_URL + '/lien-he', 15000);
+
+        var out = browser.callJs('(function(){try{' + jsBody + '}catch(e){return "";}}())');
+
+        browser.close();
+        browser = null;
+        return out ? String(out) : '';
+    } catch (e2) {
+        if (browser) { try { browser.close(); } catch (e3) {} }
+        return '';
+    }
+}
+
+// Đoạn JS dùng lại cho cả GET lẫn POST: XHR đồng bộ, cookie do WebView tự gắn.
+function xhrSnippet(method, path, body) {
+    var js = 'var x=new XMLHttpRequest();' +
+             'x.open("' + method + '","' + path + '",false);';
+    if (method === 'POST') {
+        js += 'x.setRequestHeader("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");';
+    }
+    js += 'x.send(' + (body ? '"' + body + '"' : 'null') + ');';
+    return js;
+}
+
 function apiGet(path) {
     ensureSiteUrl();
     try {
