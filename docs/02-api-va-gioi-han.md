@@ -17,12 +17,12 @@ var s = Http.get(url).headers(HEADERS).string();
 // GET trả về object JSON (dùng ở minotruyen/minohen/minomanga genre.js)
 var j = Http.get(url).headers(HEADERS).json();
 
-// POST form (dùng ở truyenvi/src/search.js)
-var html = Http.post(SITE_URL + "/")
-    .headers(HEADERS)
-    .body("truyen_name=" + encodeURIComponent(key))
-    .contentType("application/x-www-form-urlencoded")
-    .string();
+// POST form — dạng fetch (dùng ở truyenqq/src/search.js, luottruyen/src/toc.js)
+var res = fetch(BASE_URL + "/frontend/search/search", {
+    method: "POST",
+    headers: HEADERS,
+    body: "search=" + encodeURIComponent(key) + "&type=0"
+});
 ```
 
 `headers()` nhận object thường: `{"User-Agent": "...", "Referer": "..."}`.
@@ -53,7 +53,7 @@ return Response.error("Thông báo cho người dùng");
 "Truyện này chưa có chương nào trên X" tốt hơn "error", và tốt hơn hẳn việc trả mảng rỗng
 rồi để người dùng đoán.
 
-Vài plugin cũ `return null` khi lỗi (truyenvi). Vẫn chạy, nhưng `Response.error` rõ hơn — dùng nó.
+Vài plugin cũ `return null` khi lỗi (tcomic, zettruyen). Vẫn chạy, nhưng `Response.error` rõ hơn — dùng nó.
 
 ---
 

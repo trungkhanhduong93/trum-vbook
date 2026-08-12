@@ -23,7 +23,6 @@ def pack_plugin(plugin_name):
     # Change back
     os.chdir('..')
 
-pack_plugin('truyenvi')
 pack_plugin('minotruyen')
 pack_plugin('minomanga')
 pack_plugin('minohen')
