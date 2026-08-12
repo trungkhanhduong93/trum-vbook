@@ -132,12 +132,20 @@ function browserApi(jsBody) {
 }
 
 // Đoạn JS dùng lại cho cả GET lẫn POST: XHR đồng bộ, cookie do WebView tự gắn.
+//
+// Kèm luôn header Authorization nếu có — đây đúng là cách site tự làm
+// (beforeAuth trong /contents/v2/js/common.js đọc localStorage."Authorization").
+// Nghĩa là nếu người dùng đã đăng nhập trong WebView của app (mở "Trang nguồn"
+// rồi đăng nhập Google/Facebook), thì token nằm sẵn ở localStorage cùng origin
+// và các chương bị khoá cũng mở ra. Chưa đăng nhập thì bỏ qua, chạy như khách.
 function xhrSnippet(method, path, body) {
     var js = 'var x=new XMLHttpRequest();' +
              'x.open("' + method + '","' + path + '",false);';
     if (method === 'POST') {
         js += 'x.setRequestHeader("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");';
     }
+    js += 'try{var tk=localStorage.getItem("Authorization");' +
+          'if(tk)x.setRequestHeader("Authorization",tk);}catch(eA){}';
     js += 'x.send(' + (body ? '"' + body + '"' : 'null') + ');';
     return js;
 }

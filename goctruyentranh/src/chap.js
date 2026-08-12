@@ -88,8 +88,12 @@ function execute(url) {
                    '&nameEn=' + encodeURIComponent(nameEn);
 
     var res = null;
-    try {
-        if (!httpSessionBroken()) {
+
+    // try RIÊNG cho đường HTTP: Http.post ném lỗi thì cũng không được cướp mất
+    // nhánh WebView bên dưới (bug này chính là cái làm hiện "lỗi mạng khi gọi API"
+    // trong khi WebView vẫn dùng được — mục lục đi qua nó vẫn chạy).
+    if (!httpSessionBroken()) {
+        try {
             res = loadChapter(postData);
 
             // status:false thường là cookie usid đã hết hạn -> lấy phiên mới, thử lại 1 lần
@@ -98,27 +102,21 @@ function execute(url) {
                 ensureSession();
                 res = loadChapter(postData);
             }
-            if (!res || !res.status) markHttpSessionBroken();
+        } catch (e1) {
+            res = null;
         }
+        if (!res || !res.status) markHttpSessionBroken();
+    }
 
-        // Http không giữ được cookie -> mượn WebView gọi hộ.
-        if (!res || !res.status) {
-            var raw = browserApi(
-                xhrSnippet('POST', '/api/chapter/loadAll', postData) +
-                'return x.responseText;'
-            );
-            if (raw) {
-                try { res = JSON.parse(raw); } catch (eb) {}
-            }
+    // Http không giữ được cookie -> mượn WebView gọi hộ.
+    if (!res || !res.status) {
+        var raw = browserApi(
+            xhrSnippet('POST', '/api/chapter/loadAll', postData) +
+            'return x.responseText;'
+        );
+        if (raw) {
+            try { res = JSON.parse(raw); } catch (eb) { res = null; }
         }
-    } catch (e) {
-        return Response.success(noticeImage([
-            '[GTT-NET] Loi mang khi goi API',
-            'chuong ' + chapNum,
-            '',
-            'Kiem tra ket noi hoac doi DNS',
-            've 1.1.1.1 roi thu lai.'
-        ]));
     }
 
     if (!res || !res.status || !res.result) {
@@ -138,10 +136,14 @@ function execute(url) {
     if (r.codeState === '01') {
         return Response.success(noticeImage([
             'Chuong ' + chapNum + ' can dang nhap',
-            'Site khoa mot so chuong le',
-            'Cac chuong khac van doc binh thuong',
-            'Trong muc luc, chuong nao doc duoc',
-            'thi khong ghi "can dang nhap"'
+            '',
+            'Cach mo: bam menu ... o goc phai',
+            'chon "Trang nguon", dang nhap',
+            'Google ngay trong trang do,',
+            'roi quay lai doc.',
+            '',
+            'Chuong khong ghi "khoa" trong',
+            'muc luc thi doc duoc ngay.'
         ]));
     }
     if (r.codeState === '02') {
@@ -181,7 +183,7 @@ function execute(url) {
     // "plugin không lấy được ảnh" với "plugin lấy được nhưng app không tải nổi".
     // Thấy dải này mà bên dưới trống = app bị chặn ở khâu tải ảnh, không phải
     // lỗi plugin.
-    var images = [noticeUrl('900x120', ['v15 - lay duoc ' + imgs.length + ' anh'])];
+    var images = [noticeUrl('900x120', ['v16 - lay duoc ' + imgs.length + ' anh'])];
 
     for (var i = 0; i < imgs.length; i++) {
         var imgUrl = siteImage(imgs[i]);
