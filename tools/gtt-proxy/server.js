@@ -152,7 +152,9 @@ app.get('/api/proxy/v2/search', async (req, res) => {
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  await solveCloudflareSession();
+  if (!process.env.COOKIE_OVERRIDE) {
+    await solveCloudflareSession();
+  }
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/v2/search`, {
       params: req.query,
@@ -172,7 +174,9 @@ app.get('/api/proxy/comic/:slug', async (req, res) => {
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  await solveCloudflareSession();
+  if (!process.env.COOKIE_OVERRIDE) {
+    await solveCloudflareSession();
+  }
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/comic/${slug}`, {
       headers: getHeaders(),
@@ -186,7 +190,9 @@ app.get('/api/proxy/comic/:slug', async (req, res) => {
 });
 
 app.get('/api/proxy/comic/search', async (req, res) => {
-  await solveCloudflareSession();
+  if (!process.env.COOKIE_OVERRIDE) {
+    await solveCloudflareSession();
+  }
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/comic/search`, {
       params: req.query,
@@ -205,7 +211,9 @@ app.get('/api/proxy/comic/:id/chapter', async (req, res) => {
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  await solveCloudflareSession();
+  if (!process.env.COOKIE_OVERRIDE) {
+    await solveCloudflareSession();
+  }
   try {
     const apiRes = await axios.get(`${BASE_URL}/api/comic/${id}/chapter`, {
       params: req.query,
@@ -225,7 +233,9 @@ app.post('/api/proxy/chapter/loadAll', async (req, res) => {
   const cached = getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  await solveCloudflareSession();
+  if (!process.env.COOKIE_OVERRIDE) {
+    await solveCloudflareSession();
+  }
   try {
     const postData = new URLSearchParams({ comicId, chapterNumber, nameEn }).toString();
     const apiRes = await axios.post(`${BASE_URL}/api/chapter/loadAll`, postData, {
