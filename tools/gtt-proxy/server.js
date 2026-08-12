@@ -163,7 +163,12 @@ app.get('/api/proxy/v2/search', async (req, res) => {
     setCache(cacheKey, apiRes.data);
     res.json(apiRes.data);
   } catch (err) {
-    res.status(500).json({ status: false, message: err.message });
+    const errData = err.response ? err.response.data : null;
+    res.status(500).json({
+      status: false,
+      message: err.message,
+      detail: typeof errData === 'string' ? errData.substring(0, 300) : errData
+    });
   }
 });
 
