@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "GocTruyenTranh",
+    "author": "tkd1793",
+    "version": 19,
+    "source": "https://goctruyentranhvui41.com",
+    "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
+    "description": "Đọc truyện trên trang Góc Truyện Tranh (Micro-Proxy Fast Server)",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}
