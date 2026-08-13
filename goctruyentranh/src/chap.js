@@ -160,8 +160,13 @@ function execute(url) {
 
         // Cloudflare chặn ngay trong WebView → người dùng phải tự tick xác minh
         // một lần trong app; phiên đó nằm lại cookie jar cho lần sau.
+        // Vé Cloudflare gắn theo IP nên đổi mạng (4G ↔ wifi) là phải xác minh lại
+        // — bình thường, không phải plugin hỏng.
+        // TẮT CHẶN QUẢNG CÁO là bước quan trọng nhất và dễ quên nhất: bộ chặn của
+        // VBook chặn luôn tài nguyên challenges.cloudflare.com nên ô xác minh
+        // quay vô tận, tick bao nhiêu lần cũng không xong (13/08/2026).
         if (b && b.err === 'CFWALL') {
-            return Response.error('[GTT-CF] Cloudflare chặn. Mở trang nguồn → tick xác minh → đăng nhập Gmail ngay trong app.');
+            return Response.error('[GTT-CF] Cloudflare chặn. Mở trang nguồn → TẮT CHẶN QUẢNG CÁO → tick xác minh → đăng nhập Gmail, tất cả ngay trong app.');
         }
 
         return Response.error('[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + '] Chương ' + chapNum +
