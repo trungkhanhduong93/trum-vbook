@@ -1,0 +1,66 @@
+load('config.js');
+
+// /api/comic/{slug} chỉ trả 21 chương mới nhất (result.limit=21, server hardcode).
+// Phần còn lại nằm ở /api/comic/{comicId}/chapter?offset={limit}&limit=-1
+// — offset PHẢI bằng result.limit; để offset=0 thì trả rỗng.
+function fetchRest(comicId, offset) {
+    var json = siteGet('/api/comic/' + comicId + '/chapter?offset=' + offset + '&limit=-1');
+    if (json && json.result && json.result.chapters && json.result.chapters.length) {
+        return json.result.chapters;
+    }
+    return [];
+}
+
+function execute(url) {
+    var slug = comicSlug(url);
+    if (!slug) return Response.error('URL truyện không hợp lệ.');
+
+    primeSession();
+
+    var json = siteGet('/api/comic/' + slug);
+    if (!json || !json.result) return Response.error('Không tải được mục lục truyện.');
+
+    var result = json.result;
+    var latest = result.chapters || [];
+    var limit = result.limit ? parseInt(result.limit, 10) : latest.length;
+
+    var all = [];
+    var i;
+    for (i = 0; i < latest.length; i++) all.push(latest[i]);
+
+    var rest = fetchRest(String(result.id), limit);
+    for (i = 0; i < rest.length; i++) all.push(rest[i]);
+
+    if (!all.length) return Response.error('Truyện chưa có chương nào.');
+
+    // Gộp theo số chương, ghi nhận chương bị khoá (site đánh dấu type=TRIPLE)
+    var locked = {};
+    var nums = [];
+    var seen = {};
+    for (i = 0; i < all.length; i++) {
+        var cNum = String(all[i].numberChapter || '').trim();
+        if (!cNum || seen[cNum]) continue;
+        seen[cNum] = true;
+        nums.push(cNum);
+        if (String(all[i].type || '') === 'TRIPLE') locked[cNum] = true;
+    }
+
+    nums.sort(function (a, b) {
+        var na = parseFloat(a), nb = parseFloat(b);
+        if (isNaN(na) && isNaN(nb)) return 0;
+        if (isNaN(na)) return 1;
+        if (isNaN(nb)) return -1;
+        return na - nb;
+    });
+
+    var list = [];
+    for (i = 0; i < nums.length; i++) {
+        list.push({
+            name: 'Chương ' + nums[i] + (locked[nums[i]] ? ' 🔒' : ''),
+            url: SITE_URL + '/truyen/' + slug + '/chuong-' + nums[i],
+            host: HOST
+        });
+    }
+
+    return Response.success(list);
+}
