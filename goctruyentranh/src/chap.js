@@ -33,31 +33,40 @@ function loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        // KHÔNG setUserAgent: đổi UA giữa chừng có nguy cơ mất phiên đăng nhập
-        browser.launch(pageUrl, 12);
+        // KHÔNG setUserAgent: đổi UA giữa chừng có nguy cơ mất phiên đăng nhập.
+        // Mở /lien-he chứ KHÔNG mở trang chương: cùng origin nên XHR chạy được,
+        // mà trang nhẹ (55KB), không có JS trình đọc, không dính redirect
+        // `;usid=` của trang chương — đúng cách v15 từng né được vòng lặp xác minh.
+        browser.launch(SITE_URL + '/lien-he', 12);
 
         var body = 'comicId=' + encodeURIComponent(comicId) +
                    '&chapterNumber=' + encodeURIComponent(chapNum) +
                    '&nameEn=' + encodeURIComponent(nameEn);
 
+        // XHR ĐỒNG BỘ: callJs trả về là browser.html() bị đọc ngay. Dùng async thì
+        // đó là cuộc đua — mạng chậm hơn cửa sổ chờ là body chưa kịp có gì,
+        // và "chưa kịp" không phân biệt được với "site từ chối" (ca NO_SENTINEL).
         var js = '' +
             '(function(){' +
-            '  var mark=function(s){document.body.innerHTML="GTTSTART"+s+"GTTEND";};' +
+            '  var mark=function(s){try{document.body.innerHTML="GTTSTART"+s+"GTTEND";}catch(e){}};' +
             '  var tk=null; try{tk=localStorage.getItem("Authorization");}catch(e){}' +
             '  var has=tk?"1":"0";' +
+            '  var t=(document.title||"")+" "+(document.body?document.body.className:"");' +
+            '  if(/just a moment|attention required|checking your browser|cf-chl|challenge/i.test(t)){' +
+            '    mark(has+"|CFWALL|"+t.substring(0,60)); return;' +
+            '  }' +
             '  try{' +
             '    var x=new XMLHttpRequest();' +
-            '    x.open("POST","/api/chapter/loadAll",true);' +
+            '    x.open("POST","/api/chapter/loadAll",false);' +
             '    x.setRequestHeader("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");' +
             '    x.setRequestHeader("X-Requested-With","XMLHttpRequest");' +
             '    if(tk){x.setRequestHeader("Authorization",tk);}' +
-            '    x.onload=function(){mark(has+"|OK|"+x.responseText);};' +
-            '    x.onerror=function(){mark(has+"|NET|loi mang trong webview");};' +
             '    x.send(' + JSON.stringify(body) + ');' +
-            '  }catch(e){mark(has+"|EXC|"+e.message);}' +
+            '    mark(has+"|"+(x.status===200?"OK":("HTTP"+x.status))+"|"+x.responseText);' +
+            '  }catch(e){mark(has+"|EXC|"+(e&&e.message?e.message:"loi khong ro"));}' +
             '})();';
 
-        browser.callJs(js, 8000);
+        browser.callJs(js, 10000);
         var doc = browser.html();
         browser.close();
         browser = null;
@@ -66,7 +75,16 @@ function loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn) {
 
         var text = doc.select('body').text();
         var m = String(text).match(/GTTSTART([\s\S]*?)GTTEND/);
-        if (!m) return { err: 'NO_SENTINEL' };
+        if (!m) {
+            // Không có sentinel = callJs không chạy được, hoặc trang bị thay bằng
+            // tường xác minh. Đọc title để phân biệt thay vì báo chung chung.
+            var ttl = '';
+            try { ttl = doc.select('title').text(); } catch (e) {}
+            if (/just a moment|attention required|checking your browser/i.test(String(ttl))) {
+                return { err: 'CFWALL', detail: ttl };
+            }
+            return { err: 'NO_SENTINEL', detail: String(ttl).substring(0, 40) };
+        }
 
         var payload = m[1];
         var p1 = payload.indexOf('|');
@@ -162,12 +180,26 @@ function execute(url) {
             }
         }
 
+        // Cloudflare chặn ngay trong WebView → người dùng phải tự bấm xác minh
+        // một lần trong app; phiên đó nằm lại cookie jar cho lần sau.
+        if (b && b.err === 'CFWALL') {
+            return Response.success(noticeImage([
+                'Cloudflare chan',
+                '',
+                'Bam "trang nguon",',
+                'tick xac minh + dang nhap',
+                'Gmail NGAY TRONG APP,',
+                'roi quay lai chuong nay.'
+            ]));
+        }
+
         return Response.success(noticeImage([
             '[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + ']',
-            'Chuong ' + chapNum + ' khong tai duoc',
-            '', (b && b.hasToken === false)
-                    ? 'WebView chua dang nhap Gmail.'
-                    : 'Thu mo "trang nguon" mot lan.'
+            'Chuong ' + chapNum + ' loi',
+            '',
+            (b && b.hasToken === false)
+                ? 'Chua dang nhap trong app'
+                : 'Mo "trang nguon" 1 lan'
         ]));
     }
 
