@@ -1,18 +1,12 @@
 load('config.js');
 
-// Ảnh thông báo — VBook nuốt Response.error của chap.js rồi tự hiện câu
-// "bấm trang nguồn để xác minh bạn là con người", làm 3 vòng chẩn đoán trước
-// đổ nhầm cho Cloudflare. Trả lý do thật thành ảnh để đọc được trên màn hình.
-function noticeImage(lines) {
-    var text = '';
-    for (var i = 0; i < lines.length; i++) {
-        text += (i ? '\n' : '') + lines[i];
-    }
-    return [
-        'https://placehold.co/900x1300/111827/f9fafb/png?font=roboto&text=' +
-        encodeURIComponent(text)
-    ];
-}
+// LƯU Ý cho lần sửa sau: v11–v23 từng trả lý do lỗi thành ẢNH thông báo
+// (Response.success + placehold.co) để né việc VBook nuốt Response.error rồi
+// tự hiện câu "bấm trang nguồn để xác minh bạn là con người".
+// Đó là sai lầm: success = VBook tưởng chương tải xong → KHÔNG hiện nút
+// "trang nguồn" → người dùng đọc được lý do nhưng MẤT ĐƯỜNG THOÁT, trong khi
+// chính cái nút đó là chỗ duy nhất để tick xác minh và đăng nhập Gmail.
+// Mọi nhánh hỏng phải dùng Response.error, kể cả khi thông báo bị thay.
 
 function imagesFrom(result) {
     if (!result || !result.data || !result.data.length) return null;
@@ -122,11 +116,7 @@ function execute(url) {
 
     var detail = siteGet('/api/comic/' + slug);
     if (!detail || !detail.result || !detail.result.id) {
-        return Response.success(noticeImage([
-            '[GTT-DETAIL] Khong lay duoc',
-            'thong tin truyen',
-            '', slug
-        ]));
+        return Response.error('[GTT-DETAIL] Không lấy được thông tin truyện (' + slug + ').');
     }
     var comicId = String(detail.result.id);
     var nameEn = detail.result.nameEn ? String(detail.result.nameEn) : slug;
@@ -157,58 +147,29 @@ function execute(url) {
                 if (bimgs) return Response.success(bimgs);
             }
             if (br.codeState === '01') {
-                return Response.success(noticeImage(
-                    b.hasToken
-                        ? ['Chuong ' + chapNum + ' bi khoa',
-                           '', 'Da dang nhap nhung site van',
-                           'tu choi — co the het luot doc',
-                           'hoac tai khoan chua du quyen.']
-                        : ['Chuong ' + chapNum + ' can dang nhap',
-                           '', 'Bam "trang nguon", dang nhap',
-                           'Gmail NGAY TRONG APP,',
-                           'roi mo lai chuong nay.',
-                           '', '(Dang nhap bang Chrome ngoai',
-                           'app khong dung duoc)']
-                ));
+                return Response.error(b.hasToken
+                    ? '[GTT-01] Chương ' + chapNum + ': đã đăng nhập nhưng site vẫn từ chối (hết lượt đọc hoặc tài khoản chưa đủ quyền).'
+                    : '[GTT-01] Chương ' + chapNum + ' cần đăng nhập. Mở trang nguồn → đăng nhập Gmail ngay trong app.');
             }
             if (br.codeState === '02') {
-                return Response.success(noticeImage([
-                    '[GTT-02] Het luot doc mien phi',
-                    '', 'Cho reset hoac dung tai khoan',
-                    'co quyen doc chuong nay.'
-                ]));
+                return Response.error('[GTT-02] Hết lượt đọc miễn phí cho chương ' + chapNum + '.');
             }
         }
 
-        // Cloudflare chặn ngay trong WebView → người dùng phải tự bấm xác minh
+        // Cloudflare chặn ngay trong WebView → người dùng phải tự tick xác minh
         // một lần trong app; phiên đó nằm lại cookie jar cho lần sau.
         if (b && b.err === 'CFWALL') {
-            return Response.success(noticeImage([
-                'Cloudflare chan',
-                '',
-                'Bam "trang nguon",',
-                'tick xac minh + dang nhap',
-                'Gmail NGAY TRONG APP,',
-                'roi quay lai chuong nay.'
-            ]));
+            return Response.error('[GTT-CF] Cloudflare chặn. Mở trang nguồn → tick xác minh → đăng nhập Gmail ngay trong app.');
         }
 
-        return Response.success(noticeImage([
-            '[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + ']',
-            'Chuong ' + chapNum + ' loi',
-            '',
-            (b && b.hasToken === false)
-                ? 'Chua dang nhap trong app'
-                : 'Mo "trang nguon" 1 lan'
-        ]));
+        return Response.error('[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + '] Chương ' + chapNum +
+            (b && b.hasToken === false ? ': WebView chưa đăng nhập.' : ': mở trang nguồn một lần.') +
+            (b && b.detail ? ' (' + String(b.detail).substring(0, 40) + ')' : ''));
     }
 
     if (r && r.codeState === '02') {
-        return Response.success(noticeImage(['[GTT-02] Het luot doc mien phi']));
+        return Response.error('[GTT-02] Hết lượt đọc miễn phí cho chương ' + chapNum + '.');
     }
 
-    return Response.success(noticeImage([
-        '[GTT-EMPTY] Chuong ' + chapNum,
-        'chua co anh tren site.'
-    ]));
+    return Response.error('[GTT-EMPTY] Chương ' + chapNum + ' chưa có ảnh trên site.');
 }
