@@ -1,6 +1,8 @@
 load('config.js');
 
 function execute(url) {
+    syncBaseFromUrl(url);
+
     var slug = comicSlug(url);
     if (!slug) return Response.error('Không nhận được đường dẫn truyện.');
 

@@ -10,6 +10,61 @@ var SITE_URL = 'https://goctruyentranhvui41.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
+// ─── Đổi domain ───────────────────────────────────────────────
+// Site xoay số domain (…vui40 chết, 41 và 42 đang sống, 43+ chưa mở).
+// Mọi mirror goctruyentranhvui* dùng CHUNG backend — đã đối chiếu comicId
+// giữa vui41 và vui42 ra cùng một giá trị. `goctruyentranhvui.com` (không số)
+// KHÔNG dùng được: /api trả 404.
+function gttOrigin(url) {
+    if (!url) return null;
+    var m = String(url).match(/^https?:\/\/(goctruyentranhvui\d*\.com)/i);
+    return m ? 'https://' + m[1].toLowerCase() : null;
+}
+
+function setBase(origin) {
+    if (!origin) return;
+    SITE_URL = origin;
+    HOST = origin;
+}
+
+// Lấy domain ngay từ URL người dùng đang xem — 0 request, luôn khớp.
+function syncBaseFromUrl(url) {
+    var o = gttOrigin(url);
+    if (o && o !== SITE_URL) setBase(o);
+}
+
+var __GTT_PROBED = false;
+
+// Chỉ gọi khi request THẬT SỰ không ra gì (mất mạng / domain chết).
+// KHÔNG gọi khi chỉ là lỗi phiên hay bị chặn — bài học luottruyen: rà domain
+// nhầm lúc là nổ hàng chục request timeout trước khi báo lỗi.
+function probeDomain() {
+    if (__GTT_PROBED) return false;
+    __GTT_PROBED = true;
+
+    var cur = 41;
+    var m = String(SITE_URL).match(/goctruyentranhvui(\d+)\.com/i);
+    if (m) cur = parseInt(m[1], 10);
+
+    // thử quanh số hiện tại, gần trước xa sau — dừng ngay khi trúng
+    var order = [cur + 1, cur + 2, cur - 1, cur + 3, cur - 2];
+    for (var i = 0; i < order.length; i++) {
+        var n = order[i];
+        if (n < 30 || n > 99 || n === cur) continue;
+        var cand = 'https://goctruyentranhvui' + n + '.com';
+        try {
+            var s = Http.get(cand + '/api/v2/search?p=0')
+                .headers({ 'User-Agent': UA, 'Accept': 'application/json', 'Referer': cand + '/' })
+                .string();
+            if (s && s.indexOf('"status":true') >= 0) {
+                setBase(cand);
+                return true;
+            }
+        } catch (e) {}
+    }
+    return false;
+}
+
 function HEADERS() {
     return {
         'User-Agent': UA,
@@ -44,13 +99,21 @@ function primeSession() {
 
 // ─── Gọi API site ─────────────────────────────────────────────
 function siteGet(path) {
+    var s = null;
     try {
-        var s = Http.get(SITE_URL + path).headers(HEADERS()).string();
-        if (!s) return null;
-        return JSON.parse(s);
-    } catch (e) {
-        return null;
+        s = Http.get(SITE_URL + path).headers(HEADERS()).string();
+    } catch (e) {}
+
+    // Không ra gì = domain có thể đã đổi số → dò một lần rồi gọi lại.
+    // Có trả về (kể cả JSON báo lỗi phiên) nghĩa là domain còn sống → đừng dò.
+    if (!s) {
+        if (probeDomain()) {
+            try { s = Http.get(SITE_URL + path).headers(HEADERS()).string(); } catch (e2) {}
+        }
     }
+    if (!s) return null;
+
+    try { return JSON.parse(s); } catch (e3) { return null; }
 }
 
 function sitePost(path, bodyStr, referer) {
@@ -65,6 +128,48 @@ function sitePost(path, bodyStr, referer) {
     } catch (e) {
         return null;
     }
+}
+
+// ─── Gọi API TỪ BÊN TRONG WebView ─────────────────────────────
+// Cần khi cookie jar của Http client không mang được `X-TOKEN` (cookie này
+// Path=/api, Secure, HttpOnly — bản v17 cũ đã từng hỏng đúng vì mất nó).
+// Trong WebView thì trình duyệt tự gửi, khỏi phải đọc ra (mà HttpOnly cũng
+// không đọc ra được bằng JS).
+// XHR ĐỒNG BỘ: callJs trả về là html() bị đọc ngay — async là một cuộc đua.
+function browserGetJson(path) {
+    var browser = null;
+    try {
+        browser = Engine.newBrowser();
+        // KHÔNG setUserAgent — đổi UA giữa chừng có nguy cơ mất phiên đăng nhập
+        browser.launch(SITE_URL + '/lien-he', 12);
+
+        var js = '' +
+            '(function(){' +
+            '  var mark=function(s){try{document.body.innerHTML="GTTSTART"+s+"GTTEND";}catch(e){}};' +
+            '  try{' +
+            '    var x=new XMLHttpRequest();' +
+            '    x.open("GET",' + JSON.stringify(path) + ',false);' +
+            '    x.setRequestHeader("X-Requested-With","XMLHttpRequest");' +
+            '    var tk=null; try{tk=localStorage.getItem("Authorization");}catch(e){}' +
+            '    if(tk){x.setRequestHeader("Authorization",tk);}' +
+            '    x.send(null);' +
+            '    mark(x.status===200?x.responseText:("ERR"+x.status));' +
+            '  }catch(e){mark("ERR_EXC");}' +
+            '})();';
+
+        browser.callJs(js, 10000);
+        var doc = browser.html();
+        browser.close();
+        browser = null;
+        if (!doc) return null;
+
+        var m = String(doc.select('body').text()).match(/GTTSTART([\s\S]*?)GTTEND/);
+        if (!m || m[1].indexOf('ERR') === 0) return null;
+        try { return JSON.parse(m[1]); } catch (e) { return null; }
+    } catch (e) {
+        if (browser) { try { browser.close(); } catch (err) {} }
+    }
+    return null;
 }
 
 // ─── Helper ───────────────────────────────────────────────────

@@ -104,6 +104,8 @@ function loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn) {
 }
 
 function execute(url) {
+    syncBaseFromUrl(url);
+
     var sUrl = String(url);
     var slug = comicSlug(sUrl);
     if (!slug) return Response.error('URL chương không hợp lệ.');
