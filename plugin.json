@@ -31,12 +31,12 @@
     {
       "name": "LuotTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=28",
-      "version": 28,
-      "source": "https://luottruyen16.com",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=29",
+      "version": 29,
+      "source": "https://luottruyen17.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",
-      "description": "LÆ°á»›t Truyá»‡n - Äá»c truyá»‡n tranh online",
+      "description": "Lướt Truyện - Đọc truyện tranh online",
       "type": "comic",
       "locale": "vi_VN"
     },

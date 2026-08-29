@@ -88,7 +88,7 @@ function isLoginWall(doc) {
 
 // fetchRetry() trả về Response chứ không phải Document → phải .html().
 // Không dùng fetchRetry ở đây: tường đăng nhập làm res.ok = false, kéo theo
-// autoProbeDomains() rà 16 domain chết (mỗi domain timeout vài giây) vô ích.
+// autoProbeDomains() rà một loạt domain chết (mỗi domain timeout vài giây) vô ích.
 // Chỉ rà domain khi thật sự không lấy nổi HTML nào về.
 function fetchChapterDoc(url) {
     var doc = null;

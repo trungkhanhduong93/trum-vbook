@@ -66,6 +66,24 @@ function execute(url) {
     var description = "";
     var descEl = selFirst(doc, "div.detail-content p#summary");
     if (descEl) description = descEl.text().trim();
+
+    // Site trả HTML sai: <p id="summary"> bọc các <p> con. Jsoup theo chuẩn
+    // HTML5 tự đóng thẻ p khi gặp p lồng → #summary rỗng, phần giới thiệu rơi
+    // ra thành <p> anh em. Lấy cả khối .detail-content rồi cắt tiêu đề đầu.
+    if (!description) {
+        var descBox = selFirst(doc, "div.detail-content");
+        if (descBox) {
+            description = descBox.text().trim();
+            var descHead = selFirst(descBox, "h3.list-title");
+            if (descHead) {
+                var headText = descHead.text().trim();
+                if (headText && description.indexOf(headText) === 0) {
+                    description = description.substring(headText.length).trim();
+                }
+            }
+        }
+    }
+
     if (!description || description === "Updating") {
         description = "";
     }

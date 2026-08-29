@@ -1,7 +1,8 @@
 // ─── Domain (tự dò khi luottruyen đổi link) ─────────────────────────
-// luottruyen16.com là domain mặc định mới. Khi link bị đổi/không truy
-// cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ 16->17->18->19...
-var DEFAULT_BASE = "https://luottruyen16.com";
+// luottruyen17.com là domain mặc định mới (30/08/2026 — luottruyen16.com
+// đã chết nhưng DNS vẫn phân giải nên fetch treo ~15s). Khi link bị đổi/
+// không truy cập được, autoProbeDomains() rà tăng dần 18->19->20...
+var DEFAULT_BASE = "https://luottruyen17.com";
 var REDIRECTOR = "https://luottruyen.com";
 
 var BASE_URL = DEFAULT_BASE;
@@ -43,9 +44,9 @@ function syncBaseFromUrl(url) {
 
 // Trích xuất số domain từ URL hoặc origin (vd luottruyen16.com -> 16)
 function extractDomainNumber(originOrUrl) {
-    if (!originOrUrl) return 16;
+    if (!originOrUrl) return 17;
     var m = String(originOrUrl).match(/luottruyen(\d+)\.com/i);
-    return m ? parseInt(m[1], 10) : 16;
+    return m ? parseInt(m[1], 10) : 17;
 }
 
 // Thay thế domain luottruyenXX.com trong URL thành targetDomain
@@ -57,18 +58,13 @@ function swapDomainTo(url, targetDomain) {
     return String(url).replace(/^(https?:\/\/)luottruyen\d*\.com/i, targetDomain);
 }
 
-// Tự dò domain thật qua redirector luottruyen.com
+// Tự dò domain thật qua redirector luottruyen.com.
+// Chỉ được gọi từ nhánh cứu hộ (domain hiện hành đã hỏng) nên KHÔNG lấy
+// CONFIG_URL nữa: nó chính là domain vừa chết. __LT_RESOLVED giữ cho mỗi
+// lần chạy script chỉ tốn 1 lượt redirector (~5s).
 function resolveBaseUrl() {
     if (__LT_RESOLVED) return;
     __LT_RESOLVED = true;
-
-    try {
-        if (typeof CONFIG_URL !== "undefined" && CONFIG_URL) {
-            var co = luotOrigin(CONFIG_URL) || String(CONFIG_URL).replace(/\/+$/, "");
-            setBase(co);
-            return;
-        }
-    } catch (e) {}
 
     try {
         var res = fetch(REDIRECTOR + "/", FETCH_OPTIONS);
@@ -96,12 +92,18 @@ function resolveBaseUrl() {
     } catch (e) {}
 }
 
-// Tự rà soát lũy tiến các link luottruyen16.com, luottruyen17.com, 18, 19...
-// khi link hiện tại không truy cập được.
+// Rà soát lũy tiến luottruyen18.com, 19, 20... khi domain hiện hành hỏng.
+// Hết dải số thì quay sang redirector luottruyen.com.
 function autoProbeDomains(url) {
-    var startNum = extractDomainNumber(BASE_URL);
-    if (startNum < 16) startNum = 16;
-    var maxNum = startNum + 15; // Rà soát đến 15 số tiếp theo (vd 16 -> 31)
+    // Domain hiện hành vừa fetch hỏng → dò từ số KẾ TIẾP. Dò lại chính nó là
+    // vô ích và rất đắt: domain chết mà DNS còn phân giải thì treo ~15s/lần.
+    var failedNum = extractDomainNumber(BASE_URL);
+    if (failedNum < 16) failedNum = 16;
+    var startNum = failedNum + 1;
+    // Chỉ nhìn trước 5 số: nguồn xưa nay nhảy từng bậc một (8→10→11→16→17).
+    // Dò rộng hơn chỉ tổ đốt thời gian ở ca mục lục rỗng thật (toc.js) —
+    // trường hợp nhảy xa đã có redirector ở dưới lo.
+    var maxNum = startNum + 4;
 
     for (var n = startNum; n <= maxNum; n++) {
         var targetDomain = "https://luottruyen" + n + ".com";
@@ -126,7 +128,8 @@ function autoProbeDomains(url) {
         } catch (e) {}
     }
 
-    // Secondary fallback: thử qua redirector luottruyen.com
+    // Secondary fallback: thử qua redirector luottruyen.com (~5s nhưng luôn
+    // trả đúng domain hiện hành, kể cả khi nguồn nhảy sang tên không đánh số)
     try {
         resolveBaseUrl();
         var resRedir = fetch(swapDomain(url), FETCH_OPTIONS);
@@ -160,7 +163,7 @@ function fetchRetry(url) {
     var res = fetch(url, FETCH_OPTIONS);
     if (res && res.ok) return res;
 
-    // Link không truy cập được / lỗi → tự động rà soát qua luottruyen11, 12, 13, 14...
+    // Link không truy cập được / lỗi → rà soát domain kế tiếp rồi tới redirector
     var probedRes = autoProbeDomains(url);
     if (probedRes) return probedRes;
 

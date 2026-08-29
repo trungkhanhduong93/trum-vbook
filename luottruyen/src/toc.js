@@ -5,17 +5,19 @@ function execute(url) {
     // StoryID nằm cuối URL: /truyen-tranh/ten-truyen-12345 -> "12345"
     var storyId = url.replace(/\/$/, "").split("-").pop();
 
-    // 1) POST API (nhanh nhất, như Tachiyomi)
+    // 1) POST API (nhanh nhất, như Tachiyomi). null = API hỏng, [] = API sống
+    //    nhưng truyện chưa có chương nào.
     var chapters = tocViaApi(url, storyId);
 
-    // 2) Rỗng → nguồn có thể vừa đổi domain → auto probe rồi gọi lại đúng domain
-    if (chapters.length === 0) {
+    // 2) Chỉ dò lại domain khi API HỎNG THẬT. Mảng rỗng không phải dấu hiệu đổi
+    //    domain — dò lúc đó chỉ tốn thêm vài giây rồi vẫn rỗng như cũ.
+    if (chapters === null) {
         autoProbeDomains(url);
         chapters = tocViaApi(swapDomainTo(url, BASE_URL), storyId);
     }
 
     // 3) Vẫn rỗng → render bằng trình duyệt (danh sách chương nạp qua AJAX)
-    if (chapters.length === 0) {
+    if (!chapters || chapters.length === 0) {
         return tocViaBrowser(swapDomain(url));
     }
 
@@ -24,7 +26,8 @@ function execute(url) {
     return Response.success(chapters);
 }
 
-// Gọi POST API ListChapterByStoryID, trả về mảng chương (newest-first)
+// Gọi POST API ListChapterByStoryID.
+// Trả về mảng chương (newest-first), hoặc null khi chính request hỏng.
 function tocViaApi(refererUrl, storyId) {
     var apiUrl = BASE_URL + "/Story/ListChapterByStoryID";
     var res = fetch(apiUrl, {
@@ -38,9 +41,9 @@ function tocViaApi(refererUrl, storyId) {
         },
         body: "StoryID=" + storyId
     });
-    if (!res || !res.ok) return [];
+    if (!res || !res.ok) return null;
     var doc = res.html();
-    if (!doc) return [];
+    if (!doc) return null;
     return parseChapterList(doc);
 }
 
