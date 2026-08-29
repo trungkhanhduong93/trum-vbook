@@ -281,7 +281,7 @@ G. 200 nhưng rỗng                      —                    báo lỗi tử
 
 | Từng làm | Vì sao bỏ |
 |---|---|
-| Proxy ảnh qua `wsrv.nl` / Photon | Gãy ảnh trong app. Đã thêm-gỡ **2 lần** vì "đo thấy nhanh hơn ở máy dev". Số đo ở máy dev không đại diện cho image loader của app |
+| Proxy ảnh qua `wsrv.nl` / Photon | Gãy ảnh trong app. Đã thêm-gỡ **2 lần** vì "đo thấy nhanh hơn ở máy dev". Số đo ở máy dev không đại diện cho image loader của app. **Ngoại lệ đã tách bạch (v30, 30/08/2026):** nén ảnh **bìa** qua `/cdn-cgi/image/width=240,quality=72/` — đường này nằm trên **chính host `img*.dichvucdn.com`**, không thêm host lạ, nên không dính kiểu hỏng trên. 9,38 MB → 1,09 MB mỗi trang danh sách, 54/54 ảnh trả 200. Ảnh **chương** vẫn trả URL trần, không đụng |
 | Nối `|Referer=` vào URL ảnh | Vbook engine không nhận; trả URL trần |
 | Browser trong `detail.js` để mồi cookie Cloudflare | Nguồn này không có challenge — tốn 10s mỗi lần mở truyện. Đã gỡ ở v21 |
 | Nén ảnh WebP q80/q85 qua weserv | Revert 30/05/2026, cùng lý do với proxy |
