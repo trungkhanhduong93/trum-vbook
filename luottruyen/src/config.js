@@ -170,6 +170,23 @@ function fetchRetry(url) {
     return res;
 }
 
+// ─── Ảnh bìa: nén qua Cloudflare Image Resizing của CHÍNH CDN nguồn ─
+// img*.dichvucdn.com trả ảnh bìa rất nặng và rất không đều — đo 30/08/2026
+// trên 8 bìa thật: 20 KB đến 935 KB, một trang 54 truyện ≈ 8,6 MB. CDN này
+// đang bật /cdn-cgi/image/ nên thu về 240px + q72 ngay trên CÙNG HOST đó
+// (≈1,09 MB/trang). Cùng host là điểm mấu chốt: proxy weserv/Photon từng làm
+// gãy ảnh nguồn này 2 lần vì kéo host lạ vào — xem docs/06 mục 8.
+// Cloudflare KHÔNG phóng to ảnh nhỏ hơn 240px (đã đo: bìa 190px trả nguyên).
+var THUMB_OPTS = "width=240,quality=72";
+
+function thumbUrl(url) {
+    if (!url) return url;
+    if (url.indexOf("/cdn-cgi/image/") >= 0) return url;
+    var m = String(url).match(/^https:\/\/(img\d*\.dichvucdn\.com)\/(.+)$/i);
+    if (!m) return url;
+    return "https://" + m[1] + "/cdn-cgi/image/" + THUMB_OPTS + "/" + m[2];
+}
+
 // ─── Parse story cards from listing pages ──────────────────────────
 // Structure: div.items > div.row > div.item > figure
 //   .image > a > img  (cover)
@@ -197,6 +214,7 @@ function parseItems(doc) {
             if (cover && cover.indexOf("http") !== 0) {
                 cover = resolveUrl(cover);
             }
+            cover = thumbUrl(cover);
         }
 
         // Status (Full badge or default "Đang Ra")
