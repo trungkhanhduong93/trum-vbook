@@ -19,6 +19,28 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 
 ---
 
+
+## Ca kiểm ảnh phải TẢI THẬT, không chỉ nhìn URL
+
+Kiểm `chap.js` mà chỉ khẳng định "URL tuyệt đối, không có `|Referer`" là **chưa kiểm gì cả**. URL
+đúng hình dạng vẫn có thể trả 403 cho mọi ảnh.
+
+Ca thật (goctruyentranh v22 → v32, 31/08/2026): bản vá đổi host ảnh về domain site có từ v14, mất
+khi dựng lại nguồn ở v22, và **không ai phát hiện suốt 10 phiên bản** vì harness chỉ soi chuỗi URL.
+Người dùng báo "cả hai nguồn không xem được ảnh" mới lòi ra — đo lại thì CDN trả **403 cho 8/8 ảnh**.
+
+Ca kiểm tối thiểu: lấy 3 ảnh (đầu / giữa / cuối) của mỗi chương đã test, tải thật, và **giả lập
+đúng Referer mà app gửi** — image loader đặt Referer theo **host của chính URL ảnh**:
+
+```javascript
+const origin = new URL(u).origin + '/';
+const r = await fetch(u, { headers: { 'User-Agent': UA, 'Referer': origin } });
+// dat: status 200 VA body > 1000 byte (trang loi 403 cung la 200 o vai CDN)
+```
+
+Xem `tools/vbook-harness` — hàm `thuTaiAnh()` trong bộ chạy của goctruyentranh.
+
+
 ## 1. URL ảnh — đã sai 2 lần
 
 **Luật: giữ nguyên URL ảnh mà chính trang web dùng.** Site bọc proxy nghĩa là site có lý do.
