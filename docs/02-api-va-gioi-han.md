@@ -92,6 +92,35 @@ form user/password nên plugin không thể tự POST vào). Điều kiện đ�
 
 Ca thật: luottruyen v28 (`chap.js`) — [06-case-study-luottruyen.md](06-case-study-luottruyen.md).
 
+### `launch()` TRẢ VỀ TRƯỚC KHI TRANG NẠP XONG — phải chờ thêm
+
+Gọi `callJs` ngay sau `launch` là chạy JS trên **`about:blank`**, không phải trên trang. Hai triệu
+chứng sinh ra từ đó, và cả hai đều dễ bị chẩn đoán nhầm:
+
+| Thấy gì | Thực ra là |
+|---|---|
+| `localStorage.getItem(...)` ném lỗi → tưởng **người dùng chưa đăng nhập** | origin rỗng, chưa vào trang |
+| `x.open("POST","/api/...")` ném `Failed to execute 'open' on 'XMLHttpRequest'` | URL tương đối không phân giải được trên `about:blank` |
+
+Ca thật: goctruyentranh v26 → v27 (30/08/2026), người dùng nhận
+`[GTT-EXC] WebView chưa đăng nhập. (Failed to execute 'open' on 'XMLHttpRequ)` **trong khi đã đăng nhập**.
+
+**Khuôn đúng** (luottruyen v28 chạy thật trên máy dùng đúng khuôn này):
+
+```javascript
+browser.launch(SITE_URL + '/trang-nhe', 12);
+browser.callJs('void 0;', 2500);      // chờ, KHÔNG đụng DOM
+browser.callJs(jsThat, 10000);        // giờ mới chạy JS thật
+```
+
+Kèm hai lớp phòng thân trong chính JS tiêm vào:
+- **Kiểm `location.href` trước tiên**, chưa đúng host thì báo đúng tên ca (`NOTLOADED`) kèm URL thật —
+  đừng để nó đội lốt lỗi đăng nhập.
+- **XHR dùng URL tuyệt đối** dựng từ `location.protocol + "//" + location.host`, không phụ thuộc base URI.
+
+Và **đừng cắt thông báo lỗi quá ngắn**: v26 cắt 40 ký tự, vừa đúng chỗ tên lỗi bị đứt
+(`...on 'XMLHttpRequ`) nên mất luôn manh mối. Để ~100 ký tự.
+
 ⚠️ **Luôn `close()` trong cả nhánh lỗi.** Browser không đóng là rò tài nguyên, app đơ dần.
 
 ⚠️ **Đừng để browser thành đường mặc định.** Nó chậm hơn HTTP nhiều lần, và một agent trước đã
