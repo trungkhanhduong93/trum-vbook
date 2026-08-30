@@ -133,8 +133,37 @@ Khi gặp `about:blank` lì như vậy, thứ tự nên thử:
    (cuutruyen). **Đơn vị chưa ai xác định được** → đừng đoán, thử cả hai.
 3. **Kiểm bằng `browser.html()` chứ đừng tiêm JS để kiểm**: `about:blank` có `<title>` rỗng và
    body gần như trống. Tiêm JS sẽ ghi đè body, xoá mất nội dung cần bóc.
-4. Nghi phạm số một vẫn là **bộ chặn quảng cáo của VBook** — nó từng chặn cả
-   `challenges.cloudflare.com` (13/08/2026). Hướng dẫn người dùng tắt nó, đừng vòng vo.
+4. **Kiểm header `X-Frame-Options` / `Content-Security-Policy: frame-ancestors` của nguồn.**
+   Đây là nguyên nhân đã tìm ra ở goctruyentranh (30/08/2026) — xem ngay dưới.
+5. Nghi phạm còn lại: **bộ chặn quảng cáo của VBook** — nó từng chặn cả
+   `challenges.cloudflare.com` (13/08/2026).
+
+### `X-Frame-Options: DENY` giết luôn `Engine.newBrowser()`
+
+`Engine.newBrowser()` nạp trang trong **khung con**. Nguồn nào trả `X-Frame-Options: DENY`
+(hoặc CSP `frame-ancestors 'self'`) thì trình duyệt **từ chối render**, tài liệu nằm lại
+`about:blank` — không có lỗi nào được ném ra, nên rất dễ chẩn đoán nhầm thành mạng chậm,
+chưa đăng nhập, hay Cloudflare.
+
+**Cách kiểm trong 5 giây, làm TRƯỚC khi viết nhánh browser:**
+```bash
+curl -sI https://nguon.com/duong-dan | grep -i "x-frame-options\|content-security-policy"
+```
+
+Đã đo 30/08/2026:
+
+| Nguồn | XFO | Nhánh `Engine.newBrowser()` |
+|---|---|---|
+| luottruyen17 (root) | *không có* | chạy được trên máy thật (v28) |
+| cuutruyen.cc | *không có* | chạy được |
+| goctruyentranhvui41/42 — **mọi** path, kể cả `/api`, ảnh tĩnh, trang 404 | `DENY` + `frame-ancestors 'self'` | **luôn `about:blank`** |
+
+**Không có cách lách từ phía plugin** — không thể gỡ header của site, và không có đường dẫn nào
+trên nguồn đó thoát header. Gặp ca này thì **báo thẳng cho người dùng và chỉ sang nút "Trang nguồn"**
+(WebView top-level, XFO không áp dụng), đừng đẻ thêm bản vá đoán mò.
+
+⚠️ Đừng nhầm với chặn theo User-Agent: goctruyentranh trả **200 cho cả 6 UA** đã thử (Chrome,
+Android WebView `wv`, `okhttp`, `VBook/1.0`, `Java/17`, không UA). Site **không** chặn app.
 
 ⚠️ **Luôn `close()` trong cả nhánh lỗi.** Browser không đóng là rò tài nguyên, app đơ dần.
 
