@@ -8,20 +8,24 @@ load('config.js');
 // chính cái nút đó là chỗ duy nhất để tick xác minh và đăng nhập Gmail.
 // Mọi nhánh hỏng phải dùng Response.error, kể cả khi thông báo bị thay.
 
-// ─── URL ảnh ──────────────────────────────────────────────────
-// TRẢ URL TRẦN, ĐÚNG NHƯ SITE TRẢ. Không đổi host, không nối "|Referer=".
+// ─── URL ảnh: đưa về chính domain site ────────────────────────
+// CDN vn*.gtt-bk.pro núp sau Cloudflare zone `goctruyentemp.xyz` và CHẶN khi
+// request không có Referer thuộc goctruyentranhvui*.com — người dùng dán thẳng
+// URL vào Chrome điện thoại nhận đúng trang "Sorry, you have been blocked".
 //
-// Ghi lại cho lần sau khỏi đi lại: 31/08/2026 tui đo bằng curl thấy CDN
-// vn*.gtt-bk.pro trả 403 khi thiếu Referer, rồi đổi host ảnh về domain site
-// (v32). SAI. Người dùng xác nhận từ đầu là chương 1-2 vẫn xem được ảnh với
-// URL CDN gốc — tức image loader của app CÓ gửi Referer mà CDN chấp nhận.
-// curl trên máy dev không đại diện cho image loader của app. Đây đúng là bẫy
-// đã trả giá 2 lần ở luottruyen/cuutruyen, xem docs/03.
-// Muốn nén/đổi đường ảnh thì phải test trong app thật trước, không thì để yên.
+// Bảng đo 31/08/2026:
+//   vn3.gtt-bk.pro  + không Referer            -> CHẶN
+//   vn3.gtt-bk.pro  + Referer domain site      -> 200
+//   domain site     + Referer domain site      -> 200
+//   domain site     + không Referer            -> 403
 //
-// GTT_IMG_PROXY (mặc định rỗng) chỉ dành cho ca phải nhờ proxy đặt Referer hộ.
+// Image loader của app không cho plugin đính header (luật: URL phải trần,
+// KHÔNG nối "|Referer="). Thứ duy nhất plugin đổi được là HOST của URL ảnh.
+// Nếu loader đặt Referer theo host của chính URL ảnh thì để trên domain site
+// là khớp, để trên CDN là chết. Vậy nên đưa hết về domain site — cùng path,
+// cùng ảnh, và vẫn là domain mà mọi request khác của plugin đang đi.
 function siteImage(u) {
-    var url = String(u).trim();
+    var url = String(u).trim().replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL);
     if (GTT_IMG_PROXY) return GTT_IMG_PROXY + encodeURIComponent(url);
     return url;
 }
