@@ -107,62 +107,113 @@ function isLockedChapter(detailResult, chapNum) {
     return false;   // ngoài 21 chương mới nhất → hầu như luôn là chương free
 }
 
+// Trang đã nạp thật chưa? about:blank có <title> rỗng và body gần như trống.
+// Đọc bằng browser.html() nên KHÔNG phá DOM — phải giữ DOM để còn bóc ảnh.
+function pageLoaded(browser) {
+    try {
+        var doc = browser.html();
+        if (!doc) return false;
+        if (String(doc.select('title').text() || '').length > 0) return true;
+        return String(doc.select('body').html() || '').length > 300;
+    } catch (e) {}
+    return false;
+}
+
+// Bóc ảnh chương từ DOM đã render. Ảnh chương nằm trên CDN gtt-bk.pro; ảnh bìa
+// và ảnh liên quan đi qua chính domain site (`/image/{slug-id}/...?code=`) nên
+// lọc theo host là tách được hai loại.
+function imagesFromDoc(doc) {
+    if (!doc) return null;
+    var out = [], seen = {};
+    var imgs = doc.select('img');
+    for (var i = 0; i < imgs.size(); i++) {
+        var el = imgs.get(i);
+        var src = el.attr('src') || el.attr('data-src') || el.attr('data-original') || '';
+        src = String(src).trim();
+        if (src.indexOf('http') !== 0) continue;
+        if (src.indexOf('gtt-bk.pro') < 0) continue;
+        if (seen[src]) continue;
+        seen[src] = true;
+        out.push(src);
+    }
+    return out.length ? out : null;
+}
+
 function loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
         // KHÔNG setUserAgent: đổi UA giữa chừng có nguy cơ mất phiên đăng nhập.
-        // Mở /lien-he chứ KHÔNG mở trang chương: cùng origin nên XHR chạy được,
-        // mà trang nhẹ (55KB), không có JS trình đọc, không dính redirect
-        // `;usid=` của trang chương — đúng cách v15 từng né được vòng lặp xác minh.
-        browser.launch(SITE_URL + '/lien-he', 12);
 
-        // launch() TRẢ VỀ TRƯỚC KHI TRANG NẠP XONG. Chạy XHR ngay lúc đó là chạy
-        // trên about:blank → localStorage ném lỗi (bị hiểu nhầm thành "chưa đăng
-        // nhập") và x.open() ném "Failed to execute 'open' on 'XMLHttpRequest'".
-        // Đó đúng là lỗi [GTT-EXC] người dùng gặp ở v26. Chờ như luottruyen/toc.js
-        // vẫn làm: callJs rỗng chỉ để đốt thời gian, KHÔNG đụng vào DOM của trang.
-        try { browser.callJs('void 0;', 2500); } catch (e) {}
+        // Đo trên máy thật 30/08/2026 (v27): mở /lien-he thì WebView đứng nguyên ở
+        // `about:blank`, chờ thêm 6,5s cũng không nhúc nhích — nên chờ lâu hơn KHÔNG
+        // phải là cách chữa. Cùng lúc đó nút "Trang nguồn" (mở đúng URL chương) lại
+        // vào được. Vì vậy: mở CHÍNH trang chương, và thử nhiều kiểu gọi launch vì
+        // đơn vị tham số thứ hai không thống nhất trong repo (luottruyen 8, cuutruyen
+        // 15000) — không đoán đơn vị nữa, thử cả hai.
+        // Mỗi lượt đổi MỘT biến: số timeout, rồi tới đường dẫn. Nếu bộ chặn quảng cáo
+        // chặn theo mẫu đường dẫn thì trang gốc "/" có thể lọt trong khi "/truyen/..."
+        // thì không. Cả 4 đều cùng origin nên localStorage (chứa token) vẫn dùng được.
+        var tries = [
+            { url: pageUrl,                 t: 8     },   // khuôn luottruyen v28 chạy được trên máy thật
+            { url: pageUrl,                 t: 15000 },   // khuôn cuutruyen
+            { url: SITE_URL + '/lien-he',   t: 15000 },   // trang nhẹ 55KB
+            { url: SITE_URL + '/',          t: 15000 }    // đường dẫn khác hẳn
+        ];
+
+        var loaded = false;
+        for (var k = 0; k < tries.length && !loaded; k++) {
+            try { browser.launch(tries[k].url, tries[k].t); } catch (e) {}
+            // callJs cũng là chỗ chờ: luottruyen v28 chờ đúng kiểu này.
+            try { browser.callJs('void 0;', k === 0 ? 3000 : 5000); } catch (e) {}
+            loaded = pageLoaded(browser);
+        }
+
+        // Bóc ảnh có sẵn trên DOM TRƯỚC khi tiêm JS (tiêm JS ghi đè body, xoá mất ảnh).
+        // Chỉ giữ làm PHƯƠNG ÁN CUỐI: trang chương lazy-load nên DOM lúc này có thể
+        // mới chỉ có vài ảnh đầu, trả về là ra chương cụt mà không ai biết.
+        var domImgs = null;
+        if (loaded) {
+            try { domImgs = imagesFromDoc(browser.html()); } catch (e) {}
+        }
 
         var body = 'comicId=' + encodeURIComponent(comicId) +
                    '&chapterNumber=' + encodeURIComponent(chapNum) +
                    '&nameEn=' + encodeURIComponent(nameEn);
         var js = buildLoadAllJs(body);
 
-        // Tối đa 2 lượt: mạng chậm thì lượt đầu còn about:blank, chờ thêm rồi thử lại.
-        var payload = null;
-        var out = null;
-        for (var attempt = 0; attempt < 2; attempt++) {
-            if (attempt > 0) {
-                try { browser.callJs('void 0;', 4000); } catch (e) {}
-            }
-            try { browser.callJs(js, 10000); } catch (e) {}
+        // XHR trong trang: lấy ĐỦ ảnh một lần (trang chương lazy-load nên DOM có thể
+        // mới chỉ có vài ảnh đầu — đó là lý do XHR vẫn là đường chính).
+        try { browser.callJs(js, 10000); } catch (e) {}
+        var payload = readSentinel(browser);
 
+        if (payload === null) {
+            // chờ thêm một nhịp rồi thử lại đúng một lần
+            try { browser.callJs('void 0;', 4000); } catch (e) {}
+            try { browser.callJs(js, 10000); } catch (e) {}
             payload = readSentinel(browser);
-            if (payload === null) {
-                out = null;   // chưa có sentinel → thử lượt sau
-                continue;
-            }
-            out = parsePayload(payload);
-            if (out.err !== 'NOTLOADED') break;
         }
 
-        // Chỉ đọc title ở nhánh hỏng — nó tốn thêm một lượt html().
-        var title = '';
-        if (payload === null) title = browserTitle(browser);
+        var title = (payload === null) ? browserTitle(browser) : '';
+        var out = (payload === null) ? null : parsePayload(payload);
 
         browser.close();
         browser = null;
 
-        if (payload === null) {
-            // Không có sentinel = callJs không chạy được, hoặc trang bị thay bằng
-            // tường xác minh. Đọc title để phân biệt thay vì báo chung chung.
-            if (/just a moment|attention required|checking your browser/i.test(title)) {
-                return { err: 'CFWALL', detail: title };
-            }
-            return { err: 'NO_SENTINEL', detail: title.substring(0, 60) };
+        // XHR ăn thì dùng nó — đó là danh sách ĐỦ cả chương.
+        if (out && out.json) return out;
+
+        // XHR không ăn mà DOM đã có ảnh thì còn hơn không.
+        if (domImgs) return { images: domImgs };
+
+        if (out) return out;
+
+        // Không có sentinel = callJs không chạy được, hoặc trang bị thay bằng
+        // tường xác minh. Đọc title để phân biệt thay vì báo chung chung.
+        if (/just a moment|attention required|checking your browser/i.test(title)) {
+            return { err: 'CFWALL', detail: title };
         }
-        return out;
+        return { err: 'NO_SENTINEL', detail: title.substring(0, 60) };
     } catch (e) {
         if (browser) { try { browser.close(); } catch (err) {} }
         return { err: 'BROWSER_EXC', detail: e.message };
@@ -216,6 +267,10 @@ function execute(url) {
     if (needBrowser) {
         var b = loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn);
 
+        if (b && b.images && b.images.length) {
+            return Response.success(b.images);
+        }
+
         if (b && b.json && b.json.result) {
             var br = b.json.result;
             if (br.codeState === '00') {
@@ -249,9 +304,11 @@ function execute(url) {
             : '';
 
         if (b && b.err === 'NOTLOADED') {
-            return Response.error('[GTT-NOTLOADED] Chương ' + chapNum + ': WebView không mở nổi trang nguồn '
-                + '(mạng chậm, hoặc chặn quảng cáo đang chặn site). Mở trang nguồn một lần rồi thử lại.'
-                + lockNote + ' (' + String(b.detail || '').substring(0, 100) + ')');
+            // Đã thử 3 kiểu launch mà WebView vẫn đứng ở about:blank → không phải
+            // mạng chậm. Thủ phạm hay gặp nhất là bộ chặn quảng cáo của VBook.
+            return Response.error('[GTT-NOTLOADED] Chương ' + chapNum + ': WebView của app không vào được trang nguồn '
+                + '(đứng ở ' + String(b.detail || '?').substring(0, 60) + '). Vào Cài đặt VBook → TẮT CHẶN QUẢNG CÁO, '
+                + 'rồi mở lại chương.' + lockNote);
         }
 
         return Response.error('[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + '] Chương ' + chapNum +
