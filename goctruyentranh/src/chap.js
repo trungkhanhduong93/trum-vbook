@@ -8,12 +8,28 @@ load('config.js');
 // chính cái nút đó là chỗ duy nhất để tick xác minh và đăng nhập Gmail.
 // Mọi nhánh hỏng phải dùng Response.error, kể cả khi thông báo bị thay.
 
+// ─── URL ảnh: đổi host CDN về chính domain site ───────────────
+// CDN vn*.gtt-bk.pro CHẶN theo Referer — chỉ nhận Referer thuộc
+// goctruyentranhvui*.com. Image loader của app đặt Referer theo host của CHÍNH
+// URL ảnh, nên trả URL CDN trần là nó tự gửi Referer "vn3.gtt-bk.pro" và ăn 403.
+// Chính domain site phục vụ đúng ảnh đó qua cùng path, lúc đó Referer tự khớp.
+//
+// Đo 31/08/2026 trên 8 ảnh thật của một chương:
+//   CDN + Referer là host CDN   -> 403  (0/8)
+//   domain site + Referer site  -> 200  (8/8)
+//   CDN + Referer site          -> 200  (nhưng plugin không đặt được Referer)
+// Đây KHÔNG phải proxy ngoài: vẫn là domain mà mọi request khác của plugin đi.
+// Và vẫn giữ luật URL trần — tuyệt đối không nối "|Referer=" vào URL ảnh.
+function siteImage(u) {
+    return String(u).replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL);
+}
+
 function imagesFrom(result) {
     if (!result || !result.data || !result.data.length) return null;
     var out = [];
     for (var i = 0; i < result.data.length; i++) {
         var u = String(result.data[i] || '').trim();
-        if (u) out.push(u);   // URL trần, giữ nguyên như site trả
+        if (u) out.push(siteImage(u));
     }
     return out.length ? out : null;
 }
@@ -132,6 +148,7 @@ function imagesFromDoc(doc) {
         src = String(src).trim();
         if (src.indexOf('http') !== 0) continue;
         if (src.indexOf('gtt-bk.pro') < 0) continue;
+        src = siteImage(src);
         if (seen[src]) continue;
         seen[src] = true;
         out.push(src);
