@@ -23,6 +23,16 @@
 // Cách an toàn: sửa ở máy, đóng gói zip ở máy, cài file zip đó vào VBook.
 var GTT_TOKEN = '';
 
+// ─── PROXY ẢNH (tuỳ chọn) ─────────────────────────────────────
+// CDN ảnh chặn theo Referer. Nếu image loader của app KHÔNG gửi Referer nào
+// khớp goctruyentranhvui*.com thì mọi ảnh 403 và không có cách nào sửa từ
+// trong plugin — URL ảnh phải là URL trần, không đính header được.
+// Đặt biến này thành địa chỉ một proxy tự đặt Referer hộ, dạng:
+//     'http://192.168.1.16:8899/img?u='
+// rồi plugin sẽ trả về  <proxy><url-ảnh-đã-encode>.
+// Để rỗng = trả URL ảnh trên chính domain site (mặc định).
+var GTT_IMG_PROXY = '';
+
 var SITE_URL = 'https://goctruyentranhvui41.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';

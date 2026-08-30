@@ -21,7 +21,9 @@ load('config.js');
 // Đây KHÔNG phải proxy ngoài: vẫn là domain mà mọi request khác của plugin đi.
 // Và vẫn giữ luật URL trần — tuyệt đối không nối "|Referer=" vào URL ảnh.
 function siteImage(u) {
-    return String(u).replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL);
+    var url = String(u).replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL);
+    if (GTT_IMG_PROXY) return GTT_IMG_PROXY + encodeURIComponent(url);
+    return url;
 }
 
 function imagesFrom(result) {
