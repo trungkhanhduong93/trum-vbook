@@ -158,6 +158,15 @@ function sitePost(path, bodyStr, referer) {
     }
 }
 
+// Cloudflare chặn tốc độ (429 / Error 1015) trả về JSON của CHÍNH Cloudflare,
+// parse được nhưng không có `result` → nếu không nhận ra thì code tưởng phiên
+// hỏng rồi đi mở WebView, báo sai hoàn toàn. Đo 30/08/2026 khi gọi API dồn dập.
+function isRateLimited(json) {
+    if (!json || json.result) return false;
+    var t = String(json.type || '') + ' ' + String(json.title || '');
+    return t.indexOf('1015') >= 0 || t.toLowerCase().indexOf('rate limited') >= 0;
+}
+
 // ─── Gọi API TỪ BÊN TRONG WebView ─────────────────────────────
 // Cần khi cookie jar của Http client không mang được `X-TOKEN` (cookie này
 // Path=/api, Secure, HttpOnly — bản v17 cũ đã từng hỏng đúng vì mất nó).

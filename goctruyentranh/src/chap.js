@@ -246,6 +246,12 @@ function execute(url) {
 
     // ── Đường 1: HTTP thẳng. Chương thường ăn ngay, ~0,3s, không cần browser.
     var res = sitePost('/api/chapter/loadAll', body, pageUrl);
+
+    if (isRateLimited(res)) {
+        return Response.error('[GTT-429] Site đang chặn tốc độ (Cloudflare Error 1015) vì nhận quá nhiều '
+            + 'request trong thời gian ngắn. Chờ khoảng 1 phút rồi bấm Tải lại — không phải lỗi tài khoản.');
+    }
+
     var r = (res && res.result) ? res.result : null;
 
     if (r && r.codeState === '00') {
