@@ -142,13 +142,17 @@ function browserGetJson(path) {
         browser = Engine.newBrowser();
         // KHÔNG setUserAgent — đổi UA giữa chừng có nguy cơ mất phiên đăng nhập
         browser.launch(SITE_URL + '/lien-he', 12);
+        // launch() trả về trước khi trang nạp xong — chạy XHR trên about:blank
+        // thì x.open() với URL tương đối ném "Invalid URL". Chờ như chap.js.
+        try { browser.callJs('void 0;', 2500); } catch (e) {}
 
         var js = '' +
             '(function(){' +
             '  var mark=function(s){try{document.body.innerHTML="GTTSTART"+s+"GTTEND";}catch(e){}};' +
             '  try{' +
+            '    if(String(location.href).indexOf("goctruyentranhvui")<0){mark("ERR_NOTLOADED");return;}' +
             '    var x=new XMLHttpRequest();' +
-            '    x.open("GET",' + JSON.stringify(path) + ',false);' +
+            '    x.open("GET",location.protocol+"//"+location.host+' + JSON.stringify(path) + ',false);' +
             '    x.setRequestHeader("X-Requested-With","XMLHttpRequest");' +
             '    var tk=null; try{tk=localStorage.getItem("Authorization");}catch(e){}' +
             '    if(tk){x.setRequestHeader("Authorization",tk);}' +
