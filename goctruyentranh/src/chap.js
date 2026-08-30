@@ -257,6 +257,15 @@ function execute(url) {
         return Response.error('[GTT-02] Hết lượt đọc miễn phí cho chương ' + chapNum + '.');
     }
 
+    // Đã dán token mà site vẫn trả 01 thì WebView cũng vô ích (nguồn chặn nhúng
+    // khung) — báo thẳng là token hỏng thay vì bắt người dùng chờ thêm ~15s.
+    if (r && r.codeState === '01' && hasToken()) {
+        return Response.error('[GTT-TOKEN] Chương ' + chapNum + ': token trong config.js bị site từ chối '
+            + '(sai, hết hạn, hoặc tài khoản không có quyền đọc chương này). '
+            + 'Lấy lại token: mở site trên Chrome đã đăng nhập → F12 → Console → '
+            + "localStorage.getItem('Authorization')");
+    }
+
     // ── Đường 2: chương khoá (codeState 01) hoặc phiên hỏng → mượn WebView.
     // codeState 01 là site đánh dấu chương phải đăng nhập (type=TRIPLE trong
     // mục lục, đã hiện 🔒). Đo 30/08/2026: site khoá ~18 chương MỚI NHẤT nhưng
@@ -303,10 +312,11 @@ function execute(url) {
             : '';
 
         if (b && b.err === 'NOTLOADED') {
-            return Response.error('[GTT-FRAME] Chương ' + chapNum + ' bị site khoá, mà nguồn này gửi '
+            return Response.error('[GTT-FRAME] Chương ' + chapNum + ' bị site khoá. Nguồn gửi '
                 + 'X-Frame-Options: DENY nên trình duyệt nền của app không mở nổi trang (đứng ở '
-                + String(b.detail || '?').substring(0, 40) + '). Plugin không gỡ được header của site. '
-                + 'Cách đọc: bấm "Trang nguồn" ngay dưới — cửa sổ đó không bị chặn.');
+                + String(b.detail || '?').substring(0, 40) + ') — plugin không gỡ được header của site. '
+                + 'Cách đọc ngay: bấm "Trang nguồn" bên dưới. '
+                + 'Cách đọc thẳng trong app: dán token vào GTT_TOKEN trong src/config.js rồi đóng gói lại.');
         }
 
         return Response.error('[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + '] Chương ' + chapNum +

@@ -6,6 +6,23 @@
 // Đã đo 13/08/2026: API site KHÔNG có Cloudflare challenge, 0,2–0,3s/request.
 // ============================================================
 
+// ─── TOKEN CÁ NHÂN (tuỳ chọn) — chỗ duy nhất cần sửa để đọc chương khoá ──
+// Chương site khoá (🔒) chỉ mở khi request có header `Authorization`. Site lấy
+// giá trị đó từ localStorage sau khi đăng nhập Google — KHÔNG có cookie nào
+// thay thế (xem hàm beforeAuth trong /contents/v2/js/common.js của site).
+// Trình duyệt nền của app không đọc hộ được vì nguồn trả X-Frame-Options: DENY
+// nên nó đứng ở about:blank. Dán token vào đây thì mọi request đi bằng HTTP
+// thẳng, khỏi cần WebView, khỏi dính header khung.
+//
+// Lấy token: mở goctruyentranhvui41.com trên Chrome, đăng nhập Google, F12 →
+// tab Console → gõ:   localStorage.getItem('Authorization')
+// rồi copy chuỗi trong dấu nháy (bỏ dấu nháy).
+//
+// ⚠️ ĐÂY LÀ THÔNG TIN ĐĂNG NHẬP CỦA BẠN. Điền xong thì ĐỪNG commit/push file
+// này lên GitHub công khai — ai đọc repo cũng dùng được tài khoản của bạn.
+// Cách an toàn: sửa ở máy, đóng gói zip ở máy, cài file zip đó vào VBook.
+var GTT_TOKEN = '';
+
 var SITE_URL = 'https://goctruyentranhvui41.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
@@ -65,22 +82,33 @@ function probeDomain() {
     return false;
 }
 
+// Gắn token nếu có. Không có thì trả header y như cũ — nguồn vẫn chạy bình
+// thường cho chương không khoá.
+function withAuth(h) {
+    if (GTT_TOKEN) h['Authorization'] = GTT_TOKEN;
+    return h;
+}
+
+function hasToken() {
+    return !!GTT_TOKEN;
+}
+
 function HEADERS() {
-    return {
+    return withAuth({
         'User-Agent': UA,
         'Accept': 'application/json, text/plain, */*',
         'Referer': SITE_URL + '/'
-    };
+    });
 }
 
 function FORM_HEADERS(referer) {
-    return {
+    return withAuth({
         'User-Agent': UA,
         'Accept': 'application/json, text/plain, */*',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         'X-Requested-With': 'XMLHttpRequest',
         'Referer': referer || (SITE_URL + '/')
-    };
+    });
 }
 
 // ─── Phiên làm việc ───────────────────────────────────────────
