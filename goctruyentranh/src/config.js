@@ -18,10 +18,11 @@
 // tab Console → gõ:   localStorage.getItem('Authorization')
 // rồi copy chuỗi trong dấu nháy (bỏ dấu nháy).
 //
-// ⚠️ ĐÂY LÀ THÔNG TIN ĐĂNG NHẬP CỦA BẠN. Điền xong thì ĐỪNG commit/push file
-// này lên GitHub công khai — ai đọc repo cũng dùng được tài khoản của bạn.
-// Cách an toàn: sửa ở máy, đóng gói zip ở máy, cài file zip đó vào VBook.
-var GTT_TOKEN = '';
+// ⚠️ TOKEN DƯỚI ĐÂY NẰM TRONG REPO CÔNG KHAI — chủ repo chọn như vậy để chỉ
+// phải nuôi MỘT nguồn duy nhất, cập nhật thẳng qua GitHub. Ai đọc repo cũng
+// dùng được tài khoản đọc truyện này. Muốn thu hồi: đăng xuất trên site rồi
+// đăng nhập lại lấy token mới, dán vào đây.
+var GTT_TOKEN = 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEdW9uZyBUcnVuZyIsImNvbWljSWRzIjpbXSwicm9sZUlkIjpudWxsLCJncm91cElkIjpudWxsLCJhZG1pbiI6ZmFsc2UsInJhbmsiOjAsInBlcm1pc3Npb24iOltdLCJpZCI6IjAwMDEzMzU4MDgiLCJ0ZWFtIjpmYWxzZSwiaWF0IjoxNzg4MTA3NjQzLCJlbWFpbCI6Im51bGwifQ.kZbSOa04rE8b5AX4oW3Uo0w1HU8BzYuIpdxkG9OxIFUNpo8OLcqZgLJQ2WUqxQWS2D-WDM5XRkekDhtcqefQQA';
 
 // ─── PROXY ẢNH (tuỳ chọn) ─────────────────────────────────────
 // CDN ảnh chặn theo Referer. Nếu image loader của app KHÔNG gửi Referer nào

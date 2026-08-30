@@ -8,20 +8,20 @@ load('config.js');
 // chính cái nút đó là chỗ duy nhất để tick xác minh và đăng nhập Gmail.
 // Mọi nhánh hỏng phải dùng Response.error, kể cả khi thông báo bị thay.
 
-// ─── URL ảnh: đổi host CDN về chính domain site ───────────────
-// CDN vn*.gtt-bk.pro CHẶN theo Referer — chỉ nhận Referer thuộc
-// goctruyentranhvui*.com. Image loader của app đặt Referer theo host của CHÍNH
-// URL ảnh, nên trả URL CDN trần là nó tự gửi Referer "vn3.gtt-bk.pro" và ăn 403.
-// Chính domain site phục vụ đúng ảnh đó qua cùng path, lúc đó Referer tự khớp.
+// ─── URL ảnh ──────────────────────────────────────────────────
+// TRẢ URL TRẦN, ĐÚNG NHƯ SITE TRẢ. Không đổi host, không nối "|Referer=".
 //
-// Đo 31/08/2026 trên 8 ảnh thật của một chương:
-//   CDN + Referer là host CDN   -> 403  (0/8)
-//   domain site + Referer site  -> 200  (8/8)
-//   CDN + Referer site          -> 200  (nhưng plugin không đặt được Referer)
-// Đây KHÔNG phải proxy ngoài: vẫn là domain mà mọi request khác của plugin đi.
-// Và vẫn giữ luật URL trần — tuyệt đối không nối "|Referer=" vào URL ảnh.
+// Ghi lại cho lần sau khỏi đi lại: 31/08/2026 tui đo bằng curl thấy CDN
+// vn*.gtt-bk.pro trả 403 khi thiếu Referer, rồi đổi host ảnh về domain site
+// (v32). SAI. Người dùng xác nhận từ đầu là chương 1-2 vẫn xem được ảnh với
+// URL CDN gốc — tức image loader của app CÓ gửi Referer mà CDN chấp nhận.
+// curl trên máy dev không đại diện cho image loader của app. Đây đúng là bẫy
+// đã trả giá 2 lần ở luottruyen/cuutruyen, xem docs/03.
+// Muốn nén/đổi đường ảnh thì phải test trong app thật trước, không thì để yên.
+//
+// GTT_IMG_PROXY (mặc định rỗng) chỉ dành cho ca phải nhờ proxy đặt Referer hộ.
 function siteImage(u) {
-    var url = String(u).replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL);
+    var url = String(u).trim();
     if (GTT_IMG_PROXY) return GTT_IMG_PROXY + encodeURIComponent(url);
     return url;
 }
