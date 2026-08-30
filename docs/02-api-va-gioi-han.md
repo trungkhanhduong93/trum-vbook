@@ -121,6 +121,21 @@ Kèm hai lớp phòng thân trong chính JS tiêm vào:
 Và **đừng cắt thông báo lỗi quá ngắn**: v26 cắt 40 ký tự, vừa đúng chỗ tên lỗi bị đứt
 (`...on 'XMLHttpRequ`) nên mất luôn manh mối. Để ~100 ký tự.
 
+⚠️ **CHỜ LÂU HƠN KHÔNG PHẢI LÚC NÀO CŨNG CHỮA ĐƯỢC — đã đo (v27 → v28):** sau khi thêm chờ
+2,5s + 4s, goctruyentranh vẫn báo `location.href = about:blank`. Tức là WebView **không hề điều
+hướng**, chứ không phải nạp chậm. Cùng lúc đó nút "Trang nguồn" của app mở đúng URL ấy thì vào được.
+
+Khi gặp `about:blank` lì như vậy, thứ tự nên thử:
+
+1. **Đổi URL mở**: mở đúng trang người dùng đang đọc (URL mà "Trang nguồn" mở được), rồi mới tới
+   trang nhẹ, rồi trang gốc `/` — bộ chặn quảng cáo của VBook có thể chặn theo **mẫu đường dẫn**.
+2. **Đổi số timeout**: repo đang dùng lẫn lộn `8` (luottruyen, chạy được trên máy thật) và `15000`
+   (cuutruyen). **Đơn vị chưa ai xác định được** → đừng đoán, thử cả hai.
+3. **Kiểm bằng `browser.html()` chứ đừng tiêm JS để kiểm**: `about:blank` có `<title>` rỗng và
+   body gần như trống. Tiêm JS sẽ ghi đè body, xoá mất nội dung cần bóc.
+4. Nghi phạm số một vẫn là **bộ chặn quảng cáo của VBook** — nó từng chặn cả
+   `challenges.cloudflare.com` (13/08/2026). Hướng dẫn người dùng tắt nó, đừng vòng vo.
+
 ⚠️ **Luôn `close()` trong cả nhánh lỗi.** Browser không đóng là rò tài nguyên, app đơ dần.
 
 ⚠️ **Đừng để browser thành đường mặc định.** Nó chậm hơn HTTP nhiều lần, và một agent trước đã
