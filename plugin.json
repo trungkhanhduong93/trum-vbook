@@ -7,8 +7,8 @@
     {
       "name": "GocTruyenTranh",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip?v=28",
-      "version": 28,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip?v=29",
+      "version": 29,
       "source": "https://goctruyentranhvui41.com",
       "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/icon.png",

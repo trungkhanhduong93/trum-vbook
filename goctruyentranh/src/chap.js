@@ -145,20 +145,19 @@ function loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn) {
         browser = Engine.newBrowser();
         // KHÔNG setUserAgent: đổi UA giữa chừng có nguy cơ mất phiên đăng nhập.
 
-        // Đo trên máy thật 30/08/2026 (v27): mở /lien-he thì WebView đứng nguyên ở
-        // `about:blank`, chờ thêm 6,5s cũng không nhúc nhích — nên chờ lâu hơn KHÔNG
-        // phải là cách chữa. Cùng lúc đó nút "Trang nguồn" (mở đúng URL chương) lại
-        // vào được. Vì vậy: mở CHÍNH trang chương, và thử nhiều kiểu gọi launch vì
-        // đơn vị tham số thứ hai không thống nhất trong repo (luottruyen 8, cuutruyen
-        // 15000) — không đoán đơn vị nữa, thử cả hai.
-        // Mỗi lượt đổi MỘT biến: số timeout, rồi tới đường dẫn. Nếu bộ chặn quảng cáo
-        // chặn theo mẫu đường dẫn thì trang gốc "/" có thể lọt trong khi "/truyen/..."
-        // thì không. Cả 4 đều cùng origin nên localStorage (chứa token) vẫn dùng được.
+        // ⚠️ NGUỒN NÀY CẤM NHÚNG KHUNG — đo 30/08/2026, mọi đường dẫn trên cả vui41
+        // lẫn vui42 (kể cả ảnh tĩnh, /api, cả trang 404) đều trả:
+        //     X-Frame-Options: DENY, SAMEORIGIN
+        //     Content-Security-Policy: frame-ancestors 'self';
+        // Trình duyệt gặp header này trong khung con thì TỪ CHỐI render, tài liệu
+        // nằm lại ở `about:blank` — đúng triệu chứng v27 đo được trên máy thật, và
+        // chờ thêm 6,5s không đổi gì. Đối chiếu: luottruyen (root không có XFO) và
+        // cuutruyen (không có XFO) thì nhánh Engine.newBrowser() chạy được.
+        // KHÔNG có đường dẫn nào trên site thoát header này → đổi URL là vô ích,
+        // chỉ giữ lại đúng trang chương và hai kiểu gọi launch.
         var tries = [
-            { url: pageUrl,                 t: 8     },   // khuôn luottruyen v28 chạy được trên máy thật
-            { url: pageUrl,                 t: 15000 },   // khuôn cuutruyen
-            { url: SITE_URL + '/lien-he',   t: 15000 },   // trang nhẹ 55KB
-            { url: SITE_URL + '/',          t: 15000 }    // đường dẫn khác hẳn
+            { url: pageUrl, t: 8     },   // khuôn luottruyen v28 chạy được trên máy thật
+            { url: pageUrl, t: 15000 }    // khuôn cuutruyen
         ];
 
         var loaded = false;
@@ -304,11 +303,10 @@ function execute(url) {
             : '';
 
         if (b && b.err === 'NOTLOADED') {
-            // Đã thử 3 kiểu launch mà WebView vẫn đứng ở about:blank → không phải
-            // mạng chậm. Thủ phạm hay gặp nhất là bộ chặn quảng cáo của VBook.
-            return Response.error('[GTT-NOTLOADED] Chương ' + chapNum + ': WebView của app không vào được trang nguồn '
-                + '(đứng ở ' + String(b.detail || '?').substring(0, 60) + '). Vào Cài đặt VBook → TẮT CHẶN QUẢNG CÁO, '
-                + 'rồi mở lại chương.' + lockNote);
+            return Response.error('[GTT-FRAME] Chương ' + chapNum + ' bị site khoá, mà nguồn này gửi '
+                + 'X-Frame-Options: DENY nên trình duyệt nền của app không mở nổi trang (đứng ở '
+                + String(b.detail || '?').substring(0, 40) + '). Plugin không gỡ được header của site. '
+                + 'Cách đọc: bấm "Trang nguồn" ngay dưới — cửa sổ đó không bị chặn.');
         }
 
         return Response.error('[GTT-' + ((b && b.err) ? b.err : 'WEBVIEW') + '] Chương ' + chapNum +
