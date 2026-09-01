@@ -30,6 +30,6 @@ pack_plugin('toptruyen')
 pack_plugin('cuutruyen')
 pack_plugin('zettruyen')
 pack_plugin('luottruyen')
-pack_plugin('goctruyentranh')
+# pack_plugin('goctruyentranh')  # Tam an nguon (khong xoa source, co the bat lai khi can)
 
 

@@ -5,18 +5,6 @@
   },
   "data": [
     {
-      "name": "GocTruyenTranh",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip?v=35",
-      "version": 35,
-      "source": "https://goctruyentranhvui41.com",
-      "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/icon.png",
-      "description": "Đọc truyện trên trang Góc Truyện Tranh",
-      "type": "comic",
-      "locale": "vi_VN"
-    },
-    {
       "name": "2tenVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/2ten.zip",
