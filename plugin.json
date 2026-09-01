@@ -7,8 +7,8 @@
     {
       "name": "DocTruyen3Q",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/plugin.zip?v=1",
-      "version": 1,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/plugin.zip?v=2",
+      "version": 2,
       "source": "https://doctruyen3qhub.vip",
       "regexp": "doctruyen3q[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(\\/?|\\/\\d+\\/?)$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/icon.png",

@@ -5,41 +5,41 @@ function execute(url) {
     if (!doc) return Response.error("Không tải được thông tin truyện");
 
     // Title
-    var titleEl = selFirst(doc, "h1.title-detail, h1.title, h1[itemprop='name'], h1");
+    var titleEl = selFirst(doc, "h1.title-manga, h1.title-detail, h1.title, h1");
     var name = titleEl ? titleEl.text().trim() : "";
 
     // Cover
     var cover = "";
-    var coverEl = selFirst(doc, ".detail-info img, .col-image img, .book_avatar img, .image-info img");
+    var coverEl = selFirst(doc, ".image-info img, img.image-comic, .col-image img, .book_avatar img");
     if (coverEl) {
         cover = coverEl.attr("data-original") || coverEl.attr("data-src") || coverEl.attr("src") || "";
         if (cover) cover = resolveUrl(cover);
     }
 
-    // Metadata from list-info
+    // Metadata
     var author = "";
     var statusText = "";
     var views = "";
-    var followers = "";
+    var likes = "";
 
-    var rows = doc.select(".list-info li, ul.list-info li, .detail-info .row");
+    var rows = doc.select("ul.info-detail-comic li, .list-info li, ul.list-info li");
     for (var i = 0; i < rows.size(); i++) {
         var row = rows.get(i);
         var txt = row.text().trim();
         var lower = txt.toLowerCase();
 
         if (lower.indexOf("tác giả") >= 0) {
-            var valEl = selFirst(row, ".col-xs-8, .col-xs-9, p, a");
-            author = valEl ? valEl.text().trim() : txt.replace(/.*tác giả[:\s]*/i, "").trim();
+            var valEl = selFirst(row, ".detail-info, .col-sm-8, .col-xs-8, p");
+            author = valEl ? valEl.text().trim() : "";
         } else if (lower.indexOf("tình trạng") >= 0) {
-            var valEl = selFirst(row, ".col-xs-8, .col-xs-9, p, a");
-            statusText = valEl ? valEl.text().trim() : txt.replace(/.*tình trạng[:\s]*/i, "").trim();
-        } else if (lower.indexOf("lượt xem") >= 0 || lower.indexOf("xem") >= 0) {
-            var valEl = selFirst(row, ".col-xs-8, .col-xs-9, p");
+            var valEl = selFirst(row, ".detail-info, .col-sm-8, .col-xs-8, span, p");
+            statusText = valEl ? valEl.text().trim() : "";
+        } else if (lower.indexOf("lượt xem") >= 0) {
+            var valEl = selFirst(row, ".detail-info, .col-sm-8, .col-xs-8, p");
             views = valEl ? valEl.text().trim() : "";
-        } else if (lower.indexOf("theo dõi") >= 0) {
-            var valEl = selFirst(row, ".col-xs-8, .col-xs-9, p");
-            followers = valEl ? valEl.text().trim() : "";
+        } else if (lower.indexOf("yêu thích") >= 0 || lower.indexOf("thích") >= 0) {
+            var valEl = selFirst(row, ".detail-info, .col-sm-8, .col-xs-8, p");
+            likes = valEl ? valEl.text().trim() : "";
         }
     }
 
@@ -50,13 +50,14 @@ function execute(url) {
 
     // Genres
     var genres = [];
-    var gLinks = doc.select(".list-info li.kind a, .list01 a, .genres a, a[href*='/the-loai/']");
+    var gLinks = doc.select("li.category a, a[href*='/tim-truyen/']");
     var gSeen = {};
     for (var g = 0; g < gLinks.size(); g++) {
         var gl = gLinks.get(g);
         var gn = gl.text().trim();
         var gh = gl.attr("href") || "";
         if (!gn || !gh) continue;
+        if (gh.indexOf("?") >= 0) continue;
         if (gSeen[gh]) continue;
         gSeen[gh] = true;
         genres.push({
@@ -68,14 +69,14 @@ function execute(url) {
 
     // Description
     var description = "";
-    var descEl = selFirst(doc, ".detail-content p, .detail-content, .story-detail-info, .shortened");
+    var descEl = selFirst(doc, ".summary-content p.detail-summary, .summary-content, p.detail-summary, .detail-content");
     if (descEl) description = descEl.text().trim();
 
     var detailParts = [];
     if (statusText) detailParts.push("Tình trạng: " + statusText);
     if (author) detailParts.push("Tác giả: " + author);
     if (views) detailParts.push("👁 Lượt xem: " + views);
-    if (followers) detailParts.push("🔖 Theo dõi: " + followers);
+    if (likes) detailParts.push("❤ Thích: " + likes);
     var detail = detailParts.join("<br>");
 
     return Response.success({

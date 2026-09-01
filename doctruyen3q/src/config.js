@@ -55,11 +55,10 @@ function fetchRetry(url) {
     } catch (e) {}
 
     var title = doc ? doc.select("title").text() : "";
-    if (doc && title && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
+    if (doc && title && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1 && title.indexOf("404") === -1) {
         return doc;
     }
 
-    // Try fallback mirrors
     for (var i = 0; i < MIRRORS.length; i++) {
         var mirror = MIRRORS[i];
         if (mirror === BASE_URL) continue;
@@ -73,7 +72,7 @@ function fetchRetry(url) {
             }).html();
             if (res) {
                 var t = res.select("title").text();
-                if (t && t.indexOf("Just a moment") === -1 && t.indexOf("Cloudflare") === -1) {
+                if (t && t.indexOf("Just a moment") === -1 && t.indexOf("Cloudflare") === -1 && t.indexOf("404") === -1) {
                     setBase(mirror);
                     return res;
                 }
@@ -81,7 +80,6 @@ function fetchRetry(url) {
         } catch (err) {}
     }
 
-    // Browser fallback
     try {
         var browser = Engine.newBrowser();
         browser.launch(currentUrl, 10000);
@@ -114,11 +112,7 @@ function parseItems(doc) {
     for (var i = 0; i < cards.size(); i++) {
         var card = cards.get(i);
 
-        var titleA = selFirst(card, "h3 a");
-        if (!titleA) titleA = selFirst(card, ".caption h3 a");
-        if (!titleA) titleA = selFirst(card, "a.title-manga");
-        if (!titleA) titleA = selFirst(card, ".title a");
-        if (!titleA) titleA = selFirst(card, "a");
+        var titleA = selFirst(card, "h3 a.title-manga, h3 a, .caption h3 a, a.title-manga, .title a, a");
         if (!titleA) continue;
 
         var name = titleA.attr("title") || titleA.text().trim();
@@ -128,17 +122,17 @@ function parseItems(doc) {
         if (seen[link]) continue;
         seen[link] = true;
 
-        var img = selFirst(card, "img");
+        var img = selFirst(card, ".image-item img, img.image-item, img");
         var cover = "";
         if (img) {
             cover = img.attr("data-original") || img.attr("data-src") || img.attr("src") || "";
             if (cover) cover = resolveUrl(cover);
         }
 
-        var chapEl = selFirst(card, ".chapter a, .chapter-detail a, li.chapter a");
+        var chapEl = selFirst(card, ".chapter-detail a.chapter, .chapter a, li.chapter a");
         var chapText = chapEl ? chapEl.text().trim() : "";
 
-        var timeEl = selFirst(card, ".time, i.time, .comic-item .time");
+        var timeEl = selFirst(card, "i.time, .time");
         var timeText = timeEl ? timeEl.text().trim() : "";
 
         var desc = "";

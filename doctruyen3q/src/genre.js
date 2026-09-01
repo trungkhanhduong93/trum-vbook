@@ -7,13 +7,14 @@ function execute() {
     var genres = [];
     var seen = {};
 
-    var links = doc.select("a[href*='/the-loai/'], a[href*='/tim-truyen/']");
+    var links = doc.select("a[href*='/tim-truyen/']");
     for (var i = 0; i < links.size(); i++) {
         var a = links.get(i);
         var name = a.text().trim();
         var href = a.attr("href") || "";
         if (!name || !href) continue;
         if (name.length < 2 || name.length > 40) continue;
+        if (href.indexOf("?") >= 0) continue;
         if (seen[href]) continue;
         seen[href] = true;
 
