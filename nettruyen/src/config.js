@@ -55,7 +55,7 @@ function fetchRetry(url) {
     } catch (e) {}
 
     var title = doc ? doc.select("title").text() : "";
-    if (doc && title && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
+    if (doc && title && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1 && title.indexOf("404") === -1) {
         return doc;
     }
 
@@ -72,7 +72,7 @@ function fetchRetry(url) {
             }).html();
             if (res) {
                 var t = res.select("title").text();
-                if (t && t.indexOf("Just a moment") === -1 && t.indexOf("Cloudflare") === -1) {
+                if (t && t.indexOf("Just a moment") === -1 && t.indexOf("Cloudflare") === -1 && t.indexOf("404") === -1) {
                     setBase(mirror);
                     return res;
                 }
@@ -107,6 +107,11 @@ function resolveUrl(url) {
 function parseItems(doc) {
     var items = [];
     var seen = {};
+
+    // Xóa bỏ slider/carousel truyện đề cử ở đầu trang để chỉ lấy danh sách cập nhật mới nhất
+    try {
+        doc.select(".items-slide, .owl-carousel, .top-comics, #ctl00_divAlt1").remove();
+    } catch (e) {}
 
     var cards = doc.select("div.item, div.item-manga");
     for (var i = 0; i < cards.size(); i++) {
