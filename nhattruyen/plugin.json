@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "NhatTruyen",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://nhattruyenqq.com",
+    "regexp": "nhattruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
+    "description": "Đọc truyện tranh trên trang NhatTruyen",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

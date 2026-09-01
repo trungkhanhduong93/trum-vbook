@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "name": "DocTruyen3Q",
+    "author": "tkd1793",
+    "version": 1,
+    "source": "https://doctruyen3qhub.vip",
+    "regexp": "doctruyen3q[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(\\/?|\\/\\d+\\/?)$",
+    "description": "Đọc truyện tranh trên trang DocTruyen3Q",
+    "locale": "vi_VN",
+    "language": "javascript",
+    "type": "comic"
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "detail": "detail.js",
+    "search": "search.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  }
+}

@@ -5,6 +5,42 @@
   },
   "data": [
     {
+      "name": "DocTruyen3Q",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/plugin.zip?v=1",
+      "version": 1,
+      "source": "https://doctruyen3qhub.vip",
+      "regexp": "doctruyen3q[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(\\/?|\\/\\d+\\/?)$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/icon.png",
+      "description": "Đọc truyện tranh trên trang DocTruyen3Q",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
+      "name": "NetTruyen",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/plugin.zip?v=1",
+      "version": 1,
+      "source": "https://nettruyenar.com",
+      "regexp": "nettruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(-?\\d+)?\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/icon.png",
+      "description": "Đọc truyện tranh trên trang NetTruyen",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
+      "name": "NhatTruyen",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nhattruyen/plugin.zip?v=1",
+      "version": 1,
+      "source": "https://nhattruyenqq.com",
+      "regexp": "nhattruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nhattruyen/icon.png",
+      "description": "Đọc truyện tranh trên trang NhatTruyen",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
       "name": "2tenVN",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/2ten.zip",
