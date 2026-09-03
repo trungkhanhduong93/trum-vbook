@@ -2,11 +2,6 @@ var BASE_URL = "https://mimimoe.moe";
 var API_URL = "https://mimimoe.moe/api";
 var HOST = "https://mimimoe.moe";
 
-// Login credentials (embedded). API mostly works without auth, but a token
-// unlocks gated content (NSFW preferences, follow lists, ...).
-var LOGIN_EMAIL = "khanhbapbap@gmail.com";
-var LOGIN_PASS = "T4555544554";
-
 var COMMON_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
     "Accept": "application/json, text/plain, */*",
@@ -26,48 +21,16 @@ function resolveUrl(url) {
     return BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
 }
 
-// Build header map by copying COMMON_HEADERS + extras (avoid Object.assign in Rhino)
-function buildHeaders(extra) {
-    var h = {};
-    for (var k in COMMON_HEADERS) h[k] = COMMON_HEADERS[k];
-    if (extra) for (var k2 in extra) h[k2] = extra[k2];
-    return h;
-}
-
-// ─── Auth helpers ──────────────────────────────────────────────────
-var _CACHED_TOKEN = null;
-
-function loginAndGetToken() {
-    if (_CACHED_TOKEN) return _CACHED_TOKEN;
-    try {
-        var body = '{"email":"' + LOGIN_EMAIL + '","password":"' + LOGIN_PASS + '"}';
-        var res = fetch(API_URL + "/auth/login", {
-            method: "POST",
-            headers: buildHeaders({ "Content-Type": "application/json" }),
-            body: body
-        });
-        if (!res || !res.ok) return null;
-        var data = JSON.parse(res.text());
-        if (data && data.token) {
-            _CACHED_TOKEN = data.token;
-            return _CACHED_TOKEN;
-        }
-    } catch (e) {}
-    return null;
-}
-
-// API fetch wrapper: tries anonymous first, falls back to authenticated on 401/403.
+// API fetch wrapper: gọi thẳng API công khai tốc độ cao
 function apiFetch(path) {
     var url = path.indexOf("http") === 0 ? path : API_URL + path;
-    var res = fetch(url, { headers: buildHeaders() });
-    if (res && res.ok) return res;
-    if (res && (res.status === 401 || res.status === 403)) {
-        var token = loginAndGetToken();
-        if (token) {
-            res = fetch(url, { headers: buildHeaders({ "Authorization": "Bearer " + token }) });
-        }
+    try {
+        var res = fetch(url, { headers: COMMON_HEADERS });
+        if (res && res.ok) return res;
+        return null;
+    } catch (e) {
+        return null;
     }
-    return res;
 }
 
 // ─── Item parser (manga list item from API) ────────────────────────

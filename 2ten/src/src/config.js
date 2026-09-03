@@ -41,15 +41,14 @@ function imgSrc(img) {
     return s.trim();
 }
 
-// 1 retry khi lỗi mạng/5xx (4xx không retry) — đường bình thường vẫn 1 request
 function fetchRetry(url) {
-    var res = fetch(url, FETCH_OPTIONS);
-    if (res && res.ok) return res;
-    if (!res || (!res.ok && !(res.status >= 400 && res.status < 500))) {
-        var r2 = fetch(url, FETCH_OPTIONS);
-        if (r2) return r2;
+    try {
+        var res = fetch(url, FETCH_OPTIONS);
+        if (res && res.ok) return res;
+        return res;
+    } catch (e) {
+        return null;
     }
-    return res;
 }
 
 // Madara phân trang: chèn /page/N/ trước query string

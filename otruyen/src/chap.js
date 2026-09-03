@@ -6,7 +6,14 @@ function execute(url) {
     if (!sUrl) return Response.error("URL chương không hợp lệ");
 
     var str = fetchJson(sUrl);
-    if (!str) return Response.error("Không tải được dữ liệu chương");
+    if (!str && sUrl.indexOf("sv1.otruyencdn.com") >= 0) {
+        // Thử endpoint dự phòng nếu sv1.otruyencdn.com lỗi
+        var altUrl = sUrl.replace("sv1.otruyencdn.com", "img.otruyenapi.com");
+        str = fetchJson(altUrl);
+    }
+    if (!str) {
+        return Response.error("Máy chủ OTruyen (sv1.otruyencdn.com) đang bảo trì hoặc lỗi 502 Bad Gateway.");
+    }
 
     var json = parseJson(str);
     if (!json || json.status !== "success" || !json.data || !json.data.item) {

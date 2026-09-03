@@ -52,5 +52,5 @@ function toPhoton(url, idx) {
     if (!isAvif) return url;
     var bare = url.replace(/^https?:\/\//i, "");
     var host = "i" + (idx % 3) + ".wp.com/"; // xoay i0/i1/i2 để tải song song
-    return "https://" + host + bare + "?w=1000&quality=80";
+    return "https://" + host + bare + "?w=800&quality=75";
 }

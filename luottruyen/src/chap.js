@@ -109,8 +109,8 @@ function chapDocViaBrowser(url) {
     try {
         browser = Engine.newBrowser();
         // Do not override userAgent so WebView retains logged-in session cookies
-        browser.launch(url, 8);
-        browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 3000);
+        browser.launch(url, 4);
+        browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 600);
         var bDoc = browser.html();
         browser.close();
         browser = null;
@@ -126,33 +126,30 @@ function chapDocViaBrowser(url) {
 function execute(url) {
     syncBaseFromUrl(url);
 
-    // 1. Direct Jsoup fetch — chỉ ăn khi phiên HTTP đã có cookie đăng nhập.
-    //    Luôn thử bóc ảnh trước rồi mới xét tường đăng nhập: nếu trang thật có
-    //    ảnh mà vẫn còn link /Account/Login ở header thì không được bỏ nhầm.
-    var doc = fetchChapterDoc(url);
-    if (doc) {
-        var images = extractImagesFromDoc(doc);
-        if (images && images.length > 0) {
-            return Response.success(images);
-        }
-    }
-
-    // 2. WebView giữ cookie phiên đã đăng nhập trong app — đường duy nhất đọc
-    //    được chương từ khi nguồn bắt buộc đăng nhập Google.
+    // 1. WebView giữ cookie phiên đăng nhập Google trong app — đường duy nhất đọc
+    //    được chương khi nguồn khoá đăng nhập. Ưu tiên chạy trước để không lãng phí
+    //    1-2s chờ redirect 302 của HTTP thường.
     var bDoc = chapDocViaBrowser(url);
     if (bDoc) {
         var bImgs = extractImagesFromDoc(bDoc);
         if (bImgs && bImgs.length > 0) {
             return Response.success(bImgs);
         }
-        // WebView cũng bị chặn → phiên trong app chưa đăng nhập
         if (isLoginWall(bDoc)) {
             return Response.error(LOGIN_MSG);
         }
     }
 
-    if (isLoginWall(doc)) {
-        return Response.error(LOGIN_MSG);
+    // 2. Dự phòng: Direct Jsoup fetch nếu WebView trục trặc hoặc nguồn bỏ khoá
+    var doc = fetchChapterDoc(url);
+    if (doc) {
+        var images = extractImagesFromDoc(doc);
+        if (images && images.length > 0) {
+            return Response.success(images);
+        }
+        if (isLoginWall(doc)) {
+            return Response.error(LOGIN_MSG);
+        }
     }
 
     return Response.error("Không tìm thấy ảnh chương. Vui lòng kiểm tra lại trang nguồn.");

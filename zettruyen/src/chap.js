@@ -8,22 +8,12 @@ function execute(url) {
     if (!doc) return Response.error("Không tải được trang chương");
 
     // Live structure: div.chapter-images-container > div.w-full.mx-auto.center > img (src is direct CDN URL)
-    let imgs = doc.select("div.chapter-images-container div.w-full img");
+    let imgs = doc.select("div.chapter-images-container img");
     if (!imgs || imgs.size() === 0) {
         imgs = doc.select("div.w-full.mx-auto.center img");
     }
     if (!imgs || imgs.size() === 0) {
-        // Heuristic fallback: any img on the zetimage CDN
-        let all = doc.select("img");
-        let filtered = [];
-        for (let i = 0; i < all.size(); i++) {
-            let e = all.get(i);
-            let s = e.attr("src") || "";
-            if (s.indexOf("zetimage.com") !== -1 && s.indexOf("thumb") === -1) {
-                filtered.push(e);
-            }
-        }
-        imgs = filtered;
+        imgs = doc.select(".reading-detail img, #chapter-content img, .page-chapter img");
     }
 
     let data = [];

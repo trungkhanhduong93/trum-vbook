@@ -3,7 +3,14 @@ load("config.js");
 function execute(url) {
     // URL nhận vào chính là endpoint API của Otruyen (ví dụ: https://sv1.otruyencdn.com/v1/api/chapter/...)
     var str = fetchJson(url);
-    if (!str) return Response.error("Không tải được hình ảnh chương");
+    if (!str && url && url.indexOf("sv1.otruyencdn.com") >= 0) {
+        // Thử endpoint dự phòng nếu sv1.otruyencdn.com lỗi
+        var altUrl = url.replace("sv1.otruyencdn.com", "img.otruyenapi.com");
+        str = fetchJson(altUrl);
+    }
+    if (!str) {
+        return Response.error("Máy chủ OTruyen (sv1.otruyencdn.com) đang bảo trì hoặc lỗi 502 Bad Gateway.");
+    }
 
     try {
         var json = JSON.parse(str);

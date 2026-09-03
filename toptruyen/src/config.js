@@ -91,26 +91,31 @@ function fetchRetry(url) {
     var doc = null;
     try {
         doc = Http.get(currentUrl).headers({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
             "Referer": BASE_URL + "/"
         }).html();
     } catch (e) {}
 
-    var title = doc ? doc.select("title").text() : "";
-    if (doc && title && title.indexOf("Just a moment") === -1 && title.indexOf("Cloudflare") === -1) {
-        return doc;
+    if (doc) {
+        var title = doc.select("title").text();
+        var isCf = title && (title.indexOf("Just a moment") >= 0 || title.indexOf("Cloudflare") >= 0);
+        if (!isCf) {
+            return doc;
+        }
     }
 
-    // Auto probe next domain numbers if failed
-    var probeDoc = autoProbeDomains(url);
-    if (probeDoc) return probeDoc;
+    // Chỉ rà domain tiếp theo khi mất kết nối hoàn toàn (doc === null)
+    if (!doc) {
+        var probeDoc = autoProbeDomains(url);
+        if (probeDoc) return probeDoc;
+    }
 
-    // Fallback to browser
+    // Fallback sang browser nhanh khi gặp Cloudflare challenge
     try {
         var browser = Engine.newBrowser();
-        browser.launch(currentUrl, 12000);
+        browser.launch(currentUrl, 4000);
         var browserDoc = browser.html();
         browser.close();
         if (browserDoc) return browserDoc;
