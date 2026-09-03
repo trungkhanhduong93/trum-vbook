@@ -126,18 +126,6 @@
       "locale": "vi_VN"
     },
     {
-      "name": "OTruyen",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/otruyen/plugin.zip",
-      "version": 22,
-      "source": "https://otruyen.cc",
-      "regexp": "(www\\.)?otruyen\\.cc\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/otruyen/icon.png",
-      "description": "OTruyen - Đọc truyện tranh online qua otruyenapi.com",
-      "type": "comic",
-      "locale": "vi_VN"
-    },
-    {
       "name": "Mimimoe",
       "author": "tkd1793",
       "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip",
@@ -159,18 +147,6 @@
       "regexp": "(www.)?zettruyen\\.work\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png",
       "description": "Ä á» c truyá»‡n trÃªn trang ZetTruyen",
-      "type": "comic",
-      "locale": "vi_VN"
-    },
-    {
-      "name": "WebTruyenTranh",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/plugin.zip",
-      "version": 13,
-      "source": "https://www.webtruyentranh.com",
-      "regexp": "(www\\.)?webtruyentranh\\.com\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/webtruyentranh/icon.png",
-      "description": "Doc truyen tren trang WebTruyenTranh",
       "type": "comic",
       "locale": "vi_VN"
     },
