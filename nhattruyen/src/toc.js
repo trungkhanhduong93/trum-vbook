@@ -11,10 +11,24 @@ function execute(url) {
     var comicSlug = "";
     var comicId = "";
 
+    // 1.1 Trích xuất comicSlug từ URL
+    var mSlugUrl = url.match(/\/truyen-tranh\/([a-zA-Z0-9-]+?)(?:-\d+)?(?:[\/?#]|$)/);
+    if (mSlugUrl && mSlugUrl[1]) comicSlug = mSlugUrl[1];
+
+    // 1.2 Trích xuất comicId từ URL (nếu có đuôi số)
+    var mIdUrl = url.match(/\/truyen-tranh\/[a-zA-Z0-9-]+?-(\d+)(?:[\/?#]|$)/);
+    if (mIdUrl && mIdUrl[1]) comicId = mIdUrl[1];
+
+    // 1.3 Dò từ thẻ script gOpts
     var scripts = doc.select("script");
     for (var s = 0; s < scripts.size(); s++) {
-        var st = scripts.get(s).html();
-        if (st.indexOf("comicId") >= 0 || st.indexOf("comicSlug") >= 0) {
+        var sc = scripts.get(s);
+        var st = "";
+        try { st = sc.data(); } catch (eData) {}
+        if (!st) {
+            try { st = sc.html(); } catch (eHtml) {}
+        }
+        if (st && (st.indexOf("comicId") >= 0 || st.indexOf("comicSlug") >= 0)) {
             var mS = st.match(/gOpts\.comicSlug\s*=\s*['"]([^'"]+)['"]/);
             if (mS && mS[1]) comicSlug = mS[1];
             var mI = st.match(/gOpts\.comicId\s*=\s*['"]?(\d+)['"]?/);
@@ -23,18 +37,17 @@ function execute(url) {
         }
     }
 
-    if (!comicSlug || !comicId) {
-        var mUrl = url.match(/\/truyen-tranh\/([a-zA-Z0-9-]+?)(?:-([0-9]+))?(?:[\/?#]|$)/);
-        if (mUrl) {
-            if (!comicSlug) comicSlug = mUrl[1];
-            if (!comicId && mUrl[2]) comicId = mUrl[2];
-        }
-    }
-
+    // 1.4 Dò comicId từ DOM nếu script không có
     if (!comicId) {
-        var idEl = doc.select("input#ctl00_cphMain_ctl00_hfComicId, input[id*='hfComicId'], ul.comic-item[data-id], .list-chapter[data-id]");
+        var idEl = doc.select("#comment-wrapper[data-id], .follow-url[data-id], input#ctl00_cphMain_ctl00_hfComicId, input[id*='hfComicId'], ul.comic-item[data-id], .t-item.comic-item[data-id], .list-chapter[data-id]");
         if (idEl && idEl.size() > 0) {
-            comicId = idEl.get(0).attr("value") || idEl.get(0).attr("data-id") || "";
+            for (var k = 0; k < idEl.size(); k++) {
+                var val = idEl.get(k).attr("data-id") || idEl.get(k).attr("value") || "";
+                if (val && /^\d+$/.test(val)) {
+                    comicId = val;
+                    break;
+                }
+            }
         }
     }
 
