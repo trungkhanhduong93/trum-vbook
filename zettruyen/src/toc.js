@@ -44,24 +44,24 @@ function execute(url) {
 
 function fallbackFromHtml(doc) {
     var chapters = [];
-    var els = doc.select("a").filter(function(e) {
-        return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
-    });
-    if (els.size() === 0) {
-        els = doc.select(".list-chapter a").filter(function(e) {
-            return e.attr('href') && e.attr('href').indexOf('/chuong-') !== -1;
-        });
+    var els = doc.select(".list-chapter a, a[href*='/chuong-']");
+    if (!els || els.size() === 0) {
+        els = doc.select("a");
     }
-    var ne = els.size();
-    for (var i = 0; i < ne; i++) {
+    var seen = {};
+    for (var i = 0; i < els.size(); i++) {
         var e = els.get(i);
-        var link = e.attr("href");
-        if (link.indexOf("/") === 0) link = BASE_URL + link;
+        var href = e.attr("href") || "";
+        if (!href || href.indexOf("/chuong-") === -1) continue;
+        if (href.indexOf("/") === 0) href = BASE_URL + href;
+        if (seen[href]) continue;
+        seen[href] = true;
         chapters.push({
-            name: e.text().trim(),
-            url: link,
+            name: e.text().trim() || ("Chương " + (chapters.length + 1)),
+            url: href,
             host: BASE_URL
         });
     }
+    if (chapters.length === 0) return Response.error("Không tìm thấy chương nào");
     return Response.success(chapters);
 }

@@ -10,10 +10,11 @@ function execute(url) {
     var chapters = [];
     try {
         var data = JSON.parse(res.text());
-        if (!data || !data.length) return Response.error("Mục lục trống");
+        var list = Array.isArray(data) ? data : (data.items || data.chapters || data.data || []);
+        if (!list || !list.length) return Response.error("Mục lục trống");
 
-        for (var i = 0; i < data.length; i++) {
-            var c = data[i];
+        for (var i = 0; i < list.length; i++) {
+            var c = list[i];
             if (!c || !c.id) continue;
             var nm = "";
             if (c.order || c.order === 0) nm = "Chapter " + c.order;

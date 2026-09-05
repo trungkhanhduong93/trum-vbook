@@ -13,6 +13,7 @@ import re
 import zipfile
 import subprocess
 import urllib.request
+import time
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -254,6 +255,45 @@ class QAGateKeeper:
             except Exception as e:
                 self.log_fail("GATE-4", f"Lỗi cào LuotTruyenNew live: {e}")
             test_images = []
+        elif plugin_name == "toptruyen":
+            try:
+                story_url = "https://www.toptruyenzone11.com/truyen-tranh/van-co-toi-cuong-tong/1713"
+                t0 = time.time()
+                req = urllib.request.Request(story_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Referer": "https://www.toptruyenzone11.com/"
+                })
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    dt = time.time() - t0
+                    html_content = resp.read().decode('utf-8', errors='ignore')
+                    chap_links = set(re.findall(r'href=["\']([^"\']*(?:/chapter-|/chuong-)[^"\']*)["\']', html_content))
+                    total_chaps = len(chap_links)
+                    if total_chaps > 100:
+                        self.log_pass("GATE-4", f"TopTruyen zone11 phản hồi trong {dt:.2f}s, trích xuất được {total_chaps} chương.")
+                    else:
+                        self.log_fail("GATE-4", f"TopTruyen chỉ tìm thấy {total_chaps} chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi cào TopTruyen live: {e}")
+            test_images = []
+        elif plugin_name == "zettruyen":
+            try:
+                api_url = "https://www.zettruyen1.com/api/comics/dai-quan-gia-la-ma-hoang/chapters?per_page=-1&order=asc"
+                t0 = time.time()
+                req = urllib.request.Request(api_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Referer": "https://www.zettruyen1.com/"
+                })
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    dt = time.time() - t0
+                    d = json.loads(resp.read().decode('utf-8'))
+                    total_chaps = len(d.get("data", {}).get("chapters", []))
+                    if total_chaps > 500:
+                        self.log_pass("GATE-4", f"ZetTruyen1 API phản hồi trong {dt:.2f}s, trích xuất đủ {total_chaps} chương (>500).")
+                    else:
+                        self.log_fail("GATE-4", f"ZetTruyen1 API chỉ tìm thấy {total_chaps} chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi gọi ZetTruyen1 API live: {e}")
+            test_images = []
 
         for origin, img_url in test_images:
             try:
@@ -329,7 +369,7 @@ if __name__ == "__main__":
             keeper.run_gate_1_static_audit(p_dir)
             keeper.run_gate_2_zip_audit(p_dir)
             keeper.run_gate_3_version_consistency(p, p_dir)
-            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen", "cuutruyen", "luottruyennew"]:
+            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen", "cuutruyen", "luottruyennew", "toptruyen", "zettruyen"]:
                 keeper.run_gate_4_live_runtime(p)
                 
     keeper.run_gate_5_git_audit()

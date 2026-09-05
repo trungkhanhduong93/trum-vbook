@@ -1,4 +1,4 @@
-var BASE_URL = 'https://www.zettruyen.work';
+var BASE_URL = 'https://www.zettruyen1.com';
 var REFERER = BASE_URL + '/';
 
 var HTML_HEADERS = {

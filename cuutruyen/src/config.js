@@ -134,6 +134,7 @@ function parseCards(doc) {
         if (!name) continue;
 
         var cover = img ? absUrl(img.attr("src") || img.attr("data-src")) : "";
+        cover = coverAt(cover, 256);
 
         var desc = "";
         var h4 = selFirst(card, "h4");
@@ -168,7 +169,7 @@ function parseCards(doc) {
         out.push({
             name: lname,
             link: lnk,
-            cover: limg ? absUrl(limg.attr("src") || limg.attr("data-src")) : "",
+            cover: limg ? coverAt(absUrl(limg.attr("src") || limg.attr("data-src")), 256) : "",
             description: "",
             host: HOST
         });

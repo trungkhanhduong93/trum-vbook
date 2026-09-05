@@ -40,7 +40,7 @@ function probeDomain() {
     var m = String(SITE_URL).match(/goctruyentranhvui(\d+)\.com/i);
     if (m) cur = parseInt(m[1], 10);
 
-    var order = [cur + 1, cur + 2, cur - 1, cur + 3, cur - 2];
+    var order = [cur + 1, cur - 1];
     for (var i = 0; i < order.length; i++) {
         var n = order[i];
         if (n < 30 || n > 99 || n === cur) continue;

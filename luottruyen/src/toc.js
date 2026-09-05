@@ -2,21 +2,39 @@ load("config.js");
 
 function execute(url) {
     syncBaseFromUrl(url);
-    // StoryID nằm cuối URL: /truyen-tranh/ten-truyen-12345 -> "12345"
-    var storyId = url.replace(/\/$/, "").split("-").pop();
 
-    // 1) POST API (nhanh nhất, như Tachiyomi). null = API hỏng, [] = API sống
-    //    nhưng truyện chưa có chương nào.
-    var chapters = tocViaApi(url, storyId);
+    // 1. Trích xuất storyId từ URL (dạng -12345 ở cuối)
+    var m = String(url).match(/-(\d+)\/?$/);
+    var storyId = m ? m[1] : null;
 
-    // 2) Chỉ dò lại domain khi API HỎNG THẬT. Mảng rỗng không phải dấu hiệu đổi
-    //    domain — dò lúc đó chỉ tốn thêm vài giây rồi vẫn rỗng như cũ.
-    if (chapters === null) {
-        autoProbeDomains(url);
-        chapters = tocViaApi(swapDomainTo(url, BASE_URL), storyId);
+    var chapters = null;
+    if (storyId) {
+        chapters = tocViaApi(url, storyId);
     }
 
-    // 3) Vẫn rỗng → render bằng trình duyệt (danh sách chương nạp qua AJAX)
+    // 2. Nếu URL không có số ID hoặc API trả null/rỗng:
+    // Tải nhanh trang truyện để bóc tách #storyID hoặc danh sách chương nhúng sẵn
+    if (!chapters || chapters.length === 0) {
+        var pageRes = fetchRetry(url);
+        if (pageRes && pageRes.ok) {
+            var pageDoc = pageRes.html();
+            if (pageDoc) {
+                var sInput = selFirst(pageDoc, "#storyID, input[id=storyID], input[name=storyID]");
+                var foundId = sInput ? sInput.attr("value") : null;
+                if (foundId && foundId !== storyId) {
+                    chapters = tocViaApi(url, foundId);
+                }
+                if (!chapters || chapters.length === 0) {
+                    chapters = parseChapterList(pageDoc);
+                }
+                if (!chapters || chapters.length === 0) {
+                    chapters = parseEmbeddedChapters(pageDoc);
+                }
+            }
+        }
+    }
+
+    // 3. Fallback cuối cùng: WebView siêu tốc với browser.block() chặn rác (tối đa 3s)
     if (!chapters || chapters.length === 0) {
         return tocViaBrowser(swapDomain(url));
     }
@@ -52,16 +70,17 @@ function tocViaBrowser(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        browser.setUserAgent(UserAgent.android());
-        browser.launch(url, 8);
-        browser.callJs("", 2500); // chờ JS nạp danh sách chương
+        try {
+            browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.css.*", ".*\\.gif", ".*stats.*"]);
+        } catch (eBlock) {}
+        browser.launch(url, 3);
+        try {
+            browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 1);
+        } catch (eJs) {}
         var doc = browser.html();
-        browser.close();
-        browser = null;
 
         var chapters = parseChapterList(doc);
         if (chapters.length === 0) {
-            // thử selector embedded khác trên trang detail
             chapters = parseEmbeddedChapters(doc);
         }
         if (chapters.length === 0) return Response.error("Không tải được mục lục");
@@ -69,8 +88,11 @@ function tocViaBrowser(url) {
         chapters.reverse();
         return Response.success(chapters);
     } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
         return Response.error("Lỗi tải mục lục: " + e.message);
+    } finally {
+        if (browser) {
+            try { browser.close(); } catch (err) {}
+        }
     }
 }
 

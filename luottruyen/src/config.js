@@ -95,15 +95,10 @@ function resolveBaseUrl() {
 // Rà soát lũy tiến luottruyen18.com, 19, 20... khi domain hiện hành hỏng.
 // Hết dải số thì quay sang redirector luottruyen.com.
 function autoProbeDomains(url) {
-    // Domain hiện hành vừa fetch hỏng → dò từ số KẾ TIẾP. Dò lại chính nó là
-    // vô ích và rất đắt: domain chết mà DNS còn phân giải thì treo ~15s/lần.
     var failedNum = extractDomainNumber(BASE_URL);
-    if (failedNum < 16) failedNum = 16;
+    if (failedNum < 17) failedNum = 17;
     var startNum = failedNum + 1;
-    // Chỉ nhìn trước 5 số: nguồn xưa nay nhảy từng bậc một (8→10→11→16→17).
-    // Dò rộng hơn chỉ tổ đốt thời gian ở ca mục lục rỗng thật (toc.js) —
-    // trường hợp nhảy xa đã có redirector ở dưới lo.
-    var maxNum = startNum + 4;
+    var maxNum = startNum + 1; // Chỉ thử tối đa 1 số kế tiếp, tránh DNS freeze 45s
 
     for (var n = startNum; n <= maxNum; n++) {
         var targetDomain = "https://luottruyen" + n + ".com";
@@ -128,8 +123,7 @@ function autoProbeDomains(url) {
         } catch (e) {}
     }
 
-    // Secondary fallback: thử qua redirector luottruyen.com (~5s nhưng luôn
-    // trả đúng domain hiện hành, kể cả khi nguồn nhảy sang tên không đánh số)
+    // Secondary fallback: thử qua redirector luottruyen.com
     try {
         resolveBaseUrl();
         var resRedir = fetch(swapDomain(url), FETCH_OPTIONS);
