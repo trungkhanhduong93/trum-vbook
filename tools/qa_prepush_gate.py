@@ -181,6 +181,44 @@ class QAGateKeeper:
             test_images = [
                 ("https://luottruyen.net", "https://s34.cc3t.net/chapters/b2515/chapter-375/cuong-gia-den-tu-trai-tam-than-0.jpg")
             ]
+        elif plugin_name == "nettruyen":
+            try:
+                api_url = "https://nettruyenar.com/Comic/Services/ComicService.asmx/ChapterList?slug=blue-box&comicId=11258"
+                req = urllib.request.Request(api_url, headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Referer": "https://nettruyenar.com/truyen-tranh/blue-box-11258"
+                })
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                    total_chaps = len(data.get("data", []))
+                    if total_chaps > 20:
+                        self.log_pass("GATE-4", f"NetTruyen ComicService trả về đầy đủ {total_chaps} chương (>20 chương giới hạn cũ).")
+                    else:
+                        self.log_fail("GATE-4", f"NetTruyen ComicService chỉ trả về {total_chaps} chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi gọi ComicService NetTruyen: {e}")
+            test_images = [
+                ("https://nettruyenar.com", "https://cdn1.cloud-zzz.com/nettruyen/blue-box/250/0.jpg")
+            ]
+        elif plugin_name == "nhattruyen":
+            try:
+                api_url = "https://nhattruyenqq.com/Comic/Services/ComicService.asmx/ChapterList?slug=ta-co-the-don-ngo-vo-han&comicId=13396"
+                req = urllib.request.Request(api_url, headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Referer": "https://nhattruyenqq.com/truyen-tranh/ta-co-the-don-ngo-vo-han"
+                })
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                    total_chaps = len(data.get("data", []))
+                    if total_chaps > 20:
+                        self.log_pass("GATE-4", f"NhatTruyen ComicService trả về đầy đủ {total_chaps} chương (>20 chương giới hạn cũ).")
+                    else:
+                        self.log_fail("GATE-4", f"NhatTruyen ComicService chỉ trả về {total_chaps} chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi gọi ComicService NhatTruyen: {e}")
+            test_images = []
 
         for origin, img_url in test_images:
             try:
@@ -256,7 +294,7 @@ if __name__ == "__main__":
             keeper.run_gate_1_static_audit(p_dir)
             keeper.run_gate_2_zip_audit(p_dir)
             keeper.run_gate_3_version_consistency(p, p_dir)
-            if p in ["goctruyentranh", "luottruyen"]:
+            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen"]:
                 keeper.run_gate_4_live_runtime(p)
                 
     keeper.run_gate_5_git_audit()

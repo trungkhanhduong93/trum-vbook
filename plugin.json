@@ -19,8 +19,8 @@
     {
       "name": "NetTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/plugin.zip?v=3",
-      "version": 3,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/plugin.zip?v=4",
+      "version": 4,
       "source": "https://nettruyenar.com",
       "regexp": "nettruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(-?\\d+)?\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/icon.png",
@@ -31,8 +31,8 @@
     {
       "name": "NhatTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nhattruyen/plugin.zip?v=3",
-      "version": 3,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nhattruyen/plugin.zip?v=4",
+      "version": 4,
       "source": "https://nhattruyenqq.com",
       "regexp": "nhattruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nhattruyen/icon.png",

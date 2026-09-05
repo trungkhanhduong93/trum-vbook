@@ -2,7 +2,7 @@
   "metadata": {
     "name": "NetTruyen",
     "author": "tkd1793",
-    "version": 3,
+    "version": 4,
     "source": "https://nettruyenar.com",
     "regexp": "nettruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(-?\\d+)?\\/?$",
     "description": "Đọc truyện tranh trên trang NetTruyen",
