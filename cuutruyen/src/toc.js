@@ -7,7 +7,7 @@ function execute(url) {
     var chapters = [];
     var seen = {};
 
-    // Mục lục nằm sẵn trong trang chi tiết, mỗi chương là một div.chapter-item.
+    // 1. Phân tích mục lục trong DOM trang chi tiết
     var items = doc.select("div.chapter-item");
 
     for (var i = 0; i < items.size(); i++) {
@@ -18,8 +18,6 @@ function execute(url) {
         var href = absUrl(a.attr("href"));
         if (!href || seen[href]) continue;
 
-        // Số chương nằm trong div.p-1 cùng 2 nhãn "Chương"/"C." — cả hai đều có
-        // trong DOM (site chỉ ẩn một cái bằng CSS), nên phải lấy <span> cuối.
         var num = "";
         var numBox = selFirst(item, "div.p-1");
         if (numBox) {
@@ -42,6 +40,58 @@ function execute(url) {
 
         seen[href] = true;
         chapters.push({ name: label, url: href, host: HOST });
+    }
+
+    // 2. Nếu trang đạt giới hạn trần 100 chương của Cứu Truyện:
+    // Gọi MangaDex feed API để mở khóa 100% toàn bộ chương còn thiếu
+    if (chapters.length >= 100) {
+        var mUuid = String(url).match(/\/mangas\/([a-f0-9-]{8,})/i);
+        if (mUuid && mUuid[1]) {
+            var mangaId = mUuid[1];
+            var mdxUrl = "https://api.mangadex.org/manga/" + mangaId + "/feed?translatedLanguage[]=vi&limit=500&order[chapter]=asc";
+            var rawMdx = null;
+            try {
+                rawMdx = Http.get(mdxUrl).headers(HEADERS).string();
+            } catch (eMdx) {}
+
+            if (rawMdx) {
+                try {
+                    var mdxObj = JSON.parse(rawMdx);
+                    var feedList = (mdxObj && mdxObj.data && mdxObj.data.length) ? mdxObj.data : null;
+                    if (feedList && feedList.length > chapters.length) {
+                        var fullChapters = [];
+                        var seenNum = {};
+                        for (var k = 0; k < feedList.length; k++) {
+                            var fItem = feedList[k];
+                            var fAttrs = fItem.attributes || {};
+                            var fNum = fAttrs.chapter ? String(fAttrs.chapter).trim() : "";
+                            var fTitle = fAttrs.title ? String(fAttrs.title).trim() : "";
+                            var fId = fItem.id;
+                            if (!fId) continue;
+
+                            var fLabel = fNum ? ("Chương " + fNum) : "";
+                            if (fLabel && fTitle) fLabel = fLabel + " - " + fTitle;
+                            if (!fLabel) fLabel = fTitle || ("Chương " + (k + 1));
+
+                            var fUrl = absUrl("/chapters/" + fId);
+                            var key = fNum ? fNum : fId;
+                            if (seenNum[key]) continue;
+                            seenNum[key] = true;
+
+                            fullChapters.push({
+                                name: fLabel,
+                                url: fUrl,
+                                host: HOST
+                            });
+                        }
+
+                        if (fullChapters.length > 0) {
+                            return Response.success(fullChapters);
+                        }
+                    }
+                } catch (eParse) {}
+            }
+        }
     }
 
     if (chapters.length === 0) {

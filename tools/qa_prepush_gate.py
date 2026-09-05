@@ -219,6 +219,41 @@ class QAGateKeeper:
             except Exception as e:
                 self.log_fail("GATE-4", f"Lỗi gọi ComicService NhatTruyen: {e}")
             test_images = []
+        elif plugin_name == "cuutruyen":
+            try:
+                manga_id = "0c3d2ca2-0857-4a6c-be97-59ffa3e29873"
+                api_url = f"https://api.mangadex.org/manga/{manga_id}/feed?translatedLanguage[]=vi&limit=500&order[chapter]=asc"
+                req = urllib.request.Request(api_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                })
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                    total_chaps = len(data.get("data", []))
+                    if total_chaps > 100:
+                        self.log_pass("GATE-4", f"CuuTruyen MangaDex feed mở khóa thành công {total_chaps} chương (>100 giới hạn cũ).")
+                    else:
+                        self.log_fail("GATE-4", f"CuuTruyen MangaDex feed chỉ trả về {total_chaps} chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi gọi MangaDex feed CuuTruyen: {e}")
+            test_images = []
+        elif plugin_name == "luottruyennew":
+            try:
+                story_url = "https://luottruyen.net/hardcore-leveling-warrior-season-3"
+                req = urllib.request.Request(story_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Referer": "https://luottruyen.net/"
+                })
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    html_content = resp.read().decode('utf-8', errors='ignore')
+                    chap_links = set(re.findall(r'href=["\']([^"\']*/chapter-[^"\']*)["\']', html_content))
+                    total_chaps = len(chap_links)
+                    if total_chaps > 100:
+                        self.log_pass("GATE-4", f"LuotTruyenNew trích xuất được {total_chaps} chương (>100 giới hạn cũ).")
+                    else:
+                        self.log_fail("GATE-4", f"LuotTruyenNew chỉ tìm thấy {total_chaps} chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi cào LuotTruyenNew live: {e}")
+            test_images = []
 
         for origin, img_url in test_images:
             try:
@@ -294,7 +329,7 @@ if __name__ == "__main__":
             keeper.run_gate_1_static_audit(p_dir)
             keeper.run_gate_2_zip_audit(p_dir)
             keeper.run_gate_3_version_consistency(p, p_dir)
-            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen"]:
+            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen", "cuutruyen", "luottruyennew"]:
                 keeper.run_gate_4_live_runtime(p)
                 
     keeper.run_gate_5_git_audit()
