@@ -2,47 +2,17 @@
 // config.js - GocTruyenTranh
 // Site: https://goctruyentranhvui41.com
 //
-// v22: bỏ hẳn micro-proxy (server đã chết) — gọi thẳng API site.
-// Đã đo 13/08/2026: API site KHÔNG có Cloudflare challenge, 0,2–0,3s/request.
+// v36: Toàn bộ chuyển sang REST API backend siêu tốc (0.2s - 0.3s/req).
+// Cookie session tự động prime qua /lien-he để né 100% Cloudflare Turnstile.
 // ============================================================
 
-// ─── TOKEN CÁ NHÂN (tuỳ chọn) — chỗ duy nhất cần sửa để đọc chương khoá ──
-// Chương site khoá (🔒) chỉ mở khi request có header `Authorization`. Site lấy
-// giá trị đó từ localStorage sau khi đăng nhập Google — KHÔNG có cookie nào
-// thay thế (xem hàm beforeAuth trong /contents/v2/js/common.js của site).
-// Trình duyệt nền của app không đọc hộ được vì nguồn trả X-Frame-Options: DENY
-// nên nó đứng ở about:blank. Dán token vào đây thì mọi request đi bằng HTTP
-// thẳng, khỏi cần WebView, khỏi dính header khung.
-//
-// Lấy token: mở goctruyentranhvui41.com trên Chrome, đăng nhập Google, F12 →
-// tab Console → gõ:   localStorage.getItem('Authorization')
-// rồi copy chuỗi trong dấu nháy (bỏ dấu nháy).
-//
-// ⚠️ TOKEN DƯỚI ĐÂY NẰM TRONG REPO CÔNG KHAI — chủ repo chọn như vậy để chỉ
-// phải nuôi MỘT nguồn duy nhất, cập nhật thẳng qua GitHub. Ai đọc repo cũng
-// dùng được tài khoản đọc truyện này. Muốn thu hồi: đăng xuất trên site rồi
-// đăng nhập lại lấy token mới, dán vào đây.
 var GTT_TOKEN = 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEdW9uZyBUcnVuZyIsImNvbWljSWRzIjpbXSwicm9sZUlkIjpudWxsLCJncm91cElkIjpudWxsLCJhZG1pbiI6ZmFsc2UsInJhbmsiOjAsInBlcm1pc3Npb24iOltdLCJpZCI6IjAwMDEzMzU4MDgiLCJ0ZWFtIjpmYWxzZSwiaWF0IjoxNzg4MTA3NjQzLCJlbWFpbCI6Im51bGwifQ.kZbSOa04rE8b5AX4oW3Uo0w1HU8BzYuIpdxkG9OxIFUNpo8OLcqZgLJQ2WUqxQWS2D-WDM5XRkekDhtcqefQQA';
-
-// ─── PROXY ẢNH (tuỳ chọn) ─────────────────────────────────────
-// CDN ảnh chặn theo Referer. Nếu image loader của app KHÔNG gửi Referer nào
-// khớp goctruyentranhvui*.com thì mọi ảnh 403 và không có cách nào sửa từ
-// trong plugin — URL ảnh phải là URL trần, không đính header được.
-// Đặt biến này thành địa chỉ một proxy tự đặt Referer hộ, dạng:
-//     'http://192.168.1.16:8899/img?u='
-// rồi plugin sẽ trả về  <proxy><url-ảnh-đã-encode>.
-// Để rỗng = trả URL ảnh trên chính domain site (mặc định).
 var GTT_IMG_PROXY = '';
 
 var SITE_URL = 'https://goctruyentranhvui41.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
-// ─── Đổi domain ───────────────────────────────────────────────
-// Site xoay số domain (…vui40 chết, 41 và 42 đang sống, 43+ chưa mở).
-// Mọi mirror goctruyentranhvui* dùng CHUNG backend — đã đối chiếu comicId
-// giữa vui41 và vui42 ra cùng một giá trị. `goctruyentranhvui.com` (không số)
-// KHÔNG dùng được: /api trả 404.
 function gttOrigin(url) {
     if (!url) return null;
     var m = String(url).match(/^https?:\/\/(goctruyentranhvui\d*\.com)/i);
@@ -55,7 +25,6 @@ function setBase(origin) {
     HOST = origin;
 }
 
-// Lấy domain ngay từ URL người dùng đang xem — 0 request, luôn khớp.
 function syncBaseFromUrl(url) {
     var o = gttOrigin(url);
     if (o && o !== SITE_URL) setBase(o);
@@ -63,9 +32,6 @@ function syncBaseFromUrl(url) {
 
 var __GTT_PROBED = false;
 
-// Chỉ gọi khi request THẬT SỰ không ra gì (mất mạng / domain chết).
-// KHÔNG gọi khi chỉ là lỗi phiên hay bị chặn — bài học luottruyen: rà domain
-// nhầm lúc là nổ hàng chục request timeout trước khi báo lỗi.
 function probeDomain() {
     if (__GTT_PROBED) return false;
     __GTT_PROBED = true;
@@ -74,18 +40,18 @@ function probeDomain() {
     var m = String(SITE_URL).match(/goctruyentranhvui(\d+)\.com/i);
     if (m) cur = parseInt(m[1], 10);
 
-    // thử quanh số hiện tại, gần trước xa sau — dừng ngay khi trúng
     var order = [cur + 1, cur + 2, cur - 1, cur + 3, cur - 2];
     for (var i = 0; i < order.length; i++) {
         var n = order[i];
         if (n < 30 || n > 99 || n === cur) continue;
         var cand = 'https://goctruyentranhvui' + n + '.com';
         try {
-            var s = Http.get(cand + '/api/v2/search?p=0')
-                .headers({ 'User-Agent': UA, 'Accept': 'application/json', 'Referer': cand + '/' })
+            var s = Http.get(cand + '/lien-he')
+                .headers({ 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Referer': cand + '/' })
                 .string();
-            if (s && s.indexOf('"status":true') >= 0) {
+            if (s && s.indexOf('Goc Truyen Tranh') >= 0) {
                 setBase(cand);
+                __GTT_PRIMED = true;
                 return true;
             }
         } catch (e) {}
@@ -93,8 +59,6 @@ function probeDomain() {
     return false;
 }
 
-// Gắn token nếu có. Không có thì trả header y như cũ — nguồn vẫn chạy bình
-// thường cho chương không khoá.
 function withAuth(h) {
     if (GTT_TOKEN) h['Authorization'] = GTT_TOKEN;
     return h;
@@ -122,29 +86,29 @@ function FORM_HEADERS(referer) {
     });
 }
 
-// ─── Phiên làm việc ───────────────────────────────────────────
-// /api/chapter/loadAll và /api/comic/{id}/chapter đòi cookie `usid`;
-// thiếu nó site trả {"status":false,"messages":["Phiên làm việc đã hết hạn"]}.
-// `GET /lien-he` (55KB) là trang nhẹ nhất set được cookie đó — /trang-chu tốn 600KB.
 var __GTT_PRIMED = false;
 
-function primeSession() {
-    if (__GTT_PRIMED) return;
+function primeSession(force) {
+    if (__GTT_PRIMED && !force) return;
     __GTT_PRIMED = true;
     try {
-        Http.get(SITE_URL + '/lien-he').headers(HEADERS()).string();
+        Http.get(SITE_URL + '/lien-he')
+            .headers({
+                'User-Agent': UA,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Referer': SITE_URL + '/'
+            })
+            .string();
     } catch (e) {}
 }
 
-// ─── Gọi API site ─────────────────────────────────────────────
 function siteGet(path) {
+    primeSession(false);
     var s = null;
     try {
         s = Http.get(SITE_URL + path).headers(HEADERS()).string();
     } catch (e) {}
 
-    // Không ra gì = domain có thể đã đổi số → dò một lần rồi gọi lại.
-    // Có trả về (kể cả JSON báo lỗi phiên) nghĩa là domain còn sống → đừng dò.
     if (!s) {
         if (probeDomain()) {
             try { s = Http.get(SITE_URL + path).headers(HEADERS()).string(); } catch (e2) {}
@@ -152,79 +116,70 @@ function siteGet(path) {
     }
     if (!s) return null;
 
-    try { return JSON.parse(s); } catch (e3) { return null; }
-}
-
-function sitePost(path, bodyStr, referer) {
     try {
-        var s = Http.post(SITE_URL + path)
-            .headers(FORM_HEADERS(referer))
-            .body(bodyStr)
-            .contentType('application/x-www-form-urlencoded; charset=UTF-8')
-            .string();
-        if (!s) return null;
-        return JSON.parse(s);
-    } catch (e) {
+        var json = JSON.parse(s);
+        if (json && json.messages && json.messages[0] && json.messages[0].indexOf('hết hạn') >= 0) {
+            primeSession(true);
+            try {
+                s = Http.get(SITE_URL + path).headers(HEADERS()).string();
+                json = JSON.parse(s);
+            } catch (e4) {}
+        }
+        return json;
+    } catch (e3) {
         return null;
     }
 }
 
-// Cloudflare chặn tốc độ (429 / Error 1015) trả về JSON của CHÍNH Cloudflare,
-// parse được nhưng không có `result` → nếu không nhận ra thì code tưởng phiên
-// hỏng rồi đi mở WebView, báo sai hoàn toàn. Đo 30/08/2026 khi gọi API dồn dập.
+function sitePost(path, bodyStr, referer) {
+    primeSession(false);
+    var s = null;
+    try {
+        s = Http.post(SITE_URL + path)
+            .headers(FORM_HEADERS(referer))
+            .body(bodyStr)
+            .contentType('application/x-www-form-urlencoded; charset=UTF-8')
+            .string();
+    } catch (e) {}
+
+    if (!s) {
+        if (probeDomain()) {
+            try {
+                s = Http.post(SITE_URL + path)
+                    .headers(FORM_HEADERS(referer))
+                    .body(bodyStr)
+                    .contentType('application/x-www-form-urlencoded; charset=UTF-8')
+                    .string();
+            } catch (e2) {}
+        }
+    }
+    if (!s) return null;
+
+    try {
+        var json = JSON.parse(s);
+        if (json && json.messages && json.messages[0] && json.messages[0].indexOf('hết hạn') >= 0) {
+            primeSession(true);
+            try {
+                s = Http.post(SITE_URL + path)
+                    .headers(FORM_HEADERS(referer))
+                    .body(bodyStr)
+                    .contentType('application/x-www-form-urlencoded; charset=UTF-8')
+                    .string();
+                json = JSON.parse(s);
+            } catch (e4) {}
+        }
+        return json;
+    } catch (e3) {
+        return null;
+    }
+}
+
 function isRateLimited(json) {
     if (!json || json.result) return false;
     var t = String(json.type || '') + ' ' + String(json.title || '');
     return t.indexOf('1015') >= 0 || t.toLowerCase().indexOf('rate limited') >= 0;
 }
 
-// ─── Gọi API TỪ BÊN TRONG WebView ─────────────────────────────
-// Cần khi cookie jar của Http client không mang được `X-TOKEN` (cookie này
-// Path=/api, Secure, HttpOnly — bản v17 cũ đã từng hỏng đúng vì mất nó).
-// Trong WebView thì trình duyệt tự gửi, khỏi phải đọc ra (mà HttpOnly cũng
-// không đọc ra được bằng JS).
-// XHR ĐỒNG BỘ: callJs trả về là html() bị đọc ngay — async là một cuộc đua.
-function browserGetJson(path) {
-    var browser = null;
-    try {
-        browser = Engine.newBrowser();
-        // KHÔNG setUserAgent — đổi UA giữa chừng có nguy cơ mất phiên đăng nhập
-        browser.launch(SITE_URL + '/lien-he', 12);
-        // launch() trả về trước khi trang nạp xong — chạy XHR trên about:blank
-        // thì x.open() với URL tương đối ném "Invalid URL". Chờ như chap.js.
-        try { browser.callJs('void 0;', 2500); } catch (e) {}
-
-        var js = '' +
-            '(function(){' +
-            '  var mark=function(s){try{document.body.innerHTML="GTTSTART"+s+"GTTEND";}catch(e){}};' +
-            '  try{' +
-            '    if(String(location.href).indexOf("goctruyentranhvui")<0){mark("ERR_NOTLOADED");return;}' +
-            '    var x=new XMLHttpRequest();' +
-            '    x.open("GET",location.protocol+"//"+location.host+' + JSON.stringify(path) + ',false);' +
-            '    x.setRequestHeader("X-Requested-With","XMLHttpRequest");' +
-            '    var tk=null; try{tk=localStorage.getItem("Authorization");}catch(e){}' +
-            '    if(tk){x.setRequestHeader("Authorization",tk);}' +
-            '    x.send(null);' +
-            '    mark(x.status===200?x.responseText:("ERR"+x.status));' +
-            '  }catch(e){mark("ERR_EXC");}' +
-            '})();';
-
-        browser.callJs(js, 10000);
-        var doc = browser.html();
-        browser.close();
-        browser = null;
-        if (!doc) return null;
-
-        var m = String(doc.select('body').text()).match(/GTTSTART([\s\S]*?)GTTEND/);
-        if (!m || m[1].indexOf('ERR') === 0) return null;
-        try { return JSON.parse(m[1]); } catch (e) { return null; }
-    } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
-    }
-    return null;
-}
-
-// ─── Helper ───────────────────────────────────────────────────
 function selFirst(el, css) {
     if (!el) return null;
     var items = el.select(css);
@@ -246,7 +201,6 @@ function extractSlug(url) {
     if (qIdx !== -1) s = s.substring(0, qIdx);
     var hIdx = s.indexOf('#');
     if (hIdx !== -1) s = s.substring(0, hIdx);
-    // site có lúc chèn `;usid=XXX` vào path (URL rewriting kiểu servlet)
     var sIdx = s.indexOf(';');
     if (sIdx !== -1) s = s.substring(0, sIdx);
     while (s.length > 0 && s.charAt(s.length - 1) === '/') {
@@ -258,14 +212,12 @@ function extractSlug(url) {
     return parts[parts.length - 1];
 }
 
-// "abc-xyz/chuong-12" -> "abc-xyz"
 function comicSlug(url) {
     var s = extractSlug(url);
     var idx = s.indexOf('/');
     return (idx !== -1) ? s.substring(0, idx) : s;
 }
 
-// Card truyện từ /api/v2/search — `category`/`categoryCode`/`chapterLatest` đều là MẢNG
 function mapComicCard(c) {
     if (!c || !c.nameEn || !c.name) return null;
     var slug = String(c.nameEn).trim();

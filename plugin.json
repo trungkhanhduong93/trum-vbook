@@ -7,8 +7,8 @@
     {
       "name": "DocTruyen3Q",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/plugin.zip?v=2",
-      "version": 2,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/plugin.zip?v=3",
+      "version": 3,
       "source": "https://doctruyen3qhub.vip",
       "regexp": "doctruyen3q[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(\\/?|\\/\\d+\\/?)$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/doctruyen3q/icon.png",
@@ -19,8 +19,8 @@
     {
       "name": "NetTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/plugin.zip?v=2",
-      "version": 2,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/plugin.zip?v=3",
+      "version": 3,
       "source": "https://nettruyenar.com",
       "regexp": "nettruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(-?\\d+)?\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/nettruyen/icon.png",
@@ -43,8 +43,8 @@
     {
       "name": "2tenVN",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/2ten.zip",
-      "version": 3,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/2ten.zip?v=4",
+      "version": 4,
       "source": "https://www.2tenvn.com",
       "regexp": "2tenvn\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/2ten/icon.png",
@@ -55,8 +55,8 @@
     {
       "name": "LuotTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=31",
-      "version": 31,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=32",
+      "version": 32,
       "source": "https://luottruyen17.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",
@@ -104,8 +104,8 @@
     {
       "name": "TopTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/plugin.zip?v=16",
-      "version": 16,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/plugin.zip?v=17",
+      "version": 17,
       "source": "https://www.toptruyenzone10.com",
       "regexp": "toptruyenzone\\d*\\.com\\/truyen-tranh\\/[a-z0-9-]+-?\\d*\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/toptruyen/icon.png",
@@ -116,8 +116,8 @@
     {
       "name": "TruyenQQ",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenqq/plugin.zip",
-      "version": 4,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenqq/plugin.zip?v=5",
+      "version": 5,
       "source": "https://truyenqqko.com",
       "regexp": "truyenqq[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+-\\d+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/truyenqq/icon.png",
@@ -141,8 +141,8 @@
     {
       "name": "ZetTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/plugin.zip?v=16",
-      "version": 16,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/plugin.zip?v=17",
+      "version": 17,
       "source": "https://www.zettruyen.work",
       "regexp": "(www.)?zettruyen\\.work\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/zettruyen/icon.png",
@@ -195,6 +195,18 @@
       "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-f0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",
       "description": "Đọc truyện trên trang Cứu Truyện",
+      "type": "comic",
+      "locale": "vi_VN"
+    },
+    {
+      "name": "GocTruyenTranh",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip?v=36",
+      "version": 36,
+      "source": "https://goctruyentranhvui41.com",
+      "regexp": "goctruyentranhvui\\d*\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/icon.png",
+      "description": "Đọc truyện trên trang Góc Truyện Tranh",
       "type": "comic",
       "locale": "vi_VN"
     }

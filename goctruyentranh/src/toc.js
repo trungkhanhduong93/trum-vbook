@@ -1,21 +1,11 @@
 load('config.js');
 
-// /api/comic/{slug} chỉ trả 21 chương mới nhất (result.limit=21, server hardcode).
-// Phần còn lại nằm ở /api/comic/{comicId}/chapter?offset={limit}&limit=-1
-// — offset PHẢI bằng result.limit; để offset=0 thì trả rỗng.
-// Endpoint này ĐÒI cookie X-TOKEN (Path=/api). Nếu cookie jar của app không
-// mang được nó thì mục lục cụt còn 21 chương — mượn WebView lấy nốt phần sau.
 function fetchRest(comicId, offset) {
     var path = '/api/comic/' + comicId + '/chapter?offset=' + offset + '&limit=-1';
-
     var json = siteGet(path);
-    if (json && json.result && json.result.chapters && json.result.chapters.length) {
-        return json.result.chapters;
-    }
-
-    var bjson = browserGetJson(path);
-    if (bjson && bjson.result && bjson.result.chapters && bjson.result.chapters.length) {
-        return bjson.result.chapters;
+    if (json && json.result) {
+        if (Array.isArray(json.result)) return json.result;
+        if (json.result.chapters && json.result.chapters.length) return json.result.chapters;
     }
     return [];
 }
@@ -25,8 +15,6 @@ function execute(url) {
 
     var slug = comicSlug(url);
     if (!slug) return Response.error('URL truyện không hợp lệ.');
-
-    primeSession();
 
     var json = siteGet('/api/comic/' + slug);
     if (!json || !json.result) return Response.error('Không tải được mục lục truyện.');
@@ -44,7 +32,6 @@ function execute(url) {
 
     if (!all.length) return Response.error('Truyện chưa có chương nào.');
 
-    // Gộp theo số chương, ghi nhận chương bị khoá (site đánh dấu type=TRIPLE)
     var locked = {};
     var nums = [];
     var seen = {};

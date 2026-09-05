@@ -14,7 +14,7 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS };
+var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 10000 };
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function selFirst(el, css) {

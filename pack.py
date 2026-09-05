@@ -33,6 +33,27 @@ pack_plugin('luottruyen')
 pack_plugin('doctruyen3q')
 pack_plugin('nettruyen')
 pack_plugin('nhattruyen')
-# pack_plugin('goctruyentranh')  # Tam an nguon (khong xoa source, co the bat lai khi can)
+pack_plugin('goctruyentranh')
+pack_plugin('truyenqq')
+pack_plugin('mimimoe')
+
+def pack_2ten():
+    orig = os.getcwd()
+    try:
+        os.chdir('2ten/src')
+        with zipfile.ZipFile('../2ten.zip', 'w', zipfile.ZIP_DEFLATED) as z:
+            z.write('icon.png', 'icon.png')
+            z.write('plugin.json', 'plugin.json')
+            zi = zipfile.ZipInfo('src/')
+            zi.external_attr = 0o040755 << 16
+            z.writestr(zi, '')
+            for f in sorted(os.listdir('src')):
+                if f.endswith('.js') or f.endswith('.json'):
+                    z.write('src/' + f, 'src/' + f)
+        print("Packed 2ten/2ten.zip")
+    finally:
+        os.chdir(orig)
+
+pack_2ten()
 
 

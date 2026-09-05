@@ -113,13 +113,19 @@ function fetchRetry(url) {
     }
 
     // Fallback sang browser nhanh khi gặp Cloudflare challenge
+    var browser = null;
     try {
-        var browser = Engine.newBrowser();
-        browser.launch(currentUrl, 4000);
+        browser = Engine.newBrowser();
+        browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*\\.css.*", ".*\\.gif"]);
+        browser.launch(currentUrl, 4);
         var browserDoc = browser.html();
-        browser.close();
         if (browserDoc) return browserDoc;
-    } catch (err) {}
+    } catch (err) {
+    } finally {
+        if (browser) {
+            try { browser.close(); } catch(e) {}
+        }
+    }
 
     return doc;
 }

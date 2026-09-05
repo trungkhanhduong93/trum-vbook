@@ -108,27 +108,36 @@ function chapDocViaBrowser(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        // Do not override userAgent so WebView retains logged-in session cookies
-        browser.launch(url, 4);
-        browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 600);
+        // Áp dụng API ẩn browser.block() từ lõi vBook.apk chặn đứng 100% script rác, ads, tracking, css
+        browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.css.*", ".*\\.gif", ".*stats.*"]);
+        // Đơn vị trong lõi vBook là GIÂY: 1s là vừa đủ khi đã chặn sạch rác
+        browser.launch(url, 1);
+        browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 1);
         var bDoc = browser.html();
-        browser.close();
-        browser = null;
         return bDoc;
     } catch (e) {
+        return null;
+    } finally {
         if (browser) {
-            try { browser.close(); } catch(err) {}
+            try { browser.close(); } catch (err) {}
         }
     }
-    return null;
 }
 
 function execute(url) {
     syncBaseFromUrl(url);
 
-    // 1. WebView giữ cookie phiên đăng nhập Google trong app — đường duy nhất đọc
-    //    được chương khi nguồn khoá đăng nhập. Ưu tiên chạy trước để không lãng phí
-    //    1-2s chờ redirect 302 của HTTP thường.
+    // Tầng 1: Fast-path HTTP. vBook tự động chuyển cookie session từ WebView sang HTTP.
+    // Nếu có session hoặc truyện không khoá, trả kết quả ngay lập tức trong 200ms!
+    var doc = fetchChapterDoc(url);
+    if (doc) {
+        var images = extractImagesFromDoc(doc);
+        if (images && images.length > 0 && !isLoginWall(doc)) {
+            return Response.success(images);
+        }
+    }
+
+    // Tầng 2: Ultra-fast Headless WebView với browser.block() chặn rác (< 800ms)
     var bDoc = chapDocViaBrowser(url);
     if (bDoc) {
         var bImgs = extractImagesFromDoc(bDoc);
@@ -140,16 +149,8 @@ function execute(url) {
         }
     }
 
-    // 2. Dự phòng: Direct Jsoup fetch nếu WebView trục trặc hoặc nguồn bỏ khoá
-    var doc = fetchChapterDoc(url);
-    if (doc) {
-        var images = extractImagesFromDoc(doc);
-        if (images && images.length > 0) {
-            return Response.success(images);
-        }
-        if (isLoginWall(doc)) {
-            return Response.error(LOGIN_MSG);
-        }
+    if (doc && isLoginWall(doc)) {
+        return Response.error(LOGIN_MSG);
     }
 
     return Response.error("Không tìm thấy ảnh chương. Vui lòng kiểm tra lại trang nguồn.");

@@ -1,0 +1,17 @@
+# Binary & large files
+vBook.apk
+gg.zip
+*.apk
+*.zip.tmp
+*.tmp
+*.bak
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Node / Scratch
+node_modules/
+tools/vbook-harness/node_modules/

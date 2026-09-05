@@ -4,50 +4,50 @@ function execute(url, page) {
     try {
         if (!page) page = '1';
         
-        let searchUrl = "";
-        if (url.startsWith("http")) {
+        var searchUrl = "";
+        if (url.indexOf("http") === 0) {
             searchUrl = url + "&page=" + page;
         } else {
             searchUrl = BASE_URL + "/tim-kiem-nang-cao?q=" + encodeURIComponent(url) + "&page=" + page;
         }
 
-        let doc = fetchRetry(searchUrl);
+        var doc = fetchRetry(searchUrl);
         if (doc) {
-            let items = doc.select('a[href*="/truyen-tranh/"]');
-            let ni = items.size();
-            let data = [];
-            let added = {};
+            var items = doc.select('a[href*="/truyen-tranh/"]');
+            var ni = items.size();
+            var data = [];
+            var added = {};
 
-            for (let i = 0; i < ni; i++) {
-                let a = items.get(i);
-                let el = a; // Do not use a.parent() as it throws TypeError in VBook's String.select polyfill
-                let link = a.attr('href');
+            for (var i = 0; i < ni; i++) {
+                var a = items.get(i);
+                var el = a; // Do not use a.parent() as it throws TypeError in VBook's String.select polyfill
+                var link = a.attr('href');
                 
                 if (!link || added[link]) continue;
                 added[link] = true;
-                let imgEl = a.select('img').first();
-                let img = "";
+                var imgEl = a.select('img').first();
+                var img = "";
                 if (imgEl) {
                     img = imgEl.attr('src') || imgEl.attr('data-src') || imgEl.attr('srcset') || "";
                 }
                 if (img.indexOf(" ") > 0) {
                     img = img.split(" ")[0];
                 }
-                if (img.startsWith("/")) {
+                if (img.indexOf("/") === 0) {
                     img = BASE_URL + img;
                 }
 
-                let title = a.attr('title') || "";
+                var title = a.attr('title') || "";
                 if (!title) {
-                    let imgEl2 = a.select('img').first();
+                    var imgEl2 = a.select('img').first();
                     if (imgEl2) {
                         title = imgEl2.attr('title') || imgEl2.attr('alt') || "";
                     }
                 }
                 if (!title) {
-                    let spans = a.select('span.font-bold');
-                    for (let j = 0; j < spans.size(); j++) {
-                        let txt = spans.get(j).text().trim();
+                    var spans = a.select('span.font-bold');
+                    for (var j = 0; j < spans.size(); j++) {
+                        var txt = spans.get(j).text().trim();
                         if (txt && txt.length > 3 && txt.toLowerCase().indexOf('manhua') === -1 && txt.toLowerCase().indexOf('manhwa') === -1) {
                             title = txt;
                             break;
@@ -55,9 +55,9 @@ function execute(url, page) {
                     }
                 }
                 if (!title) {
-                    let txts = a.select('span, div');
-                    for (let j = 0; j < txts.size(); j++) {
-                        let txt = txts.get(j).text().trim();
+                    var txts = a.select('span, div');
+                    for (var j = 0; j < txts.size(); j++) {
+                        var txt = txts.get(j).text().trim();
                         if (txt && txt.length > 3 && txt.toLowerCase().indexOf('manhua') === -1) {
                             title = txt;
                             break;
@@ -65,10 +65,10 @@ function execute(url, page) {
                     }
                 }
 
-                let chap = "";
-                let chapTags = el.select('span.text-xs, .text-txt-secondary, .absolute, .bg-red-500, .bg-blue-500');
-                for (let j = 0; j < chapTags.size(); j++) {
-                    let t = chapTags.get(j).text().trim();
+                var chap = "";
+                var chapTags = el.select('span.text-xs, .text-txt-secondary, .absolute, .bg-red-500, .bg-blue-500');
+                for (var j = 0; j < chapTags.size(); j++) {
+                    var t = chapTags.get(j).text().trim();
                     if (/^[0-9.]+$/.test(t) || t.toLowerCase().indexOf('chương') !== -1) {
                         chap = t;
                         break;
@@ -86,13 +86,13 @@ function execute(url, page) {
                 }
             }
 
-            let next = "";
-            let paginationUrls = doc.select('a[href*="page="]');
-            let np = paginationUrls.size();
-            for(let i = 0; i < np; i++) {
-                let pUrl = paginationUrls.get(i).attr('href');
-                let pMatch = pUrl.match(/page=(\d+)/);
-                if(pMatch && parseInt(pMatch[1]) > parseInt(page)) {
+            var next = "";
+            var paginationUrls = doc.select('a[href*="page="]');
+            var np = paginationUrls.size();
+            for (var i = 0; i < np; i++) {
+                var pUrl = paginationUrls.get(i).attr('href');
+                var pMatch = pUrl.match(/page=(\d+)/);
+                if (pMatch && parseInt(pMatch[1]) > parseInt(page)) {
                     next = pMatch[1];
                     break;
                 }
