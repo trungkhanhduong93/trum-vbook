@@ -16,34 +16,29 @@ function browserFallback(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        browser.launch(url, 2500);
+        try {
+            browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.gif"]);
+        } catch (eBlock) {}
+        browser.launch(url, 4);
+        try { browser.callJs('void 0;', 2); } catch (eWait) {}
+
         var script = "" +
-            "(async function() {\n" +
+            "(function() {\n" +
             "    try {\n" +
             "        var sel = 'div[id^=\"chap-img\"] img';\n" +
+            "        var imgs = document.querySelectorAll(sel);\n" +
             "        var srcs = [];\n" +
-            "        for (var i = 0; i < 25; i++) {\n" +
-            "            var imgs = document.querySelectorAll(sel);\n" +
-            "            if (imgs.length > 0) {\n" +
-            "                var tmp = [];\n" +
-            "                for (var j = 0; j < imgs.length; j++) {\n" +
-            "                    var s = imgs[j].getAttribute('src') || imgs[j].getAttribute('data-src') || imgs[j].src || '';\n" +
-            "                    if (s && s.indexOf('data:') !== 0) tmp.push(s);\n" +
-            "                }\n" +
-            "                if (tmp.length >= imgs.length) { srcs = tmp; break; }\n" +
-            "                if (tmp.length > 0 && i >= 5) { srcs = tmp; break; }\n" +
-            "            }\n" +
-            "            await new Promise(function(r){ setTimeout(r, 100); });\n" +
+            "        for (var j = 0; j < imgs.length; j++) {\n" +
+            "            var s = imgs[j].getAttribute('src') || imgs[j].getAttribute('data-src') || imgs[j].src || '';\n" +
+            "            if (s && s.indexOf('data:') !== 0) srcs.push(s);\n" +
             "        }\n" +
             "        document.body.innerHTML = 'VBOOK_IMGS_START' + JSON.stringify(srcs) + 'VBOOK_IMGS_END';\n" +
             "    } catch(e) {\n" +
             "        document.body.innerHTML = 'VBOOK_IMGS_ERROR' + e.message;\n" +
             "    }\n" +
             "})();";
-        browser.callJs(script, 6000);
+        browser.callJs(script, 4);
         var bdoc = browser.html();
-        browser.close();
-        browser = null;
 
         if (!bdoc) return Response.error("Không tải được trang chương");
         var text = bdoc.select("body").text();
@@ -60,7 +55,10 @@ function browserFallback(url) {
         }
         return Response.success(result);
     } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
         return Response.error("Lỗi tải chương: " + e.message);
+    } finally {
+        if (browser) {
+            try { browser.close(); } catch (err) {}
+        }
     }
 }

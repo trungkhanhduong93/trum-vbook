@@ -59,8 +59,54 @@ function probeDomain() {
     return false;
 }
 
+var SESSION_COOKIES = '';
+var X_TOKEN_VAL = '';
+
+function extractCookiesFromRes(res) {
+    if (!res) return '';
+    try {
+        var h = res.headers;
+        var sc = '';
+        if (h) {
+            for (var k in h) {
+                if (k.toLowerCase() === 'set-cookie') {
+                    sc = h[k];
+                    break;
+                }
+            }
+        }
+        if (!sc && typeof res.header === 'function') {
+            sc = res.header('Set-Cookie') || res.header('set-cookie') || '';
+        }
+        if (!sc) return '';
+        var parts = [];
+        if (Array.isArray(sc)) {
+            for (var i = 0; i < sc.length; i++) {
+                var p = String(sc[i]).split(';')[0].trim();
+                if (p) parts.push(p);
+            }
+        } else {
+            var raw = String(sc);
+            var arr = raw.split(/,\s*(?=[a-zA-Z0-9_\-]+=[^;]+)/);
+            for (var j = 0; j < arr.length; j++) {
+                var p2 = String(arr[j]).split(';')[0].trim();
+                if (p2) parts.push(p2);
+            }
+        }
+        return parts.join('; ');
+    } catch (e) {
+        return '';
+    }
+}
+
 function withAuth(h) {
     if (GTT_TOKEN) h['Authorization'] = GTT_TOKEN;
+    if (SESSION_COOKIES) {
+        h['Cookie'] = SESSION_COOKIES;
+    }
+    if (X_TOKEN_VAL) {
+        h['X-TOKEN'] = X_TOKEN_VAL;
+    }
     return h;
 }
 
@@ -89,31 +135,68 @@ function FORM_HEADERS(referer) {
 var __GTT_PRIMED = false;
 
 function primeSession(force) {
-    if (__GTT_PRIMED && !force) return;
+    if (__GTT_PRIMED && !force && SESSION_COOKIES) return;
     __GTT_PRIMED = true;
     try {
-        Http.get(SITE_URL + '/lien-he')
-            .headers({
-                'User-Agent': UA,
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Referer': SITE_URL + '/'
-            })
-            .string();
-    } catch (e) {}
+        if (typeof fetch !== 'undefined') {
+            var res = fetch(SITE_URL + '/lien-he', {
+                method: 'GET',
+                headers: {
+                    'User-Agent': UA,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Referer': SITE_URL + '/'
+                }
+            });
+            var c = extractCookiesFromRes(res);
+            if (c) {
+                SESSION_COOKIES = c;
+                var m = c.match(/X-TOKEN=([^;]+)/);
+                if (m) X_TOKEN_VAL = m[1];
+            }
+        }
+    } catch (e1) {}
+    if (!SESSION_COOKIES) {
+        try {
+            Http.get(SITE_URL + '/lien-he')
+                .headers({
+                    'User-Agent': UA,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Referer': SITE_URL + '/'
+                })
+                .string();
+        } catch (e2) {}
+    }
 }
 
 function siteGet(path) {
     primeSession(false);
     var s = null;
     try {
-        s = Http.get(SITE_URL + path).headers(HEADERS()).string();
-    } catch (e) {}
+        if (typeof fetch !== 'undefined') {
+            var res = fetch(SITE_URL + path, {
+                method: 'GET',
+                headers: HEADERS()
+            });
+            if (res && res.ok) s = res.text();
+        }
+    } catch (eFetch) {}
 
     if (!s) {
-        if (probeDomain()) {
-            try { s = Http.get(SITE_URL + path).headers(HEADERS()).string(); } catch (e2) {}
-        }
+        try {
+            s = Http.get(SITE_URL + path).headers(HEADERS()).string();
+        } catch (eHttp) {}
     }
+
+    if (!s && probeDomain()) {
+        try {
+            if (typeof fetch !== 'undefined') {
+                var res2 = fetch(SITE_URL + path, { method: 'GET', headers: HEADERS() });
+                if (res2 && res2.ok) s = res2.text();
+            }
+            if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).string();
+        } catch (eProbe) {}
+    }
+
     if (!s) return null;
 
     try {
@@ -121,12 +204,16 @@ function siteGet(path) {
         if (json && json.messages && json.messages[0] && json.messages[0].indexOf('hết hạn') >= 0) {
             primeSession(true);
             try {
-                s = Http.get(SITE_URL + path).headers(HEADERS()).string();
+                if (typeof fetch !== 'undefined') {
+                    var rRetry = fetch(SITE_URL + path, { method: 'GET', headers: HEADERS() });
+                    if (rRetry && rRetry.ok) s = rRetry.text();
+                }
+                if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).string();
                 json = JSON.parse(s);
-            } catch (e4) {}
+            } catch (eRetry) {}
         }
         return json;
-    } catch (e3) {
+    } catch (eJson) {
         return null;
     }
 }
@@ -135,24 +222,44 @@ function sitePost(path, bodyStr, referer) {
     primeSession(false);
     var s = null;
     try {
-        s = Http.post(SITE_URL + path)
-            .headers(FORM_HEADERS(referer))
-            .body(bodyStr)
-            .contentType('application/x-www-form-urlencoded; charset=UTF-8')
-            .string();
-    } catch (e) {}
+        if (typeof fetch !== 'undefined') {
+            var res = fetch(SITE_URL + path, {
+                method: 'POST',
+                headers: FORM_HEADERS(referer),
+                body: bodyStr
+            });
+            if (res && res.ok) s = res.text();
+        }
+    } catch (eFetch) {}
 
     if (!s) {
-        if (probeDomain()) {
-            try {
+        try {
+            s = Http.post(SITE_URL + path)
+                .headers(FORM_HEADERS(referer))
+                .body(bodyStr)
+                .string();
+        } catch (eHttp) {}
+    }
+
+    if (!s && probeDomain()) {
+        try {
+            if (typeof fetch !== 'undefined') {
+                var res2 = fetch(SITE_URL + path, {
+                    method: 'POST',
+                    headers: FORM_HEADERS(referer),
+                    body: bodyStr
+                });
+                if (res2 && res2.ok) s = res2.text();
+            }
+            if (!s) {
                 s = Http.post(SITE_URL + path)
                     .headers(FORM_HEADERS(referer))
                     .body(bodyStr)
-                    .contentType('application/x-www-form-urlencoded; charset=UTF-8')
                     .string();
-            } catch (e2) {}
-        }
+            }
+        } catch (eProbe) {}
     }
+
     if (!s) return null;
 
     try {
@@ -160,16 +267,25 @@ function sitePost(path, bodyStr, referer) {
         if (json && json.messages && json.messages[0] && json.messages[0].indexOf('hết hạn') >= 0) {
             primeSession(true);
             try {
-                s = Http.post(SITE_URL + path)
-                    .headers(FORM_HEADERS(referer))
-                    .body(bodyStr)
-                    .contentType('application/x-www-form-urlencoded; charset=UTF-8')
-                    .string();
+                if (typeof fetch !== 'undefined') {
+                    var rRetry2 = fetch(SITE_URL + path, {
+                        method: 'POST',
+                        headers: FORM_HEADERS(referer),
+                        body: bodyStr
+                    });
+                    if (rRetry2 && rRetry2.ok) s = rRetry2.text();
+                }
+                if (!s) {
+                    s = Http.post(SITE_URL + path)
+                        .headers(FORM_HEADERS(referer))
+                        .body(bodyStr)
+                        .string();
+                }
                 json = JSON.parse(s);
-            } catch (e4) {}
+            } catch (eRetry) {}
         }
         return json;
-    } catch (e3) {
+    } catch (eJson) {
         return null;
     }
 }

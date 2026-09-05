@@ -44,13 +44,18 @@ function fetchRetry(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        browser.launch(url, 15000);
+        try {
+            browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.css.*", ".*\\.gif"]);
+        } catch (eBlock) {}
+        browser.launch(url, 4);
         var browserDoc = browser.html();
-        browser.close();
         return browserDoc;
     } catch (e) {
-        if (browser) { try { browser.close(); } catch (err) {} }
         return null;
+    } finally {
+        if (browser) {
+            try { browser.close(); } catch (err) {}
+        }
     }
 }
 

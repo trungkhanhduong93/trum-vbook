@@ -340,7 +340,7 @@ function apiGet(path, params) {
     if (sig) headers["x-request-id"] = sig;
     var url = API_URL + path + buildQS(params);
     try {
-        var s = Http.get(url).headers(headers).string();
+        var s = Http.get(url).headers(headers).timeout(8000).string();
         if (!s) return null;
         return JSON.parse(s);
     } catch (e) {

@@ -74,14 +74,18 @@ function fetchDoc(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
+        try {
+            browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.css.*", ".*\\.gif"]);
+        } catch (eBlock) {}
         try { browser.setUserAgent(HEADERS["User-Agent"]); } catch (e2) {}
-        browser.launch(url, 15000);
+        browser.launch(url, 4);
         var bdoc = browser.html();
-        browser.close();
-        browser = null;
         if (bdoc) return bdoc;
     } catch (err) {
-        if (browser) { try { browser.close(); } catch (e3) {} }
+    } finally {
+        if (browser) {
+            try { browser.close(); } catch (e3) {}
+        }
     }
 
     return doc;

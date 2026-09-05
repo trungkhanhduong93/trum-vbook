@@ -25,7 +25,7 @@ function resolveUrl(url) {
 function apiFetch(path) {
     var url = path.indexOf("http") === 0 ? path : API_URL + path;
     try {
-        var res = fetch(url, { headers: COMMON_HEADERS });
+        var res = fetch(url, { headers: COMMON_HEADERS, timeout: 8000 });
         if (res && res.ok) return res;
         return null;
     } catch (e) {

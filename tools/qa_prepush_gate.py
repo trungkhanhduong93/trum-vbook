@@ -244,8 +244,10 @@ if __name__ == "__main__":
     keeper = QAGateKeeper(target)
     
     plugins_to_check = [
-        "goctruyentranh", "luottruyen", "toptruyen", "zettruyen",
-        "2ten", "truyenqq", "nettruyen", "doctruyen3q", "mimimoe"
+        "goctruyentranh", "luottruyen", "luottruyennew", "toptruyen",
+        "zettruyen", "2ten", "truyenqq", "nettruyen", "nhattruyen",
+        "doctruyen3q", "mimimoe", "cuutruyen", "truyenggvn", "tcomic",
+        "minotruyen", "minomanga", "minohen"
     ] if target == "all" else [target]
     
     for p in plugins_to_check:
