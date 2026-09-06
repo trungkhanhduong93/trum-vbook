@@ -1,7 +1,8 @@
 // ============================================================
 // config.js - GocTruyenTranh
-// Site: https://goctruyentranhvui41.com
+// Site: https://goctruyentranhvui42.com
 //
+// v39: Chuyển domain mặc định sang vui42 (vui41 bật Cloudflare Turnstile).
 // v36: Toàn bộ chuyển sang REST API backend siêu tốc (0.2s - 0.3s/req).
 // Cookie session tự động prime qua /lien-he để né 100% Cloudflare Turnstile.
 // ============================================================
@@ -9,7 +10,7 @@
 var GTT_TOKEN = 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEdW9uZyBUcnVuZyIsImNvbWljSWRzIjpbXSwicm9sZUlkIjpudWxsLCJncm91cElkIjpudWxsLCJhZG1pbiI6ZmFsc2UsInJhbmsiOjAsInBlcm1pc3Npb24iOltdLCJpZCI6IjAwMDEzMzU4MDgiLCJ0ZWFtIjpmYWxzZSwiaWF0IjoxNzg4MTA3NjQzLCJlbWFpbCI6Im51bGwifQ.kZbSOa04rE8b5AX4oW3Uo0w1HU8BzYuIpdxkG9OxIFUNpo8OLcqZgLJQ2WUqxQWS2D-WDM5XRkekDhtcqefQQA';
 var GTT_IMG_PROXY = '';
 
-var SITE_URL = 'https://goctruyentranhvui41.com';
+var SITE_URL = 'https://goctruyentranhvui42.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
@@ -36,7 +37,7 @@ function probeDomain() {
     if (__GTT_PROBED) return false;
     __GTT_PROBED = true;
 
-    var cur = 41;
+    var cur = 42;
     var m = String(SITE_URL).match(/goctruyentranhvui(\d+)\.com/i);
     if (m) cur = parseInt(m[1], 10);
 

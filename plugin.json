@@ -201,9 +201,9 @@
     {
       "name": "GocTruyenTranh",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip?v=38",
-      "version": 38,
-      "source": "https://goctruyentranhvui41.com",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/plugin.zip?v=39",
+      "version": 39,
+      "source": "https://goctruyentranhvui42.com",
       "regexp": "goctruyentranhvui\\d*\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/goctruyentranh/icon.png",
       "description": "Đọc truyện trên trang Góc Truyện Tranh",
