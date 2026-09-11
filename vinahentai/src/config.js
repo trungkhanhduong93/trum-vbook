@@ -14,7 +14,7 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 15000 };
+var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 10000 };
 
 function selFirst(el, css) {
     if (!el) return null;
@@ -55,7 +55,7 @@ function imgSrc(el) {
 }
 
 function fetchRetry(url, maxRetries) {
-    if (typeof maxRetries === "undefined") maxRetries = 2;
+    if (typeof maxRetries === "undefined") maxRetries = 1;
     var lastResp = null;
     for (var i = 0; i <= maxRetries; i++) {
         var resp = fetch(url, FETCH_OPTIONS);
@@ -68,27 +68,20 @@ function fetchRetry(url, maxRetries) {
 function parseItems(doc) {
     var items = [];
     if (!doc) return items;
-    
+
     var links = doc.select("a[href*='/truyen-hentai/']");
     var seen = {};
 
     for (var i = 0; i < links.size(); i++) {
         var a = links.get(i);
         var href = a.attr("href") || "";
-        
-        // Exclude reading chapter links
-        if (href.indexOf("/chuong-") >= 0 || href.indexOf("/chap-") >= 0) continue;
-        var cleanHref = href.replace(BASE_URL, "");
-        var rawParts = cleanHref.split("/");
-        var parts = [];
-        for (var p = 0; p < rawParts.length; p++) {
-            if (rawParts[p] && rawParts[p].length > 0) {
-                parts.push(rawParts[p]);
-            }
-        }
-        if (parts.length !== 2 || parts[0] !== "truyen-hentai") continue;
 
-        var fullUrl = resolveUrl(href);
+        if (href.indexOf("/chuong-") >= 0 || href.indexOf("/chap-") >= 0) continue;
+        var m = href.match(/\/truyen-hentai\/([^\/\?#]+)/);
+        if (!m) continue;
+
+        var slug = m[1];
+        var fullUrl = BASE_URL + "/truyen-hentai/" + slug;
         if (seen[fullUrl]) continue;
 
         var imgEl = selFirst(a, "img");

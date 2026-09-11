@@ -1,3 +1,5 @@
+load("config.js");
+
 function execute() {
     return Response.success([
         { title: "Manhwa 18+", input: "/genres/manhwa", script: "gen.js" },

@@ -1,3 +1,5 @@
+load("config.js");
+
 function execute(url) {
     var resp = fetchRetry(url);
     if (!resp || !resp.ok) {
@@ -12,21 +14,18 @@ function execute(url) {
     for (var i = 0; i < links.size(); i++) {
         var a = links.get(i);
         var href = a.attr("href") || "";
-        
-        // Only accept chapter links
+
         if (href.indexOf("/chuong-") < 0 && href.indexOf("/chap-") < 0) continue;
 
-        // Skip shortcut buttons
         var rawTxt = txt(a);
         if (rawTxt === "Đọc từ đầu" || rawTxt === "Đọc mới nhất" || rawTxt === "Đọc oneshot") continue;
 
         var fullUrl = resolveUrl(href);
         if (seen[fullUrl]) continue;
 
-        // Extract clean chapter title
         var titleEl = selFirst(a, "span.text-txt-primary, span.font-medium");
         var chapName = titleEl ? txt(titleEl) : rawTxt;
-        
+
         if (chapName.indexOf("ngày trước") >= 0 || chapName.indexOf("giờ trước") >= 0 || chapName.indexOf("tháng trước") >= 0) {
             var m = chapName.match(/^(Chương\s+[0-9\.\-\sA-Za-z]+|Chap\s+[0-9\.\-\sA-Za-z]+|Oneshot[^\d]*)/i);
             if (m && m[1]) chapName = m[1].trim();
@@ -46,7 +45,6 @@ function execute(url) {
         return Response.error("Không tìm thấy chương nào");
     }
 
-    // Reverse to standard ascending order (Chap 1 first)
     chapters.reverse();
 
     return Response.success(chapters);

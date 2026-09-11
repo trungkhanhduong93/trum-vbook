@@ -1,3 +1,5 @@
+load("config.js");
+
 function execute(url) {
     var resp = fetchRetry(url);
     if (!resp || !resp.ok) {
@@ -8,7 +10,6 @@ function execute(url) {
     var images = [];
     var seen = {};
 
-    // VinaHentai SSR streaming: Regex extracts 100% of manga images from hydration stream
     var regex = /https?:\/\/vnht\.vinahentai\.click\/manga-images\/[^"'\s<>\)]+?\.(?:webp|jpg|jpeg|png)/gi;
     var match;
     while ((match = regex.exec(html)) !== null) {
@@ -20,7 +21,6 @@ function execute(url) {
         }
     }
 
-    // Fallback if regex found nothing
     if (images.length === 0) {
         var doc = resp.html();
         var imgEls = doc.select("img");

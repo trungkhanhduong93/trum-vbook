@@ -14,12 +14,11 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 10000 };
 
 function selFirst(el, css) {
     if (!el) return null;
-    var it = el.select(css);
-    return it.size() > 0 ? it.get(0) : null;
+    var items = el.select(css);
+    return items.size() > 0 ? items.get(0) : null;
 }
 
 function txt(el) {
@@ -42,7 +41,7 @@ function imgSrc(img) {
 
 function fetchRetry(url, extraHeaders) {
     try {
-        var opts = { headers: FETCH_HEADERS, timeout: 10000 };
+        var opts = { headers: FETCH_HEADERS, timeout: 8000 };
         if (extraHeaders) {
             for (var k in extraHeaders) {
                 opts.headers[k] = extraHeaders[k];
@@ -56,39 +55,54 @@ function fetchRetry(url, extraHeaders) {
     }
 }
 
-// Parse thẻ truyện ở trang listing (.item)
+// Parse thẻ truyện ở trang listing
 function parseItems(doc) {
     var items = [];
     if (!doc) return items;
-    var cards = doc.select(".item");
+
+    var cards = doc.select(".page-item-detail, .item, .c-tabs-item__content");
+    var seen = {};
+
     for (var i = 0; i < cards.size(); i++) {
         var c = cards.get(i);
-        
-        var a = selFirst(c, ".info-item .line-2 a");
-        if (!a) a = selFirst(c, ".img-item a");
-        if (!a) a = selFirst(c, "a[href*='/truyen-']");
+        var titleA = selFirst(c, ".post-title h3 a, h3.line-2 a, .line-2 a, .widget-title a");
+        var thumbA = selFirst(c, ".item-thumb a, .img-item a, a[href*='/truyen-']");
+
+        var a = titleA ? titleA : thumbA;
         if (!a) continue;
 
-        var name = txt(a);
-        var href = a.attr("href") || "";
-        if (!href) continue;
+        var href = "";
+        if (titleA) href = titleA.attr("href");
+        if (!href && thumbA) href = thumbA.attr("href");
+        if (!href || href.indexOf("/truyen-") < 0 || href.indexOf("/chuong-") >= 0) continue;
 
-        var img = selFirst(c, ".img-item img");
-        if (!img) img = selFirst(c, "img");
-        if (!name && img) name = img.attr("alt") || img.attr("title") || "";
-        if (!name) continue;
+        var fullUrl = resolveUrl(href);
+        if (seen[fullUrl]) continue;
 
+        var name = titleA ? txt(titleA) : "";
+        if (!name || name === "Mới") {
+            var h3 = selFirst(c, "h3, .post-title, .line-2");
+            if (h3) name = txt(h3);
+        }
+        var img = selFirst(c, ".item-thumb img, .img-item img, img");
+        if (!name && img) {
+            name = img.attr("alt") || img.attr("title") || "";
+        }
+        if (!name || name === "Mới") continue;
+
+        seen[fullUrl] = true;
         var cover = imgSrc(img);
-        var chap = selFirst(c, ".chapter a");
-        if (!chap) chap = selFirst(c, ".list-chapter");
+        var chapEl = selFirst(c, ".list-chapter .chapter a, .chapter a, .list-chapter");
+        var chap = chapEl ? txt(chapEl) : "";
 
         items.push({
             name: name,
-            cover: resolveUrl(cover),
-            link: resolveUrl(href),
-            description: chap ? txt(chap) : "",
+            link: fullUrl,
+            cover: cover,
+            description: chap,
             host: HOST
         });
     }
+
     return items;
 }

@@ -1,3 +1,5 @@
+load("config.js");
+
 function execute(url) {
     var resp = fetchRetry(url);
     if (!resp || !resp.ok) {

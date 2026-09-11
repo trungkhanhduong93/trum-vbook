@@ -6,6 +6,9 @@ function execute(url, page) {
 
     var fullUrl = resolveUrl(url);
     if (p > 1) {
+        if (fullUrl === BASE_URL || fullUrl === BASE_URL + "/") {
+            return Response.success([], null);
+        }
         if (fullUrl.indexOf("?") >= 0) {
             fullUrl += "&page=" + p;
         } else {
@@ -19,11 +22,9 @@ function execute(url, page) {
     if (!doc) return Response.error("Không parse được HTML");
 
     var items = parseItems(doc);
-    var next = (items.length > 0) ? String(p + 1) : null;
-
-    var hasNext = doc.select(".pagination li.active + li a, .pagination a[rel='next']");
-    if (hasNext.size() === 0 && items.length < 10) {
-        next = null;
+    var next = null;
+    if (fullUrl !== BASE_URL && fullUrl !== BASE_URL + "/" && items.length >= 20) {
+        next = String(p + 1);
     }
 
     return Response.success(items, next);
