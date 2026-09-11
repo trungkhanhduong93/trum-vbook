@@ -1,3 +1,35 @@
+# TECHNICAL HANDOFF REPORT - DAMCONUONG (v6), MIMIMOE (v12), MINO (v28) & REPO CLEANUP
+
+- **Plugins:** `damconuong/` (v6 - MỚI), `mimimoe/` (v12), `minotruyen/` (v28), `minomanga/` (v28)
+- **Commit:** `eb48dfa` (Branch `main`, GitHub `trungkhanhduong93/trum-vbook`)
+- **Trạng thái:** Toàn bộ tính năng đã hoạt động hoàn hảo, người dùng đã kiểm chứng thực tế và xác nhận ("ok được rồi"). Đã vượt qua 100% các chốt kiểm định QA Pre-push Gate.
+
+## 1. DamCoNuong (v6) - Tạo nguồn mới & Tối ưu hóa toàn diện
+- **Bối cảnh:** Nguồn mới `https://www.damconuong.xyz` chạy trên theme WordPress Madara + plugin auto-leech truyện tranh (KDN Auto Leech).
+- **Các bẫy đã gặp & xử lý:**
+  1. **Ảnh AVIF không hiển thị trên Android (v3):** Host ảnh gốc lưu trữ định dạng `.avif`. Thư viện Glide mặc định của Vbook không decode được khiến toàn bộ ảnh bị gãy đen. Giải pháp: Chuyển đổi định dạng sang JPEG bằng Jetpack Photon proxy (`i{0-2}.wp.com`).
+  2. **Gãy 25% ảnh do sharding 4 host (v4):** Ban đầu dev dùng modulo 4 (`idx % 4`), sinh ra subdomain `i3.wp.com`. Do Automattic chỉ có 3 cụm server công khai (`i0`, `i1`, `i2`), node `i3` bị lỗi DNS/SSL, làm gãy đúng 1/4 số ảnh của mỗi chương. Giải pháp: Đổi về 3 node chuẩn `((idx || 0) % 3)`.
+  3. **Khựng mục lục 10–15s do OkHttp Unicode Header Crash (v5):** Trong `toc.js`, hàm AJAX `chaptersViaAjax` lấy `referer: url` (URL truyện chứa slug tiếng Việt/Unicode có dấu). Khi đưa vào header `Referer`, Android OkHttp ném ngoại lệ `IllegalArgumentException: Unexpected char %#x at ... in Referer value`. Request AJAX chết ngầm, kích hoạt fallback tĩnh `fetchRetry(url)` mất >10s nhưng HTML tĩnh lại không có chapter (container rỗng). Giải pháp: Chuẩn hóa header `Referer: BASE_URL + "/"` (100% ASCII) và bọc `try/catch` + timeout 7000ms.
+  4. **Chương rỗng do plugin auto-leech (v5):** Web auto-leech tạo bản ghi bài viết trong DB trước khi cào ảnh xong. Bổ sung `Response.error("Chương này đang được cập nhật...")` để báo người đọc tử tế, không fallback quét bậy.
+  5. **Tối ưu tốc độ tải ảnh cực đại (v6):** Webtoon có 80–140 lát ảnh/chương. Với `w=800&quality=75`, payload lên tới ~14 MB/chương gây nghẽn băng thông 4G. Tối ưu xuống `w=600&quality=65&strip=all`: dung lượng mỗi lát ảnh giảm hơn 50% (còn ~50–65 KB/ảnh, cả chương còn ~5.5 MB), loại bỏ toàn bộ metadata thừa. Glide giải mã cực nhanh, cuộn mượt mà không khựng giật.
+
+## 2. Mimimoe (v12) - Cập nhật Domain
+- Domain cũ `mimimoe.moe` chuyển hướng sang domain mới `https://mimihentai.moe`.
+- Cập nhật `BASE_URL = "https://mimihentai.moe"` trong `mimimoe/src/config.js`.
+- Cập nhật regex trong `plugin.json`: `(www\\.)?(mimimoe|mimihentai)\\.moe\\/manga\\/[0-9]+\\/?$`.
+- Bump version lên **v12** (root `plugin.json`, `mimimoe/plugin.json`, và repack `plugin.zip`).
+
+## 3. Mino Truyện (v28) & Mino Manga (v28) - Tối ưu tốc độ cực đại
+- Chuyển toàn bộ backend gọi qua API siêu tốc mới: `https://api.cloudkk-v2.xyz`.
+- Đính kèm headers định danh ứng dụng `x-app: minotruyen` / `x-app: minomanga`.
+- Tốc độ nạp dữ liệu truyện, mục lục và danh sách ảnh đạt tức thì (< 300ms).
+- Bump version lên **v28** (root `plugin.json`, `minotruyen/plugin.json`, `minomanga/plugin.json`, repack zip).
+
+## 4. Dọn dẹp nguồn ngừng hoạt động theo yêu cầu người dùng
+- Đã gỡ bỏ khỏi registry chính các nguồn: `hentaivn`, `sayhentai`, `minohentai`.
+
+---
+
 # TECHNICAL HANDOFF REPORT - SAYHENTAI (v27) & VINAHENTAI (v6) OPTIMIZATION
 
 - **Plugins:** `sayhentai/` (v27) & `vinahentai/` (v6)

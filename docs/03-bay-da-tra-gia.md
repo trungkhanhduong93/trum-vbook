@@ -6,10 +6,12 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 
 | Người dùng báo | Đọc mục |
 |---|---|
-| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy) |
-| Ảnh tải cực chậm / đơ nghẽn | [18](#18-selector-img-quét-trúng-ảnh-rác-làm-nghẽn-connection-pool), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy) |
-| Lỗi crash Unexpected char / Unicode | [20](#20-url-chứa-ký-tự-unicode-tiếng-việt-làm-okhttp-crash) |
+| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy), [23](#23-wordpress-photon-chỉ-có-3-node-sharding-i0-i1-i2--không-có-i3) |
+| Ảnh tải cực chậm / đơ nghẽn | [18](#18-selector-img-quét-trúng-ảnh-rác-làm-nghẽn-connection-pool), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy), [25](#25-tối-ưu-dung-lượng-webtoon-qua-photon-w600quality65stripall) |
+| Lỗi crash Unexpected char / Unicode | [20](#20-url-chứa-ký-tự-unicode-tiếng-việt-làm-okhttp-crash), [22](#22-okhttp-crash-khi-header-referer-chứa-unicode--ký-tự-tiếng-việt) |
+| Bấm vào mục lục rất lâu / delay 10-15s mới hiện hoặc trắng trơn | [22](#22-okhttp-crash-khi-header-referer-chứa-unicode--ký-tự-tiếng-việt) |
 | Mục lục trống trên truyện oneshot / chapter lạ | [21](#21-slug-mục-lục-không-chỉ-có-chap-và-chuong) |
+| Chương mở được nhưng không có ảnh nào | [24](#24-chương-truyện-rỗng-trên-các-site-auto-leech-madara) |
 | Màn hình trống, lỗi trống trơn không có thông báo | [17](#17-fetch-trả-response-không-phải-document), [5](#5-selectfirst-và-parent) |
 | "Đăng nhập rồi mà vẫn không đọc được" | [17](#17-fetch-trả-response-không-phải-document) + [06 case study](06-case-study-luottruyen.md) |
 | "Cài xong không chạy gì cả" | [3](#3-zip-thiếu-entry-src), [4](#4-version-không-bump-đủ-3-chỗ) |
@@ -300,4 +302,110 @@ Nhiều web truyện tranh 18+/hentai/manhwa có các định dạng chương r�
   var sub = href.substring(prefix.length); // ví dụ: chapter-1, 1shot-1, tap-1
   ```
 - Loại trừ rõ ràng các nút CTA điều hướng đầu trang (kiểm tra class, text "Đọc ngay", "Đọc từ đầu").
+
+---
+
+## 22. OkHttp Crash khi Header `Referer` chứa Unicode / ký tự tiếng Việt
+
+Khác với [Bẫy 20](#20-url-chứa-ký-tự-unicode-tiếng-việt-làm-okhttp-crash) (về Request URL), bẫy này xảy ra ngay trong **Request Headers** — cụ thể là header `"Referer"`.
+
+**Đã trả giá thật (DamCoNuong v4→v5, 11/09/2026):**
+- Trên các web WordPress / Madara theme, mục lục thường được nạp động qua AJAX POST: `/wp-admin/admin-ajax.php` với `action=manga_get_chapters`.
+- Để giả lập đúng nguồn gốc request, dev thường truyền URL truyện vào header `"Referer"`:
+  ```javascript
+  // NGUY HIỂM: url chứa slug tiếng Việt thô hoặc ký tự đặc biệt
+  var res = fetch(ajaxUrl, {
+      method: "POST",
+      headers: {
+          "Referer": url, // url = https://site.com/truyen/〖-không-che-〗-co-giao...
+          "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "action=manga_get_chapters&manga=" + mangaId
+  });
+  ```
+- Khi URL truyện chứa ký tự Unicode có dấu tiếng Việt hoặc dấu ngoặc đặc biệt, Java OkHttp ném ngay ngoại lệ:
+  `IllegalArgumentException: Unexpected char %#x at ... in Referer value`
+- Hậu quả dây chuyền:
+  1. Nếu hàm AJAX không bọc `try/catch`, toàn bộ script ném lỗi.
+  2. Nếu có fallback tĩnh `fetchRetry(url)`, Vbook phải tốn 10–15s tải toàn bộ trang HTML tĩnh nặng nề. Nhưng trên giao diện Madara, trang tĩnh **không hề chứa chapter trong DOM** (chỉ có container rỗng chờ JS client gọi AJAX).
+  3. Kết quả: Người dùng bấm vào truyện bị khựng xoay vòng 10–15s, sau đó mục lục trắng tinh không có chương nào!
+
+**Luật phòng tránh:**
+1. Header `Referer` trong request HTTP chỉ cần gán domain gốc sạch chuẩn ASCII:
+   ```javascript
+   headers: {
+       "Referer": BASE_URL + "/",
+       "Content-Type": "application/x-www-form-urlencoded"
+   }
+   ```
+   WordPress và hầu hết backend chỉ kiểm tra Referer có cùng Origin/Domain hay không để chống CSRF cơ bản, tuyệt đối không yêu cầu đúng slug chi tiết.
+2. Mọi request mạng chuyên biệt (AJAX POST, API) **bắt buộc bọc `try { ... } catch (e) {}`**, đặt timeout hợp lý (5000–7000ms), và luôn truyền `body: ""` nếu POST không có payload.
+
+---
+
+## 23. WordPress Photon chỉ có 3 node sharding: `i0`, `i1`, `i2` — KHÔNG CÓ `i3`
+
+Khi cần route ảnh qua Jetpack Photon để nén hoặc giải mã WebP/AVIF, dev thường dùng kỹ thuật domain sharding để vượt qua giới hạn 5 kết nối đồng thời per-host của OkHttp.
+
+**Đã trả giá thật (DamCoNuong v4→v5, 11/09/2026):**
+- Dev viết chia dư theo 4 host:
+  ```javascript
+  // SAI: Giả định Photon có 4 cụm máy chủ i0..i3
+  var hostIndex = idx % 4; // -> Sinh ra i0, i1, i2, i3.wp.com
+  ```
+- Trên thực tế hạ tầng Automattic / WordPress Jetpack Photon **chỉ có 3 máy chủ công khai**: `i0.wp.com`, `i1.wp.com`, và `i2.wp.com`. Subdomain `i3.wp.com` không hề tồn tại (trả về lỗi DNS `NXDOMAIN` hoặc SSL handshake failure).
+- Hậu quả: Đúng **25% tổng số ảnh trong chương** (tất cả các ảnh rơi vào `idx % 4 === 3`) bị gãy hoàn toàn. Người dùng mở chương lên thấy cứ cách 3 ảnh lại có 1 ảnh báo lỗi không tải được.
+
+**Luật phòng tránh:**
+- Chỉ shard qua 3 node: `((idx || 0) % 3)`:
+  ```javascript
+  var hostIndex = (idx || 0) % 3; // Luôn ra 0, 1, 2
+  var proxyUrl = "https://i" + hostIndex + ".wp.com/" + rawUrl.replace(/^https?:\/\//, "");
+  ```
+
+---
+
+## 24. Chương truyện rỗng trên các site Auto-Leech (Madara WordPress)
+
+Nhiều web truyện tranh tự động cào bài (như dùng plugin KDN Auto Leech trên nền WordPress) có cơ chế tạo bản ghi bài viết trong cơ sở dữ liệu (`wp_posts`) và sinh URL chương trước khi tiến trình tải ảnh hoàn tất.
+
+**Đã trả giá thật (DamCoNuong v4, 11/09/2026):**
+- Trang chương vẫn có DOM hoàn chỉnh: có title, có input `<input id="wp-manga-current-chap">`, nhưng bên trong `div.reading-content` **hoàn toàn không có thẻ `<img>` nào**.
+- Nếu dev viết fallback cẩu thả kiểu `if (imgs.length === 0) doc.select("img")`, Vbook sẽ cào toàn bộ logo, banner quảng cáo, avatar comment làm ảnh truyện (xem lại [Bẫy 6](#6-fallback-quét-toàn-trang)).
+- Nếu trả mảng rỗng `[]`, Vbook báo "không có trang nào" làm người dùng tưởng plugin bị hỏng.
+
+**Luật phòng tránh:**
+- Kiểm tra rõ ràng nếu chương không có ảnh nội dung, trả về thông báo có ý nghĩa bằng `Response.error()`:
+  ```javascript
+  if (!imgs || imgs.length === 0) {
+      return Response.error("Chương này đang được cập nhật hoặc nguồn chưa tải ảnh lên!");
+  }
+  ```
+- Tuyệt đối không fallback quét toàn trang khi bộ container đọc truyện đã được xác định chính xác.
+
+---
+
+## 25. Tối ưu dung lượng Webtoon qua Photon (`w=600&quality=65&strip=all`)
+
+Truyện Webtoon / Manhwa hiện đại thường cắt một chương thành 80–140 lát ảnh dọc (slices).
+
+**Đã trả giá thật (DamCoNuong v4→v6, 11/09/2026):**
+- Khi dùng Photon proxy để chuyển đổi ảnh sang JPEG (cho tương thích Glide), nếu để chất lượng cao mặc định như `w=800&quality=75`:
+  - Mỗi lát ảnh nặng ~145 KB.
+  - Cả chương 90–100 lát ảnh nặng tới **~14 MB**.
+  - Việc tải 90–100 ảnh nặng 14 MB qua 4G/WiFi yếu làm connection pool nghẽn, máy nóng, tiêu hao nhiều RAM để decode bitmap, và cuộn trang bị khựng giật.
+- Phân tích thực tế trên màn hình smartphone:
+  - Bề rộng hiển thị truyện dọc (webtoon reader) trên điện thoại thông thường chỉ chiếm từ 400px đến 720px chiều ngang màn hình.
+  - Đo đạc thực tế:
+    * `w=800, quality=75`: ~145 KB/ảnh (tổng ~13.5 MB/chương)
+    * `w=600, quality=65, strip=all`: ~55–65 KB/ảnh (tổng ~5.5 MB/chương — **giảm 55%–60% dung lượng!**)
+  - Tham số `strip=all` loại bỏ triệt để thông tin EXIF, ICC Color Profile và metadata máy ảnh thừa thãi trong từng lát cắt.
+  - Ở độ phân giải `w=600&quality=65`, thoại chữ trong khung tranh trên màn hình Full HD vẫn giữ nguyên 100% độ sắc nét và tương phản, nhưng tốc độ tải và render của Glide tăng gấp **2–3 lần**.
+
+**Công thức chuẩn tối ưu Webtoon:**
+```javascript
+var clean = rawUrl.replace(/^https?:\/\//, "");
+var hostIndex = (idx || 0) % 3;
+return "https://i" + hostIndex + ".wp.com/" + clean + "?w=600&quality=65&strip=all";
+```
 

@@ -26,6 +26,7 @@ var res = fetch(BASE_URL + "/frontend/search/search", {
 ```
 
 `headers()` nhận object thường: `{"User-Agent": "...", "Referer": "..."}`.
+**CẢNH BÁO:** Giá trị header phải là chuỗi **100% ASCII** (không dấu tiếng Việt, không ký tự đặc biệt). Nếu `Referer` chứa ký tự tiếng Việt có dấu, OkHttp Android sẽ crash `IllegalArgumentException: Unexpected char` (xem [03-bay-da-tra-gia.md](03-bay-da-tra-gia.md) bẫy 22). Luôn dùng `BASE_URL + "/"` cho Referer thay vì slug truyện thô.
 
 **Http là đồng bộ** — không Promise, không callback. Đây là lý do harness test phải tự nạp
 trước HTML rồi mới chạy script (xem `04`).
@@ -287,4 +288,5 @@ kiểm tra thật:
 - `nextPage(doc, page)` — dò link trang kế bằng regex trên `href`
 
 **`Referer` trong `headers()` của request HTML là bình thường và nên có.** Cấm là cấm nối
-`|Referer=` vào **URL ảnh** trả về cho app — hai chuyện khác nhau.
+`|Referer=` vào **URL ảnh** trả về cho app — hai chuyện khác nhau. Đồng thời, header `Referer`
+trong request phải đảm bảo 100% ASCII (dùng `BASE_URL + "/"`), không nhét slug truyện tiếng Việt vào (xem bẫy 22).
