@@ -39,6 +39,19 @@ function imgSrc(img) {
     return s.trim();
 }
 
+function toPhoton(url, idx, isCover) {
+    if (!url) return "";
+    url = String(url).trim();
+    if (url.indexOf("//") === 0) url = "https:" + url;
+    var isAvif = url.indexOf(".avif") >= 0 || url.indexOf("wsrvnl") >= 0;
+    if (!isAvif) return url;
+    var bare = url.replace(/^https?:\/\//i, "");
+    var host = "i" + ((idx || 0) % 3) + ".wp.com/";
+    var sep = bare.indexOf("?") >= 0 ? "&" : "?";
+    var params = isCover ? "w=400&quality=80" : "w=1000&quality=80";
+    return "https://" + host + bare + sep + params;
+}
+
 function fetchRetry(url) {
     try {
         var res = fetch(url, FETCH_OPTIONS);
@@ -76,7 +89,7 @@ function parseItems(doc) {
         if (!name || !href) continue;
 
         var img = selFirst(c, "img");
-        var cover = imgSrc(img);
+        var cover = toPhoton(imgSrc(img), i, true);
 
         var chA = selFirst(c, ".chapter-item a, .list-chapter a");
         var desc = txt(chA);

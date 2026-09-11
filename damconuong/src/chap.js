@@ -17,6 +17,10 @@ function execute(url) {
     if (!doc) return Response.error("Không parse được HTML");
 
     var imgs = doc.select("div.reading-content img, div.page-break img, .entry-content img");
+    if (!imgs || imgs.size() === 0) {
+        imgs = doc.select(".reading-content div.item img, .reading-content p img");
+    }
+
     var images = [];
     var seen = {};
     for (var i = 0; i < imgs.size(); i++) {
@@ -31,7 +35,7 @@ function execute(url) {
 
         if (seen[src]) continue;
         seen[src] = true;
-        images.push(src);
+        images.push(toPhoton(src, images.length, false));
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");

@@ -312,6 +312,25 @@ class QAGateKeeper:
                         self.log_fail("GATE-4", f"VinaHentai chỉ tìm thấy {len(imgs)} ảnh chương.")
             except Exception as e:
                 self.log_fail("GATE-4", f"Lỗi cào VinaHentai chapter live: {e}")
+        elif plugin_name == "damconuong":
+            try:
+                chap_url = "https://www.damconuong.xyz/truyen/summer-friends-and-summer-flings/chapter-1/"
+                req = urllib.request.Request(chap_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Referer": "https://www.damconuong.xyz/"
+                })
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    html_content = resp.read().decode('utf-8', errors='ignore')
+                    imgs = re.findall(r'https?://img\.wsrvnl\.xyz/[^\s"\'<>]+?\.(?:avif|webp|jpg|jpeg|png)', html_content)
+                    if len(imgs) >= 10:
+                        self.log_pass("GATE-4", f"DamCoNuong trích xuất thành công {len(imgs)} ảnh chương.")
+                        bare = imgs[0].replace('https://', '').replace('http://', '')
+                        photon_url = f"https://i0.wp.com/{bare}?w=1000&quality=80"
+                        test_images = [("https://www.damconuong.xyz", photon_url)]
+                    else:
+                        self.log_fail("GATE-4", f"DamCoNuong chỉ tìm thấy {len(imgs)} ảnh chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi cào DamCoNuong live: {e}")
 
         for origin, img_url in test_images:
             try:

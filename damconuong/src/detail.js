@@ -9,7 +9,7 @@ function execute(url) {
     var name = txt(selFirst(doc, ".post-title h1, h1"));
     if (!name) return Response.error("Không tìm thấy tên truyện");
 
-    var cover = imgSrc(selFirst(doc, ".summary_image img"));
+    var cover = toPhoton(imgSrc(selFirst(doc, ".summary_image img")), 0, true);
     var author = txt(selFirst(doc, ".author-content a, .artist-content a"));
     var description = txt(selFirst(doc, ".description-summary, .summary__content, .manga-about"));
 
