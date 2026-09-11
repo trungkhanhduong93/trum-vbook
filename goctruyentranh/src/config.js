@@ -1,16 +1,15 @@
 // ============================================================
 // config.js - GocTruyenTranh
-// Site: https://goctruyentranhvui42.com
+// Site: https://goctruyentranhvui41.com
 //
-// v39: Chuyển domain mặc định sang vui42 (vui41 bật Cloudflare Turnstile).
-// v36: Toàn bộ chuyển sang REST API backend siêu tốc (0.2s - 0.3s/req).
-// Cookie session tự động prime qua /lien-he để né 100% Cloudflare Turnstile.
+// v40: Chuyển domain mặc định về vui41 (vui42 bị chuyển hướng 301).
+// Tự động nạp cookie session X-TOKEN qua /lien-he và CookieManager.
 // ============================================================
 
 var GTT_TOKEN = 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEdW9uZyBUcnVuZyIsImNvbWljSWRzIjpbXSwicm9sZUlkIjpudWxsLCJncm91cElkIjpudWxsLCJhZG1pbiI6ZmFsc2UsInJhbmsiOjAsInBlcm1pc3Npb24iOltdLCJpZCI6IjAwMDEzMzU4MDgiLCJ0ZWFtIjpmYWxzZSwiaWF0IjoxNzg4MTA3NjQzLCJlbWFpbCI6Im51bGwifQ.kZbSOa04rE8b5AX4oW3Uo0w1HU8BzYuIpdxkG9OxIFUNpo8OLcqZgLJQ2WUqxQWS2D-WDM5XRkekDhtcqefQQA';
 var GTT_IMG_PROXY = '';
 
-var SITE_URL = 'https://goctruyentranhvui42.com';
+var SITE_URL = 'https://goctruyentranhvui41.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
@@ -28,7 +27,11 @@ function setBase(origin) {
 
 function syncBaseFromUrl(url) {
     var o = gttOrigin(url);
-    if (o && o !== SITE_URL) setBase(o);
+    if (o && o !== SITE_URL) {
+        if (o.indexOf('vui42') < 0) {
+            setBase(o);
+        }
+    }
 }
 
 var __GTT_PROBED = false;
@@ -37,7 +40,7 @@ function probeDomain() {
     if (__GTT_PROBED) return false;
     __GTT_PROBED = true;
 
-    var cur = 42;
+    var cur = 41;
     var m = String(SITE_URL).match(/goctruyentranhvui(\d+)\.com/i);
     if (m) cur = parseInt(m[1], 10);
 
@@ -50,9 +53,9 @@ function probeDomain() {
             var s = Http.get(cand + '/lien-he')
                 .headers({ 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Referer': cand + '/' })
                 .string();
-            if (s && s.indexOf('Goc Truyen Tranh') >= 0) {
+            if (s && s.indexOf('Goc Truyen Tranh') >= 0 && s.indexOf('goctruyentranhvui' + n + '.com') >= 0) {
                 setBase(cand);
-                __GTT_PRIMED = true;
+                __GTT_PRIMED = false;
                 return true;
             }
         } catch (e) {}
@@ -136,8 +139,21 @@ function FORM_HEADERS(referer) {
 var __GTT_PRIMED = false;
 
 function primeSession(force) {
-    if (__GTT_PRIMED && !force && SESSION_COOKIES) return;
+    if (__GTT_PRIMED && !force && SESSION_COOKIES && SESSION_COOKIES.indexOf('X-TOKEN') >= 0) return;
     __GTT_PRIMED = true;
+
+    try {
+        if (typeof localCookie !== 'undefined' && localCookie.getCookie) {
+            var lc = localCookie.getCookie();
+            if (lc && lc.indexOf('X-TOKEN') >= 0) {
+                SESSION_COOKIES = lc;
+                var m0 = lc.match(/X-TOKEN=([^;]+)/);
+                if (m0) X_TOKEN_VAL = m0[1];
+                return;
+            }
+        }
+    } catch (e0) {}
+
     try {
         if (typeof fetch !== 'undefined') {
             var res = fetch(SITE_URL + '/lien-he', {
@@ -156,7 +172,8 @@ function primeSession(force) {
             }
         }
     } catch (e1) {}
-    if (!SESSION_COOKIES) {
+
+    if (!SESSION_COOKIES || SESSION_COOKIES.indexOf('X-TOKEN') < 0) {
         try {
             Http.get(SITE_URL + '/lien-he')
                 .headers({
@@ -165,6 +182,14 @@ function primeSession(force) {
                     'Referer': SITE_URL + '/'
                 })
                 .string();
+            if (typeof localCookie !== 'undefined' && localCookie.getCookie) {
+                var lc2 = localCookie.getCookie();
+                if (lc2 && lc2.indexOf('X-TOKEN') >= 0) {
+                    SESSION_COOKIES = lc2;
+                    var m2 = lc2.match(/X-TOKEN=([^;]+)/);
+                    if (m2) X_TOKEN_VAL = m2[1];
+                }
+            }
         } catch (e2) {}
     }
 }
