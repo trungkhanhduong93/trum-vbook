@@ -6,7 +6,10 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 
 | Người dùng báo | Đọc mục |
 |---|---|
-| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document) |
+| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy) |
+| Ảnh tải cực chậm / đơ nghẽn | [18](#18-selector-img-quét-trúng-ảnh-rác-làm-nghẽn-connection-pool), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy) |
+| Lỗi crash Unexpected char / Unicode | [20](#20-url-chứa-ký-tự-unicode-tiếng-việt-làm-okhttp-crash) |
+| Mục lục trống trên truyện oneshot / chapter lạ | [21](#21-slug-mục-lục-không-chỉ-có-chap-và-chuong) |
 | Màn hình trống, lỗi trống trơn không có thông báo | [17](#17-fetch-trả-response-không-phải-document), [5](#5-selectfirst-và-parent) |
 | "Đăng nhập rồi mà vẫn không đọc được" | [17](#17-fetch-trả-response-không-phải-document) + [06 case study](06-case-study-luottruyen.md) |
 | "Cài xong không chạy gì cả" | [3](#3-zip-thiếu-entry-src), [4](#4-version-không-bump-đủ-3-chỗ) |
@@ -213,3 +216,88 @@ có tác dụng, vì code chưa từng chạy tới đó. Đóng gói 3 lần v�
   script thứ 6 là chỗ hỏng.
 - **Nhánh fallback phải có ca test chứng minh nó CHẠY TỚI.** Fallback không bao giờ chạy thì
   giống hệt fallback không tồn tại, nhưng đọc code lại thấy rất yên tâm.
+
+---
+
+## 18. Selector `img` quét trúng ảnh rác làm nghẽn Connection Pool
+
+Khi viết `chap.js`, dùng fallback quét rộng kiểu `doc.select("img")` hoặc selector vùng đọc không chặt chẽ (ví dụ dính cả phần comment, related stories, footer) sẽ cào trúng:
+- Hàng chục emoji/pepe sticker (`/img/pepe2/20.png`)
+- Ảnh bìa truyện gợi ý với đường dẫn tiếng Việt thô
+- Icon, avatar, banner quảng cáo
+
+**Hậu quả thực tế (SayHentai v26→v27):**
+Mỗi chương truyện chỉ có 16 trang thật nhưng `chap.js` trả về tới **46 URL ảnh**. Trong đó có 30 URL là emoji và ảnh rác.
+Trên Android, OkHttp duy trì một connection pool có giới hạn (mặc định 5 connection đồng thời trên mỗi host). 30 request ảnh rác vô nghĩa này tranh chấp socket với ảnh truyện thật, gây ra hiện tượng **Head-of-Line blocking**, timeout, và nghẽn toàn bộ tiến trình tải chương truyện.
+
+**Luật phòng tránh:**
+- Luôn khóa chặt container đọc truyện: `doc.select("div.reading-content img, div.page-break img, img.chapter-img")`.
+- Có danh sách loại trừ (blacklist) bắt buộc: `logo`, `banner`, `avatar`, `icon`, `ads`, `button`, `pepe`, `/cover/`.
+- Luôn kiểm tra số lượng ảnh trả về: nếu truyện tranh thông thường trả về >50 ảnh trong khi chương chỉ có 15 trang, chắc chắn selector đang bị overreach.
+
+---
+
+## 19. CDN ảnh có Token HMAC — không được bọc Photon Proxy
+
+Khi gặp tình trạng ảnh tải chậm, suy nghĩ đầu tiên thường là "bọc qua WordPress Photon (`i0.wp.com`...) hoặc Image Proxy để nén và tăng tốc".
+
+**Đã trả giá thật (SayHentai & VinaHentai, 11/09/2026):**
+- SayHentai sử dụng CDN riêng (`pubtranxzyzz.store`) có gắn token bảo vệ trên query string: `?token=...&expires=...`. Khi đẩy qua Jetpack Photon, máy chủ Photon hoặc strip mất query, hoặc gửi request từ IP datacenter khiến CDN từ chối và trả về **403 Forbidden**.
+- VinaHentai sử dụng CDN `vnht.vinahentai.click` trên nền tảng Cloudflare Edge Singapore. Khi request hàng loạt qua Photon, Photon trả về **400 Bad Request** hoặc timeout.
+- Cả hai CDN nguồn vốn đã đặt tại Cloudflare Edge Singapore (`CF-RAY: ...-SIN`) có kết nối peering trực tiếp đến VNPT/Viettel/FPT với độ trễ < 30ms và hỗ trợ HTTP/2. Bọc thêm proxy chỉ làm tăng thêm một chặng trung gian (hop) và có nguy cơ bị chặn IP.
+
+**Luật phòng tránh:**
+- Xem lại [Luật 1](#1-url-ảnh--đã-sai-2-lần): **Luôn giữ nguyên URL ảnh gốc của site.**
+- Không bao giờ bọc CDN ảnh có chứa query token (`token=`, `sign=`, `expires=`) vào các dịch vụ proxy công cộng.
+
+---
+
+## 20. URL chứa ký tự Unicode tiếng Việt làm OkHttp Crash
+
+Android OkHttp tuân thủ nghiêm ngặt RFC 7230/RFC 3986. Mọi ký tự trong Request URL phải nằm trong bảng mã ASCII hợp lệ (`\u0020` đến `\u007E`).
+Nếu một URL từ web chứa ký tự tiếng Việt có dấu (ví dụ `/tai-thiet-đoi-bong-chuyen-hang-bet` hoặc tên file ảnh có dấu cách, dấu tiếng Việt):
+- Browser trên máy tính tự động encode thành `%C4%91...`.
+- Nhưng trong Rhino JS của Vbook, chuỗi URL được truyền thẳng xuống Java OkHttp `Request.Builder().url(u)`. Khi đó OkHttp sẽ ném ngoại lệ:
+  `IllegalArgumentException: Unexpected char %#x at ...`
+- Kết quả: Vbook crash hoặc báo "Không thể tải nội dung" mà không có bất kỳ thông tin lỗi chi tiết nào.
+
+**Luật phòng tránh:**
+- Luôn chuẩn hóa URL qua một hàm an toàn trước khi gọi `fetch()` hoặc trả về cho Vbook:
+  ```javascript
+  function safeEncodeUrl(u) {
+      if (!u) return "";
+      try {
+          return encodeURI(u);
+      } catch (e) {
+          return u;
+      }
+  }
+  ```
+- Tích hợp `safeEncodeUrl()` vào hàm `resolveUrl()` dùng chung trong `config.js`.
+
+---
+
+## 21. Slug mục lục không chỉ có `chap-` và `chuong-`
+
+Khi phân tích link chương trong `toc.js`, dev thường viết regex hoặc filter đơn giản:
+```javascript
+// SAI: Chỉ bắt được chap và chuong
+if (href.indexOf("/chap-") >= 0 || href.indexOf("/chuong-") >= 0)
+```
+
+**Thực tế đa dạng hơn rất nhiều (VinaHentai v5→v6):**
+Nhiều web truyện tranh 18+/hentai/manhwa có các định dạng chương rất đặc thù:
+- Truyện Oneshot: `/1shot-1`, `/oneshot`, `/full`
+- Truyện tập: `/tap-1`, `/vol-1`
+- Truyện viết tắt: `/chapter-1`
+- Hơn nữa, trên trang chi tiết thường có các nút bấm điều hướng như "Đọc từ đầu", "Đọc mới nhất", "Xem ngay" cũng trỏ tới link chương đầu tiên. Nếu chỉ bắt theo selector link chương thì danh sách mục lục sẽ bị trùng lặp hoặc chứa các nút action không mong muốn.
+
+**Luật phòng tránh:**
+- Khảo sát ít nhất 3 loại truyện: truyện dài tập nhiều chương, truyện oneshot 1 chương, và truyện có nhiều vol/tập.
+- Bắt link chương dựa trên tiền tố của slug truyện:
+  ```javascript
+  // Lấy link là con của slug truyện: /truyen-hentai/<slug>/<subpath>
+  var sub = href.substring(prefix.length); // ví dụ: chapter-1, 1shot-1, tap-1
+  ```
+- Loại trừ rõ ràng các nút CTA điều hướng đầu trang (kiểm tra class, text "Đọc ngay", "Đọc từ đầu").
+

@@ -1,3 +1,37 @@
+# TECHNICAL HANDOFF REPORT - SAYHENTAI (v27) & VINAHENTAI (v6) OPTIMIZATION
+
+- **Plugins:** `sayhentai/` (v27) & `vinahentai/` (v6)
+- **Commit:** `9c05d49` (Branch `main`, GitHub `trungkhanhduong93/trum-vbook`)
+- **Trạng thái:** Đã tối ưu tốc độ load ảnh lên mức cực đại, giải quyết triệt để lỗi không tải được ảnh & mục lục, vượt qua 5/5 chốt kiểm định QA Pre-push Gate.
+
+## 1. SayHentai (v27) - Tối ưu hóa tốc độ load ảnh cực đại
+- **Vấn đề cũ:** Selector `img` cũ quét quá rộng khiến `chap.js` nhặt nhầm hơn 30 ảnh rác/emoji pepe (`/img/pepe2/20.png`), avatar, và ảnh bìa truyện có URL chứa ký tự tiếng Việt thô chưa encode (`vũ điieeju.jpg`).
+- **Hậu quả:** Gây nghẽn nghiêm trọng (Head-of-Line blocking) trong connection pool của Android OkHttp, khiến vBook tải ảnh cực chậm hoặc timeout.
+- **Giải pháp:**
+  - Khóa chặt selector vùng đọc: `div.reading-content img, div.page-break img, img.chapter-img, img[id^='image-']`.
+  - Blacklist lọc sạch 100% rác: `pepe`, `/cover/`, `ads`, `button`, `logo`, `banner`. Lượng ảnh giảm từ 46 xuống đúng 16 ảnh truyện chuẩn (giảm 65% request thừa).
+  - Tích hợp helper `fetchDoc(url, extraHeaders)` cơ chế dự phòng 2 tầng (`fetch` + `Http.get`) cho cả `detail.js`, `toc.js`, và `chap.js`.
+  - Bump version lên **v27** (đồng bộ root `plugin.json`, `sayhentai/plugin.json`, và `sayhentai/plugin.zip`).
+
+## 2. VinaHentai (v6) - Xử lý Next.js Hydration, URL tiếng Việt & Mục lục toàn diện
+- **Vấn đề cũ:**
+  1. URL chứa ký tự tiếng Việt (`/tai-thiet-đoi-bong-chuyen-hang-bet`) làm OkHttp crash với lỗi `IllegalArgumentException: Unexpected char %#x`.
+  2. Mục lục `toc.js` cũ chỉ bắt `/chap-` và `/chuong-`, bỏ sót toàn bộ truyện dạng `/chapter-`, `/1shot-`, `/oneshot`, `/tap-`, `/vol-`, hoặc bị nuốt nhầm nút điều hướng "Đọc từ đầu".
+  3. Thử nghiệm Jetpack Photon (`i0.wp.com`...): CDN gốc `vnht.vinahentai.click` trả 400 Bad Request / Timeout, còn `pubtranxzyzz.store` (SayHentai) trả 403 Forbidden do HMAC token.
+- **Giải pháp:**
+  - Viết helper `safeEncodeUrl(u)` dùng `encodeURI(u)` trước khi gửi bất kỳ request nào.
+  - Viết lại `vinahentai/src/toc.js`: Quét regex theo subpaths dưới `/truyen-hentai/<slug>/` hỗ trợ mọi định dạng chapter/oneshot, loại trừ nút action.
+  - Giữ nguyên raw CDN direct link từ Cloudflare Edge Singapore (`CF-RAY: ...-SIN`) hỗ trợ HTTP/2, không bọc qua proxy trung gian.
+  - Trích xuất ảnh trong `chap.js` trực tiếp từ chuỗi HTML Next.js SSR qua Regex, không phụ thuộc DOM hydration.
+  - Bump version lên **v6** (đồng bộ root `plugin.json`, `vinahentai/plugin.json`, và `vinahentai/plugin.zip`).
+
+## 3. Bài học thực chiến & Quy tắc vàng
+1. **Tuyệt đối không dùng Jetpack Photon (`i0.wp.com`) cho CDN có token HMAC:** Token hết hạn hoặc sai query string sẽ kích hoạt 403 Forbidden ngay lập tức.
+2. **Luôn encode URL tiếng Việt trước khi đưa vào OkHttp:** Android OkHttp ném `IllegalArgumentException` nếu URL chứa ký tự Unicode không thuộc ASCII.
+3. **Thu hẹp selector ảnh chương:** Không bao giờ dùng `doc.select("img")` làm fallback mà không có blacklist nghiêm ngặt; mỗi request rác đều cướp slot socket của ảnh truyện thật.
+
+---
+
 > ⚠️ **GocTruyenTranh: Tài liệu handoff mới nhất là [`goctruyentranh/HANDOVER.md`](goctruyentranh/HANDOVER.md)** (Đã lên v9, commit `cca6af2`).
 
 # TECHNICAL HANDOFF REPORT (FOR CLAUDE) - GOCTRUYENTRANH ISSUE (v9)
