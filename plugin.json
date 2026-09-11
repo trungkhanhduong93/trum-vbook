@@ -209,6 +209,32 @@
       "description": "Đọc truyện trên trang Góc Truyện Tranh",
       "type": "comic",
       "locale": "vi_VN"
+    },
+    {
+      "name": "SayHentai",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/plugin.zip?v=1",
+      "version": 1,
+      "source": "https://sayhentai.cx",
+      "regexp": "(www\\.)?sayhentai\\.(cx|ink|one|art|life|tv)\\/truyen-[^\\/]+\\.html$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/icon.png",
+      "description": "SayHentai - Đọc truyện tranh Manhwa 18+ online",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
+    },
+    {
+      "name": "VinaHentai",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/plugin.zip?v=1",
+      "version": 1,
+      "source": "https://vinahentai.click",
+      "regexp": "(www\\.)?vinahentai\\.(click|net|com|org)\\/truyen-hentai\\/[^\\/]+",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/icon.png",
+      "description": "VinaHentai - Đọc truyện tranh Hentai Manga & Manhwa 18+ vietsub",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
     }
   ]
 }
