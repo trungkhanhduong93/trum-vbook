@@ -1,5 +1,5 @@
 var BASE_URL = 'https://minotruyenv7.xyz';
-var API = 'https://api.cloudkk-v1.xyz/api';
+var API = 'https://api.cloudkk-v2.xyz/api';
 var TYPE = 'comics';
 try {
     if (CONFIG_URL) {
@@ -27,10 +27,10 @@ function jsonGet(url) {
         var res = Http.get(url).headers(HEADERS).string();
         if (res && res.indexOf("{") >= 0) return JSON.parse(res);
     } catch (e) {}
-    if (url.indexOf("api.cloudkk-v1.xyz") >= 0) {
+    if (url.indexOf("api.cloudkk-v2.xyz") >= 0) {
         try {
-            var v2Url = url.replace("api.cloudkk-v1.xyz", "api.cloudkk-v2.xyz");
-            var res2 = Http.get(v2Url).headers(HEADERS).string();
+            var v1Url = url.replace("api.cloudkk-v2.xyz", "api.cloudkk-v1.xyz");
+            var res2 = Http.get(v1Url).headers(HEADERS).string();
             if (res2 && res2.indexOf("{") >= 0) return JSON.parse(res2);
         } catch (e2) {}
     }
@@ -109,23 +109,19 @@ function parseChapterIds(url) {
     var s = String(url).split(/[?#]/)[0].replace(/\/+$/, "");
     s = s.replace(/([^:])\/+/g, "$1/");
 
-    var m = s.match(/\/books\/(\d+)\/(?:.*\/)?(?:chapters?\/)?(?:[^\/]*?-)?(\d+)$/);
+    var m = s.match(/\/books\/(?:[^\/]*?-)?(\d+)\/(?:.*\/)?(?:chapters?\/)?(?:[^\/]*?-)?(\d+)$/);
     if (m) {
         return { bookId: m[1], chapterId: m[2] };
     }
 
-    var mBook = s.match(/\/books\/(\d+)/);
-    if (!mBook) return null;
-    var bookId = mBook[1];
-
-    var idx = s.indexOf("/books/" + bookId);
-    if (idx < 0) return null;
-    var rest = s.substring(idx + ("/books/" + bookId).length).replace(/^\/+/, "");
-    if (!rest) return null;
-
-    var mChap = rest.match(/(?:^|\/)(\d+)$/) || rest.match(/(\d+)$/);
-    if (mChap) {
-        return { bookId: bookId, chapterId: mChap[1] };
+    var nums = s.match(/\/books\/[^\/]+/);
+    if (nums) {
+        var bMatch = nums[0].match(/(\d+)/);
+        var rest = s.substring(s.indexOf(nums[0]) + nums[0].length).replace(/^\/+/, "");
+        var cMatch = rest.match(/(\d+)(?:\/?$)/);
+        if (bMatch && cMatch) {
+            return { bookId: bMatch[1], chapterId: cMatch[1] };
+        }
     }
     return null;
 }
@@ -137,10 +133,10 @@ function fetchChapterImagesApi(chapterId, bookId) {
         var res = Http.get(apiUrl).headers(HEADERS).string();
         if (res && res.indexOf("{") >= 0) json = JSON.parse(res);
     } catch (e) {}
-    if (!json && apiUrl.indexOf("api.cloudkk-v1.xyz") >= 0) {
+    if (!json && apiUrl.indexOf("api.cloudkk-v2.xyz") >= 0) {
         try {
-            var v2Url = "https://api.cloudkk-v2.xyz/api/books/" + bookId + "/chapters/" + chapterId;
-            var res2 = Http.get(v2Url).headers(HEADERS).string();
+            var v1Url = "https://api.cloudkk-v1.xyz/api/books/" + bookId + "/chapters/" + chapterId;
+            var res2 = Http.get(v1Url).headers(HEADERS).string();
             if (res2 && res2.indexOf("{") >= 0) json = JSON.parse(res2);
         } catch (e2) {}
     }

@@ -25,7 +25,6 @@ def pack_plugin(plugin_name):
 
 pack_plugin('minotruyen')
 pack_plugin('minomanga')
-pack_plugin('minohen')
 pack_plugin('toptruyen')
 pack_plugin('cuutruyen')
 pack_plugin('zettruyen')
@@ -39,7 +38,7 @@ pack_plugin('truyenqq')
 pack_plugin('mimimoe')
 pack_plugin('truyenggvn')
 pack_plugin('tcomic')
-pack_plugin('sayhentai')
+pack_plugin('damconuong')
 pack_plugin('vinahentai')
 
 def pack_2ten():

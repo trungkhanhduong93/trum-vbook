@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "name": "Mino Hentai",
+    "name": "DamCoNuong",
     "author": "tkd1793",
-    "version": 26,
-    "source": "https://minotruyenv7.xyz",
-    "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
-    "description": "Đọc truyện trên trang Mino Hentai",
+    "version": 1,
+    "source": "https://www.damconuong.xyz",
+    "regexp": "(www\\.)?damconuong\\.xyz\\/truyen\\/[a-zA-Z0-9-]+\\/?$",
+    "description": "DamCoNuong - Đọc truyện Hentai, Manhwa 18+ online",
     "locale": "vi_VN",
-    "language": "javascript",
     "type": "comic",
+    "language": "javascript",
     "tag": "nsfw"
   },
   "script": {

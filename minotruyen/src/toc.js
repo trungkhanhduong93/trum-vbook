@@ -9,9 +9,6 @@ function execute(url) {
     var apiUrl = API + "/books/" + bookId + "/chapters?order=desc&take=5000";
 
     var data = jsonGet(apiUrl);
-    if (!data && apiUrl.indexOf("api.cloudkk-v1.xyz") >= 0) {
-        data = jsonGet("https://api.cloudkk-v2.xyz/api/books/" + bookId + "/chapters?order=desc&take=5000");
-    }
     if (!data || !data.data || !data.data.chapters) return Response.error("Không tải được danh sách chương");
 
     var chapters = data.data.chapters;

@@ -1,6 +1,6 @@
-var BASE_URL = "https://mimimoe.moe";
-var API_URL = "https://mimimoe.moe/api";
-var HOST = "https://mimimoe.moe";
+var BASE_URL = "https://mimihentai.moe";
+var API_URL = "https://mimihentai.moe/api";
+var HOST = "https://mimihentai.moe";
 
 var COMMON_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",

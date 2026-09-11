@@ -67,8 +67,8 @@
     {
       "name": "Mino Truyện",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=26",
-      "version": 26,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=27",
+      "version": 27,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/icon.png",
@@ -79,8 +79,8 @@
     {
       "name": "Mino Manga",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=26",
-      "version": 26,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=27",
+      "version": 27,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/icon.png",
@@ -88,19 +88,7 @@
       "type": "comic",
       "locale": "vi_VN"
     },
-    {
-      "name": "Mino Hentai",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip?v=26",
-      "version": 26,
-      "source": "https://minotruyenv7.xyz",
-      "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/icon.png",
-      "description": "Đọc truyện trên trang Mino Hentai",
-      "type": "comic",
-      "locale": "vi_VN",
-      "tag": "nsfw"
-    },
+
     {
       "name": "TopTruyen",
       "author": "tkd1793",
@@ -128,10 +116,10 @@
     {
       "name": "Mimimoe",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip?v=10",
-      "version": 10,
-      "source": "https://mimimoe.moe",
-      "regexp": "mimimoe\\.moe\\/manga\\/[0-9]+\\/?$",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip?v=11",
+      "version": 11,
+      "source": "https://mimihentai.moe",
+      "regexp": "(www\\.)?(mimimoe|mimihentai)\\.moe\\/manga\\/[0-9]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/icon.png",
       "description": "Mimi - Đọc truyện chất lượng cao",
       "type": "comic",
@@ -211,14 +199,14 @@
       "locale": "vi_VN"
     },
     {
-      "name": "SayHentai",
+      "name": "DamCoNuong",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/plugin.zip?v=27",
-      "version": 27,
-      "source": "https://sayhentai.cx",
-      "regexp": "(www\\.)?sayhentai\\.(cx|ink|one|art|life|tv)\\/truyen-[^\\/]+\\.html$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/icon.png",
-      "description": "SayHentai - Đọc truyện tranh Manhwa 18+ online",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/plugin.zip?v=1",
+      "version": 1,
+      "source": "https://www.damconuong.xyz",
+      "regexp": "(www\\.)?damconuong\\.xyz\\/truyen\\/[a-zA-Z0-9-]+\\/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/icon.png",
+      "description": "DamCoNuong - Đọc truyện Hentai, Manhwa 18+ online",
       "type": "comic",
       "locale": "vi_VN",
       "tag": "nsfw"
