@@ -57,7 +57,7 @@ function toPhoton(url, idx, isCover) {
     var bare = url.replace(/^https?:\/\//i, "");
     var host = "i" + ((idx || 0) % 3) + ".wp.com/";
     var sep = bare.indexOf("?") >= 0 ? "&" : "?";
-    var params = isCover ? "w=350&quality=75" : "w=800&quality=75";
+    var params = isCover ? "w=300&quality=70&strip=all" : "w=600&quality=65&strip=all";
     return "https://" + host + bare + sep + params;
 }
 

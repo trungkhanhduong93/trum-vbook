@@ -201,8 +201,8 @@
     {
       "name": "DamCoNuong",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/plugin.zip?v=5",
-      "version": 5,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/plugin.zip?v=6",
+      "version": 6,
       "source": "https://www.damconuong.xyz",
       "regexp": "(www\\.)?damconuong\\.xyz\\/truyen\\/[a-zA-Z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/icon.png",
