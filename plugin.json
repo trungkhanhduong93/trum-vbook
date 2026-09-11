@@ -55,8 +55,8 @@
     {
       "name": "LuotTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=33",
-      "version": 33,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=34",
+      "version": 34,
       "source": "https://luottruyen17.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",
@@ -67,8 +67,8 @@
     {
       "name": "Mino Truyện",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=25",
-      "version": 25,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=26",
+      "version": 26,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/icon.png",
@@ -177,8 +177,8 @@
     {
       "name": "LuotTruyenNew",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/plugin.zip?v=25",
-      "version": 25,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/plugin.zip?v=26",
+      "version": 26,
       "source": "https://luottruyen.net",
       "regexp": "(www\\.)?luottruyen\\.net\\/[a-z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyennew/icon.png",

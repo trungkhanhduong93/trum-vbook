@@ -4,6 +4,9 @@ function execute(url) {
     var sUrl = String(url).replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
 
     var ids = parseChapterIds(sUrl);
+    if (!ids) {
+        ids = parseChapterIds(url);
+    }
     if (ids) {
         var imgs = fetchChapterImagesApi(ids.chapterId, ids.bookId);
         if (imgs && imgs.length) return Response.success(imgs);
@@ -17,10 +20,13 @@ function browserFallback(url) {
     try {
         browser = Engine.newBrowser();
         try {
-            browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.gif"]);
+            browser.block([
+                ".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*",
+                ".*\\.css.*", ".*\\.gif.*", ".*\\.png.*", ".*\\.jpg.*", ".*\\.jpeg.*", ".*\\.webp.*", ".*stats.*"
+            ]);
         } catch (eBlock) {}
-        browser.launch(url, 4);
-        try { browser.callJs('void 0;', 2); } catch (eWait) {}
+        browser.launch(url, 2);
+        try { browser.callJs('void 0;', 1); } catch (eWait) {}
 
         var script = "" +
             "(function() {\n" +
@@ -37,7 +43,7 @@ function browserFallback(url) {
             "        document.body.innerHTML = 'VBOOK_IMGS_ERROR' + e.message;\n" +
             "    }\n" +
             "})();";
-        browser.callJs(script, 4);
+        browser.callJs(script, 2);
         var bdoc = browser.html();
 
         if (!bdoc) return Response.error("Không tải được trang chương");

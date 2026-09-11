@@ -2,6 +2,7 @@ load("config.js");
 
 function execute(url) {
     syncBaseFromUrl(url);
+    url = swapDomain(url);
 
     // Tải trực tiếp (nhanh, 1 request). fetchRetry tự dò lại domain nếu lỗi mạng.
     // CDN ảnh luottruyen KHÔNG chặn Cloudflare → không cần browser mồi cookie.

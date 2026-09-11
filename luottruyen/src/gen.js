@@ -6,7 +6,7 @@ function execute(url, page) {
     var p = page ? parseInt(page) : 1;
 
     // Build URL with page parameter
-    var fetchUrl = url;
+    var fetchUrl = swapDomain(url);
     if (fetchUrl.indexOf("?") >= 0) {
         fetchUrl = fetchUrl + "&page=" + p;
     } else {

@@ -1,39 +1,40 @@
 load("config.js");
 
 function execute(url) {
-    url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
-    if (url.indexOf("/") === 0) url = BASE_URL + url;
+    try {
+        if (!url) return Response.error("URL chương không hợp lệ");
+        if (url.indexOf("/") === 0) url = BASE_URL + url;
+        url = url.replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img, BASE_URL);
 
-    var doc = fetchRetry(url);
-    if (!doc) return Response.error("Không tải được chương");
+        var doc = fetchRetry(url);
+        if (!doc) return Response.error("Không tải được chương (mạng chậm hoặc lỗi kết nối)");
 
-    var imgEls = doc.select("div.reading-content img");
-    var images = [];
-    var seen = {};
+        var imgEls = doc.select("div.reading-content img");
+        if (!imgEls || imgEls.size() === 0) {
+            return Response.error("Không tìm thấy ảnh chương");
+        }
 
-    for (var i = 0; i < imgEls.size(); i++) {
-        var el = imgEls.get(i);
-        var src = el.attr("data-src") || el.attr("src") || el.attr("data-original") || "";
-        src = trimText(src);
+        var images = [];
+        var seen = {};
+        var junkRegex = /^(?:data:)|placeholder|loading|logo|\/icon/i;
 
-        if (!src) continue;
-        if (src.indexOf("data:") === 0) continue;
-        if (src.indexOf("placeholder") >= 0) continue;
-        if (src.indexOf("loading") >= 0) continue;
-        if (src.indexOf("logo") >= 0) continue;
-        if (src.indexOf("/icon") >= 0) continue;
+        for (var i = 0; i < imgEls.size(); i++) {
+            var el = imgEls.get(i);
+            var src = el.attr("data-src") || el.attr("data-original") || el.attr("src") || "";
+            src = trimText(src);
 
-        var finalSrc = resolveUrl(src);
-        
-        // Proxy đã bị xoá vì corsproxy.io chặn VBook và Lướt Truyện không chặn trực tiếp.
+            if (!src || junkRegex.test(src)) continue;
 
+            var finalSrc = resolveUrl(src);
+            if (!seen[finalSrc]) {
+                seen[finalSrc] = true;
+                images.push(finalSrc);
+            }
+        }
 
-        if (seen[finalSrc]) continue;
-        seen[finalSrc] = true;
-        
-        images.push(finalSrc);
+        if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
+        return Response.success(images);
+    } catch (e) {
+        return Response.error("Lỗi khi tải chương: " + (e.message || e));
     }
-
-    if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
-    return Response.success(images);
 }

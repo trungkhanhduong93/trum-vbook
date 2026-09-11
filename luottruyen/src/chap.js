@@ -86,21 +86,40 @@ function isLoginWall(doc) {
     return false;
 }
 
-// fetchRetry() trả về Response chứ không phải Document → phải .html().
-// Không dùng fetchRetry ở đây: tường đăng nhập làm res.ok = false, kéo theo
-// autoProbeDomains() rà một loạt domain chết (mỗi domain timeout vài giây) vô ích.
-// Chỉ rà domain khi thật sự không lấy nổi HTML nào về.
+// Fast-path tải trực tiếp trang chương qua HTTP (Http.get/fetch gắn Cookie Google từ localCookie)
 function fetchChapterDoc(url) {
     var doc = null;
+    var cookie = getLocalCookie(url);
+    var headers = {
+        "User-Agent": FETCH_HEADERS["User-Agent"],
+        "Accept": FETCH_HEADERS["Accept"],
+        "Accept-Language": FETCH_HEADERS["Accept-Language"],
+        "Referer": BASE_URL + "/"
+    };
+    if (cookie) {
+        headers["Cookie"] = cookie;
+    }
+
+    // 1. Ưu tiên Http.get (đồng bộ OkHttp trong vBook, tốc độ cực nhanh ~200ms)
     try {
-        var res = fetch(url, FETCH_OPTIONS);
-        if (res) doc = res.html();
-    } catch (e) {}
+        if (typeof Http !== "undefined" && Http.get) {
+            doc = Http.get(url).headers(headers).html();
+        }
+    } catch (eHttp) {}
+
+    // 2. Dự phòng qua fetch nếu Http.get không trả về doc
+    if (!doc) {
+        try {
+            var res = fetch(url, { headers: headers });
+            if (res) doc = res.html();
+        } catch (eFetch) {}
+    }
+
     if (doc) return doc;
 
     var probed = autoProbeDomains(url);
     if (!probed) return null;
-    try { return probed.html(); } catch (e) {}
+    try { return probed.html(); } catch (eProbe) {}
     return null;
 }
 
@@ -108,11 +127,30 @@ function chapDocViaBrowser(url) {
     var browser = null;
     try {
         browser = Engine.newBrowser();
-        // Áp dụng API ẩn browser.block() từ lõi vBook.apk chặn đứng 100% script rác, ads, tracking, css
-        browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.css.*", ".*\\.gif", ".*stats.*"]);
+        try {
+            // Chặn đứng toàn bộ ảnh, css, gif, script tracking rác để nạp DOM nhanh nhất
+            browser.block([
+                ".*\\.jpg.*",
+                ".*\\.jpeg.*",
+                ".*\\.png.*",
+                ".*\\.webp.*",
+                ".*\\.gif.*",
+                ".*\\.svg.*",
+                ".*\\.css.*",
+                ".*google.*",
+                ".*facebook.*",
+                ".*analytics.*",
+                ".*doubleclick.*",
+                ".*adservice.*",
+                ".*stats.*",
+                ".*traffic.*"
+            ]);
+        } catch (eBlock) {}
         // Đơn vị trong lõi vBook là GIÂY: 1s là vừa đủ khi đã chặn sạch rác
         browser.launch(url, 1);
-        browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 1);
+        try {
+            browser.callJs("window.scrollTo(0, document.body.scrollHeight);", 1);
+        } catch (eJs) {}
         var bDoc = browser.html();
         return bDoc;
     } catch (e) {
@@ -126,9 +164,10 @@ function chapDocViaBrowser(url) {
 
 function execute(url) {
     syncBaseFromUrl(url);
+    url = swapDomain(url);
 
-    // Tầng 1: Fast-path HTTP. vBook tự động chuyển cookie session từ WebView sang HTTP.
-    // Nếu có session hoặc truyện không khoá, trả kết quả ngay lập tức trong 200ms!
+    // Tầng 1: Fast-path HTTP có gắn Cookie phiên đăng nhập Google từ localCookie.
+    // Nếu có session Google đã đăng nhập hoặc chương mở, đọc thẳng trong ~200ms mà không cần bật WebView!
     var doc = fetchChapterDoc(url);
     if (doc) {
         var images = extractImagesFromDoc(doc);
@@ -137,7 +176,7 @@ function execute(url) {
         }
     }
 
-    // Tầng 2: Ultra-fast Headless WebView với browser.block() chặn rác (< 800ms)
+    // Tầng 2: Ultra-fast Headless WebView (<1s) với browser.block() chặn toàn bộ ảnh, css, gif, tracking rác
     var bDoc = chapDocViaBrowser(url);
     if (bDoc) {
         var bImgs = extractImagesFromDoc(bDoc);

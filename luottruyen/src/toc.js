@@ -2,6 +2,7 @@ load("config.js");
 
 function execute(url) {
     syncBaseFromUrl(url);
+    url = swapDomain(url);
 
     // 1. Trích xuất storyId từ URL (dạng -12345 ở cuối)
     var m = String(url).match(/-(\d+)\/?$/);

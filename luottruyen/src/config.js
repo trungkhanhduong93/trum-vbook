@@ -39,7 +39,14 @@ function setBase(origin) {
 // không vỡ kể cả khi nguồn đang giữa kỳ đổi link.
 function syncBaseFromUrl(url) {
     var origin = luotOrigin(url);
-    if (origin && origin !== BASE_URL) setBase(origin);
+    if (!origin) return;
+    var originNum = extractDomainNumber(origin);
+    var baseNum = extractDomainNumber(BASE_URL);
+    // Chỉ cập nhật nếu domain từ URL lớn hơn hoặc bằng BASE_URL hiện tại,
+    // tránh trường hợp URL cũ kéo lùi BASE_URL về domain đã chết.
+    if (originNum >= baseNum && origin !== BASE_URL) {
+        setBase(origin);
+    }
 }
 
 // Trích xuất số domain từ URL hoặc origin (vd luottruyen16.com -> 16)
@@ -59,42 +66,64 @@ function swapDomainTo(url, targetDomain) {
 }
 
 // Tự dò domain thật qua redirector luottruyen.com.
-// Chỉ được gọi từ nhánh cứu hộ (domain hiện hành đã hỏng) nên KHÔNG lấy
-// CONFIG_URL nữa: nó chính là domain vừa chết. __LT_RESOLVED giữ cho mỗi
-// lần chạy script chỉ tốn 1 lượt redirector (~5s).
-function resolveBaseUrl() {
-    if (__LT_RESOLVED) return;
+function resolveBaseUrl(force) {
+    if (__LT_RESOLVED && !force) return;
     __LT_RESOLVED = true;
 
+    var doc = null;
+    var finalUrl = null;
     try {
         var res = fetch(REDIRECTOR + "/", FETCH_OPTIONS);
-        if (!res) return;
-
-        var doc = res.html();
-        if (doc) {
-            var cano = selFirst(doc, "link[rel=canonical]");
-            var fromCanon = cano ? luotOrigin(cano.attr("href")) : null;
-            if (fromCanon) { setBase(fromCanon); return; }
-
-            var og = selFirst(doc, "meta[property=og:url]");
-            var fromOg = og ? luotOrigin(og.attr("content")) : null;
-            if (fromOg) { setBase(fromOg); return; }
-
-            var links = doc.select("a[href]");
-            for (var i = 0; i < links.size(); i++) {
-                var fromLink = luotOrigin(links.get(i).attr("href"));
-                if (fromLink) { setBase(fromLink); return; }
-            }
+        if (res) {
+            finalUrl = res.url;
+            doc = res.html();
         }
+    } catch (e1) {}
 
-        var fromFinal = luotOrigin(res.url);
-        if (fromFinal) { setBase(fromFinal); return; }
-    } catch (e) {}
+    if (!doc) {
+        try {
+            if (typeof Http !== "undefined" && Http.get) {
+                doc = Http.get(REDIRECTOR + "/").headers(FETCH_HEADERS).html();
+            }
+        } catch (e2) {}
+    }
+
+    if (doc) {
+        var cano = selFirst(doc, "link[rel=canonical]");
+        var fromCanon = cano ? luotOrigin(cano.attr("href")) : null;
+        if (fromCanon) { setBase(fromCanon); return; }
+
+        var og = selFirst(doc, "meta[property=og:url]");
+        var fromOg = og ? luotOrigin(og.attr("content")) : null;
+        if (fromOg) { setBase(fromOg); return; }
+
+        var links = doc.select("a[href]");
+        for (var i = 0; i < links.size(); i++) {
+            var fromLink = luotOrigin(links.get(i).attr("href"));
+            if (fromLink) { setBase(fromLink); return; }
+        }
+    }
+
+    var fromFinal = luotOrigin(finalUrl);
+    if (fromFinal) { setBase(fromFinal); return; }
 }
 
-// Rà soát lũy tiến luottruyen18.com, 19, 20... khi domain hiện hành hỏng.
-// Hết dải số thì quay sang redirector luottruyen.com.
+// Rà soát domain khi domain hiện hành hỏng.
+// Ưu tiên redirector luottruyen.com trước (Cloudflare redirect siêu tốc, không bị treo DNS).
+// Fallback rà số kế tiếp nếu redirector không phân giải được.
 function autoProbeDomains(url) {
+    var oldBase = BASE_URL;
+
+    // 1. Thử qua redirector luottruyen.com trước (Cloudflare redirect siêu tốc, không bị treo DNS)
+    try {
+        resolveBaseUrl(true);
+        if (BASE_URL !== oldBase) {
+            var resRedir = fetch(swapDomain(url), FETCH_OPTIONS);
+            if (resRedir && resRedir.ok) return resRedir;
+        }
+    } catch (eRedir) {}
+
+    // 2. Fallback: rà soát lũy tiến số kế tiếp nếu redirector không phân giải được
     var failedNum = extractDomainNumber(BASE_URL);
     if (failedNum < 17) failedNum = 17;
     var startNum = failedNum + 1;
@@ -123,14 +152,26 @@ function autoProbeDomains(url) {
         } catch (e) {}
     }
 
-    // Secondary fallback: thử qua redirector luottruyen.com
-    try {
-        resolveBaseUrl();
-        var resRedir = fetch(swapDomain(url), FETCH_OPTIONS);
-        if (resRedir && resRedir.ok) return resRedir;
-    } catch (e) {}
-
     return null;
+}
+
+// Lấy cookie phiên đăng nhập từ WebView qua localCookie của vBook
+function getLocalCookie(url) {
+    var target = url || BASE_URL;
+    var c = "";
+    try {
+        if (typeof localCookie !== "undefined" && localCookie.getCookie) {
+            c = localCookie.getCookie(target);
+            if (!c) c = localCookie.getCookie();
+        }
+    } catch (e1) {
+        try {
+            if (typeof localCookie !== "undefined" && localCookie.getCookie) {
+                c = localCookie.getCookie();
+            }
+        } catch (e2) {}
+    }
+    return c || "";
 }
 
 // ─── Helper functions ──────────────────────────────────────────────
