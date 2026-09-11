@@ -26,13 +26,24 @@ function txt(el) {
     return el ? el.text().trim() : "";
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
 function resolveUrl(u) {
     if (!u) return BASE_URL;
     u = String(u).trim();
-    if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) return u;
-    if (u.indexOf("//") === 0) return "https:" + u;
-    if (u.indexOf("/") === 0) return BASE_URL + u;
-    return BASE_URL + "/" + u;
+    var full = u;
+    if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) full = u;
+    else if (u.indexOf("//") === 0) full = "https:" + u;
+    else if (u.indexOf("/") === 0) full = BASE_URL + u;
+    else full = BASE_URL + "/" + u;
+    return safeEncodeUrl(full);
 }
 
 function imgSrc(el) {
@@ -56,13 +67,34 @@ function imgSrc(el) {
 
 function fetchRetry(url, maxRetries) {
     if (typeof maxRetries === "undefined") maxRetries = 1;
-    var lastResp = null;
+    var cleanUrl = resolveUrl(url);
     for (var i = 0; i <= maxRetries; i++) {
-        var resp = fetch(url, FETCH_OPTIONS);
-        if (resp && resp.ok) return resp;
-        lastResp = resp;
+        try {
+            var resp = fetch(cleanUrl, FETCH_OPTIONS);
+            if (resp && resp.ok) return resp;
+        } catch (e) {}
     }
-    return lastResp;
+    return null;
+}
+
+function fetchDoc(url) {
+    var cleanUrl = resolveUrl(url);
+    try {
+        var resp = fetchRetry(cleanUrl);
+        if (resp && resp.ok) {
+            var doc = resp.html();
+            if (doc) return doc;
+        }
+    } catch (e1) {}
+
+    try {
+        if (typeof Http !== "undefined" && typeof Http.get === "function") {
+            var doc2 = Http.get(cleanUrl).headers(FETCH_HEADERS).html();
+            if (doc2) return doc2;
+        }
+    } catch (e2) {}
+
+    return null;
 }
 
 function parseItems(doc) {

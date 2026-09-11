@@ -226,8 +226,8 @@
     {
       "name": "VinaHentai",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/plugin.zip?v=4",
-      "version": 4,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/plugin.zip?v=5",
+      "version": 5,
       "source": "https://vinahentai.click",
       "regexp": "(www\\.)?vinahentai\\.(click|net|com|org)\\/truyen-hentai\\/[^\\/]+",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/icon.png",

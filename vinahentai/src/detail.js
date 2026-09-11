@@ -1,12 +1,11 @@
 load("config.js");
 
 function execute(url) {
-    var resp = fetchRetry(url);
-    if (!resp || !resp.ok) {
+    var doc = fetchDoc(url);
+    if (!doc) {
         return Response.error("Không thể tải thông tin truyện");
     }
 
-    var doc = resp.html();
     var h1 = selFirst(doc, "h1");
     var title = txt(h1);
     if (!title) {
@@ -42,34 +41,46 @@ function execute(url) {
     var genres = [];
     var genreSeen = {};
     for (var k = 0; k < genreEls.size(); k++) {
-        var gName = txt(genreEls.get(k));
+        var gEl = genreEls.get(k);
+        var gName = txt(gEl);
+        var gHref = gEl.attr("href") || "";
         if (gName && !genreSeen[gName]) {
             genreSeen[gName] = true;
-            genres.push(gName);
+            genres.push({
+                title: gName,
+                input: resolveUrl(gHref),
+                script: "gen.js"
+            });
         }
     }
 
     // Description
     var descEl = selFirst(doc, "meta[name='description'], meta[property='og:description']");
     var desc = descEl ? descEl.attr("content") : "";
-    if (group) {
-        desc = "Dịch giả: " + group + "\n\n" + desc;
-    }
 
     // Status
     var status = "Đang tiến hành";
+    var ongoing = true;
     var textAll = doc.text();
     if (textAll.indexOf("Hoàn thành") >= 0 || textAll.indexOf("Đã hoàn thành") >= 0) {
         status = "Hoàn thành";
+        ongoing = false;
     }
+
+    var detailParts = [];
+    if (author) detailParts.push("Tác giả: " + author);
+    if (group) detailParts.push("Nhóm dịch: " + group);
+    detailParts.push("Tình trạng: " + status);
+    var detail = detailParts.join("<br>");
 
     return Response.success({
         name: title,
         cover: cover,
         author: author,
         description: desc,
+        detail: detail,
         genres: genres,
-        status: status,
+        ongoing: ongoing,
         host: HOST
     });
 }
