@@ -294,6 +294,24 @@ class QAGateKeeper:
             except Exception as e:
                 self.log_fail("GATE-4", f"Lỗi gọi ZetTruyen1 API live: {e}")
             test_images = []
+        elif plugin_name == "vinahentai":
+            try:
+                chap_url = "https://vinahentai.click/truyen-hentai/cho-di-nha-cua-co-ban-thuo-nho-hanh-nghe-mai-dam/chap-1"
+                req = urllib.request.Request(chap_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Referer": "https://vinahentai.click/"
+                })
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    html_content = resp.read().decode('utf-8', errors='ignore')
+                    imgs = re.findall(r'https?:\\?/\\?/[^"\'\s<>\)]+?/manga-images/[^"\'\s<>\)]+?\.(?:webp|jpg|jpeg|png)', html_content)
+                    if len(imgs) >= 10:
+                        self.log_pass("GATE-4", f"VinaHentai trích xuất thành công {len(imgs)} ảnh chương (>10 ảnh).")
+                        clean_img = imgs[0].replace(r'\/', '/').replace('\\', '').strip()
+                        test_images = [("https://vinahentai.click", clean_img)]
+                    else:
+                        self.log_fail("GATE-4", f"VinaHentai chỉ tìm thấy {len(imgs)} ảnh chương.")
+            except Exception as e:
+                self.log_fail("GATE-4", f"Lỗi cào VinaHentai chapter live: {e}")
 
         for origin, img_url in test_images:
             try:
@@ -369,7 +387,7 @@ if __name__ == "__main__":
             keeper.run_gate_1_static_audit(p_dir)
             keeper.run_gate_2_zip_audit(p_dir)
             keeper.run_gate_3_version_consistency(p, p_dir)
-            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen", "cuutruyen", "luottruyennew", "toptruyen", "zettruyen"]:
+            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen", "cuutruyen", "luottruyennew", "toptruyen", "zettruyen", "vinahentai"]:
                 keeper.run_gate_4_live_runtime(p)
                 
     keeper.run_gate_5_git_audit()
