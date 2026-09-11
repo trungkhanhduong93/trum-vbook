@@ -213,8 +213,8 @@
     {
       "name": "SayHentai",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/plugin.zip?v=1",
-      "version": 1,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/plugin.zip?v=25",
+      "version": 25,
       "source": "https://sayhentai.cx",
       "regexp": "(www\\.)?sayhentai\\.(cx|ink|one|art|life|tv)\\/truyen-[^\\/]+\\.html$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/sayhentai/icon.png",
@@ -226,8 +226,8 @@
     {
       "name": "VinaHentai",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/plugin.zip?v=1",
-      "version": 1,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/plugin.zip?v=2",
+      "version": 2,
       "source": "https://vinahentai.click",
       "regexp": "(www\\.)?vinahentai\\.(click|net|com|org)\\/truyen-hentai\\/[^\\/]+",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/vinahentai/icon.png",

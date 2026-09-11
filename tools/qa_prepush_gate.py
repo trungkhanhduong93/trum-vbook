@@ -360,7 +360,7 @@ if __name__ == "__main__":
         "goctruyentranh", "luottruyen", "luottruyennew", "toptruyen",
         "zettruyen", "2ten", "truyenqq", "nettruyen", "nhattruyen",
         "doctruyen3q", "mimimoe", "cuutruyen", "truyenggvn", "tcomic",
-        "minotruyen", "minomanga", "minohen"
+        "minotruyen", "minomanga", "minohen", "sayhentai", "vinahentai"
     ] if target == "all" else [target]
     
     for p in plugins_to_check:
