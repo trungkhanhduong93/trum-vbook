@@ -1,21 +1,18 @@
 load('config.js');
 
 function execute(url) {
-    var bookId = url.split('/').pop();
-    if (!bookId) return null;
+    var cleanUrl = String(url || "").split(/[?#]/)[0].replace(/\/+$/, "");
+    var mBook = cleanUrl.match(/\/books\/(\d+)/);
+    var bookId = mBook ? mBook[1] : cleanUrl.split("/").pop();
+    if (!bookId) return Response.error("Không tìm thấy ID truyện");
 
     var apiUrl = API + "/books/" + bookId + "/chapters?order=desc&take=5000";
 
-    var response = fetch(apiUrl);
-    if (!response || !response.ok) return null;
-
-    var data;
-    try {
-        data = JSON.parse(response.text());
-    } catch (e) {
-        return null;
+    var data = jsonGet(apiUrl);
+    if (!data && apiUrl.indexOf("api.cloudkk-v1.xyz") >= 0) {
+        data = jsonGet("https://api.cloudkk-v2.xyz/api/books/" + bookId + "/chapters?order=desc&take=5000");
     }
-    if (!data || !data.data || !data.data.chapters) return null;
+    if (!data || !data.data || !data.data.chapters) return Response.error("Không tải được danh sách chương");
 
     var chapters = data.data.chapters;
     var list = [];
@@ -24,7 +21,7 @@ function execute(url) {
         var chName = ch.title || ("Chương " + ch.chapterNumber);
         list.push({
             name: chName,
-            url: url + "/" + ch.chapterId,
+            url: cleanUrl + "/" + ch.chapterId,
             host: BASE_URL
         });
     }

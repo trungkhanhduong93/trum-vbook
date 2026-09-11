@@ -79,8 +79,8 @@
     {
       "name": "Mino Manga",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=25",
-      "version": 25,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=26",
+      "version": 26,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/icon.png",
@@ -91,8 +91,8 @@
     {
       "name": "Mino Hentai",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip?v=25",
-      "version": 25,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip?v=26",
+      "version": 26,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/icon.png",
