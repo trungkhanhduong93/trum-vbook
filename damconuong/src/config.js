@@ -25,12 +25,21 @@ function txt(el) {
     return el ? el.text().trim() : "";
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
 function resolveUrl(u) {
     if (!u) return BASE_URL;
     u = String(u).trim();
-    if (u.indexOf("//") === 0) return "https:" + u;
-    if (u.indexOf("http") === 0) return u;
-    return BASE_URL + (u.charAt(0) === "/" ? u : "/" + u);
+    if (u.indexOf("//") === 0) u = "https:" + u;
+    else if (u.indexOf("http") !== 0) u = BASE_URL + (u.charAt(0) === "/" ? u : "/" + u);
+    return safeEncodeUrl(u);
 }
 
 function imgSrc(img) {
@@ -46,7 +55,7 @@ function toPhoton(url, idx, isCover) {
     var isAvif = url.indexOf(".avif") >= 0 || url.indexOf("wsrvnl") >= 0;
     if (!isAvif) return url;
     var bare = url.replace(/^https?:\/\//i, "");
-    var host = "i" + ((idx || 0) % 4) + ".wp.com/";
+    var host = "i" + ((idx || 0) % 3) + ".wp.com/";
     var sep = bare.indexOf("?") >= 0 ? "&" : "?";
     var params = isCover ? "w=350&quality=75" : "w=800&quality=75";
     return "https://" + host + bare + sep + params;
@@ -54,7 +63,7 @@ function toPhoton(url, idx, isCover) {
 
 function fetchRetry(url) {
     try {
-        var res = fetch(url, FETCH_OPTIONS);
+        var res = fetch(safeEncodeUrl(url), FETCH_OPTIONS);
         if (res && res.ok) return res;
         return res;
     } catch (e) {

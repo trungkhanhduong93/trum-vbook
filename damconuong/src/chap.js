@@ -1,14 +1,21 @@
 load("config.js");
 
 function execute(url) {
-    var res = fetch(url, {
-        headers: {
-            "User-Agent": FETCH_HEADERS["User-Agent"],
-            "Referer": BASE_URL + "/",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"
-        }
-    });
+    var cleanUrl = safeEncodeUrl(url);
+    var res = null;
+    try {
+        res = fetch(cleanUrl, {
+            headers: {
+                "User-Agent": FETCH_HEADERS["User-Agent"],
+                "Referer": BASE_URL + "/",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"
+            },
+            timeout: 10000
+        });
+    } catch (e) {
+        return Response.error("Lỗi kết nối tải trang chương: " + e.message);
+    }
     if (!res || !res.ok) {
         return Response.error("Không tải được trang chương: " + (res ? res.status : "null"));
     }
@@ -38,6 +45,8 @@ function execute(url) {
         images.push(toPhoton(src, images.length, false));
     }
 
-    if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");
+    if (images.length === 0) {
+        return Response.error("Chương này chưa có ảnh trên nguồn hoặc đang được cập nhật!");
+    }
     return Response.success(images);
 }
