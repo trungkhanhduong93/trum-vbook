@@ -39,20 +39,45 @@ function imgSrc(img) {
     return s.trim();
 }
 
+function copyHeaders(base, extra) {
+    var h = {};
+    for (var k in base) h[k] = base[k];
+    if (extra) {
+        for (var ex in extra) h[ex] = extra[ex];
+    }
+    return h;
+}
+
 function fetchRetry(url, extraHeaders) {
     try {
-        var opts = { headers: FETCH_HEADERS, timeout: 8000 };
-        if (extraHeaders) {
-            for (var k in extraHeaders) {
-                opts.headers[k] = extraHeaders[k];
-            }
-        }
+        var headers = copyHeaders(FETCH_HEADERS, extraHeaders);
+        var opts = { headers: headers, timeout: 8000 };
         var res = fetch(url, opts);
         if (res && res.ok) return res;
         return res;
     } catch (e) {
         return null;
     }
+}
+
+function fetchDoc(url, extraHeaders) {
+    try {
+        var res = fetchRetry(url, extraHeaders);
+        if (res && res.ok) {
+            var doc = res.html();
+            if (doc) return doc;
+        }
+    } catch (e1) {}
+
+    try {
+        if (typeof Http !== "undefined" && typeof Http.get === "function") {
+            var headers = copyHeaders(FETCH_HEADERS, extraHeaders);
+            var doc2 = Http.get(url).headers(headers).html();
+            if (doc2) return doc2;
+        }
+    } catch (e2) {}
+
+    return null;
 }
 
 // Parse thẻ truyện ở trang listing

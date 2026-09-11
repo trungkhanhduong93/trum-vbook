@@ -2,17 +2,15 @@ load("config.js");
 
 function execute(url) {
     var fullUrl = resolveUrl(url);
-    var res = fetchRetry(fullUrl);
-    if (!res || !res.ok) return Response.error("Không tải được chương truyện");
-    var doc = res.html();
-    if (!doc) return Response.error("Không parse được HTML chương");
+    var doc = fetchDoc(fullUrl);
+    if (!doc) return Response.error("Không tải được chương truyện");
 
     var images = [];
     var seen = {};
 
-    var imgEls = doc.select("img.chapter-img, img[id^='image-'], .reading-detail img");
+    var imgEls = doc.select("div.reading-content img, div.page-break img, img.chapter-img, img[id^='image-']");
     if (imgEls.size() === 0) {
-        imgEls = doc.select(".chapter-content img, .entry-content img, img");
+        imgEls = doc.select(".reading-detail img, .entry-content img");
     }
 
     for (var i = 0; i < imgEls.size(); i++) {
@@ -23,13 +21,16 @@ function execute(url) {
         var sLower = src.toLowerCase();
         if (sLower.indexOf("logo") >= 0 || sLower.indexOf("banner") >= 0 || 
             sLower.indexOf("avatar") >= 0 || sLower.indexOf("icon") >= 0 ||
-            sLower.indexOf("ads") >= 0 || sLower.indexOf("button") >= 0) {
+            sLower.indexOf("ads") >= 0 || sLower.indexOf("button") >= 0 ||
+            sLower.indexOf("pepe") >= 0 || sLower.indexOf("/cover/") >= 0 ||
+            sLower.indexOf("fb-") >= 0 || sLower.indexOf("discord") >= 0) {
             continue;
         }
 
-        if (sLower.indexOf(".jpg") >= 0 || sLower.indexOf(".png") >= 0 || 
+        if (sLower.indexOf("pubtranxzyzz") >= 0 || sLower.indexOf("/hen/") >= 0 || 
+            sLower.indexOf("chapter") >= 0 || sLower.indexOf(".jpg") >= 0 || 
             sLower.indexOf(".webp") >= 0 || sLower.indexOf(".jpeg") >= 0 || 
-            sLower.indexOf("pubtranxzyzz") >= 0 || sLower.indexOf("/hen/") >= 0) {
+            sLower.indexOf(".png") >= 0) {
             
             var fullSrc = resolveUrl(src);
             if (!seen[fullSrc]) {

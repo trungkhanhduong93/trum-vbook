@@ -2,10 +2,8 @@ load("config.js");
 
 function execute(url) {
     var fullUrl = resolveUrl(url);
-    var res = fetchRetry(fullUrl);
-    if (!res || !res.ok) return Response.error("Không tải được trang mục lục");
-    var doc = res.html();
-    if (!doc) return Response.error("Không parse được HTML");
+    var doc = fetchDoc(fullUrl);
+    if (!doc) return Response.error("Không tải được trang mục lục");
 
     var chapters = [];
     var seen = {};
