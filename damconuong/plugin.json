@@ -2,7 +2,7 @@
   "metadata": {
     "name": "DamCoNuong",
     "author": "tkd1793",
-    "version": 1,
+    "version": 2,
     "source": "https://www.damconuong.xyz",
     "regexp": "(www\\.)?damconuong\\.xyz\\/truyen\\/[a-zA-Z0-9-]+\\/?$",
     "description": "DamCoNuong - Đọc truyện Hentai, Manhwa 18+ online",

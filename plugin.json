@@ -67,8 +67,8 @@
     {
       "name": "Mino Truyện",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=27",
-      "version": 27,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=28",
+      "version": 28,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/icon.png",
@@ -79,8 +79,8 @@
     {
       "name": "Mino Manga",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=27",
-      "version": 27,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=28",
+      "version": 28,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/icon.png",
@@ -116,8 +116,8 @@
     {
       "name": "Mimimoe",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip?v=11",
-      "version": 11,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/plugin.zip?v=12",
+      "version": 12,
       "source": "https://mimihentai.moe",
       "regexp": "(www\\.)?(mimimoe|mimihentai)\\.moe\\/manga\\/[0-9]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/mimimoe/icon.png",
@@ -201,8 +201,8 @@
     {
       "name": "DamCoNuong",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/plugin.zip?v=1",
-      "version": 1,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/plugin.zip?v=2",
+      "version": 2,
       "source": "https://www.damconuong.xyz",
       "regexp": "(www\\.)?damconuong\\.xyz\\/truyen\\/[a-zA-Z0-9-]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/icon.png",
