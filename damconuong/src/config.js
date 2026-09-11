@@ -46,9 +46,9 @@ function toPhoton(url, idx, isCover) {
     var isAvif = url.indexOf(".avif") >= 0 || url.indexOf("wsrvnl") >= 0;
     if (!isAvif) return url;
     var bare = url.replace(/^https?:\/\//i, "");
-    var host = "i" + ((idx || 0) % 3) + ".wp.com/";
+    var host = "i" + ((idx || 0) % 4) + ".wp.com/";
     var sep = bare.indexOf("?") >= 0 ? "&" : "?";
-    var params = isCover ? "w=400&quality=80" : "w=1000&quality=80";
+    var params = isCover ? "w=350&quality=75" : "w=800&quality=75";
     return "https://" + host + bare + sep + params;
 }
 
