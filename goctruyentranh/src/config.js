@@ -36,10 +36,14 @@ function setBase(origin) {
 
 function syncBaseFromUrl(url) {
     var o = gttOrigin(url);
-    if (o && o !== SITE_URL) {
-        if (o.indexOf('vui42') < 0) {
-            setBase(o);
-        }
+    if (!o) return;
+    var m = o.match(/goctruyentranhvui(\d+)\.com/i);
+    var num = m ? parseInt(m[1], 10) : 0;
+    // Tên miền hiện tại là vui41. Các tên miền cũ (<= 40) đã chết DNS hoàn toàn.
+    // Tên miền vui42 bị chuyển hướng 301 về vui41.
+    // Chỉ cập nhật SITE_URL nếu phát hiện tên miền mới hơn (>= 43).
+    if (num >= 43) {
+        setBase(o);
     }
 }
 
@@ -80,32 +84,35 @@ var X_TOKEN_VAL = '';
 function extractCookiesFromRes(res) {
     if (!res) return '';
     try {
+        var parts = [];
         var h = res.headers;
-        var sc = '';
         if (h) {
             for (var k in h) {
                 if (k.toLowerCase() === 'set-cookie') {
-                    sc = h[k];
-                    break;
+                    var val = h[k];
+                    if (Array.isArray(val)) {
+                        for (var a = 0; a < val.length; a++) {
+                            var p0 = String(val[a]).split(';')[0].trim();
+                            if (p0) parts.push(p0);
+                        }
+                    } else if (typeof val === 'string') {
+                        var arr0 = val.split(/,\s*(?=[a-zA-Z0-9_\-]+=[^;]+)/);
+                        for (var b = 0; b < arr0.length; b++) {
+                            var p01 = String(arr0[b]).split(';')[0].trim();
+                            if (p01) parts.push(p01);
+                        }
+                    }
                 }
             }
         }
-        if (!sc && typeof res.header === 'function') {
-            sc = res.header('Set-Cookie') || res.header('set-cookie') || '';
-        }
-        if (!sc) return '';
-        var parts = [];
-        if (Array.isArray(sc)) {
-            for (var i = 0; i < sc.length; i++) {
-                var p = String(sc[i]).split(';')[0].trim();
-                if (p) parts.push(p);
-            }
-        } else {
-            var raw = String(sc);
-            var arr = raw.split(/,\s*(?=[a-zA-Z0-9_\-]+=[^;]+)/);
-            for (var j = 0; j < arr.length; j++) {
-                var p2 = String(arr[j]).split(';')[0].trim();
-                if (p2) parts.push(p2);
+        if (typeof res.header === 'function') {
+            var sc = res.header('Set-Cookie') || res.header('set-cookie') || '';
+            if (sc) {
+                var arr = String(sc).split(/,\s*(?=[a-zA-Z0-9_\-]+=[^;]+)/);
+                for (var j = 0; j < arr.length; j++) {
+                    var p2 = String(arr[j]).split(';')[0].trim();
+                    if (p2 && parts.indexOf(p2) < 0) parts.push(p2);
+                }
             }
         }
         return parts.join('; ');
@@ -155,7 +162,7 @@ function primeSession(force) {
 
     try {
         if (typeof localCookie !== 'undefined' && localCookie.getCookie) {
-            var lc = localCookie.getCookie();
+            var lc = localCookie.getCookie(SITE_URL) || localCookie.getCookie();
             if (lc && lc.indexOf('X-TOKEN') >= 0) {
                 SESSION_COOKIES = lc;
                 var m0 = lc.match(/X-TOKEN=([^;]+)/);
@@ -194,7 +201,7 @@ function primeSession(force) {
                 })
                 .string();
             if (typeof localCookie !== 'undefined' && localCookie.getCookie) {
-                var lc2 = localCookie.getCookie();
+                var lc2 = localCookie.getCookie(SITE_URL) || localCookie.getCookie();
                 if (lc2 && lc2.indexOf('X-TOKEN') >= 0) {
                     SESSION_COOKIES = lc2;
                     var m2 = lc2.match(/X-TOKEN=([^;]+)/);
@@ -214,7 +221,10 @@ function siteGet(path) {
                 method: 'GET',
                 headers: HEADERS()
             });
-            if (res && res.ok) s = res.text();
+            if (res) {
+                var txt = res.text();
+                if (txt) s = txt;
+            }
         }
     } catch (eFetch) {}
 
@@ -228,7 +238,10 @@ function siteGet(path) {
         try {
             if (typeof fetch !== 'undefined') {
                 var res2 = fetch(SITE_URL + path, { method: 'GET', headers: HEADERS() });
-                if (res2 && res2.ok) s = res2.text();
+                if (res2) {
+                    var txt2 = res2.text();
+                    if (txt2) s = txt2;
+                }
             }
             if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).string();
         } catch (eProbe) {}
@@ -243,7 +256,10 @@ function siteGet(path) {
             try {
                 if (typeof fetch !== 'undefined') {
                     var rRetry = fetch(SITE_URL + path, { method: 'GET', headers: HEADERS() });
-                    if (rRetry && rRetry.ok) s = rRetry.text();
+                    if (rRetry) {
+                        var txtR = rRetry.text();
+                        if (txtR) s = txtR;
+                    }
                 }
                 if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).string();
                 json = JSON.parse(s);
@@ -265,7 +281,10 @@ function sitePost(path, bodyStr, referer) {
                 headers: FORM_HEADERS(referer),
                 body: bodyStr
             });
-            if (res && res.ok) s = res.text();
+            if (res) {
+                var txtP = res.text();
+                if (txtP) s = txtP;
+            }
         }
     } catch (eFetch) {}
 
@@ -286,7 +305,10 @@ function sitePost(path, bodyStr, referer) {
                     headers: FORM_HEADERS(referer),
                     body: bodyStr
                 });
-                if (res2 && res2.ok) s = res2.text();
+                if (res2) {
+                    var txt2P = res2.text();
+                    if (txt2P) s = txt2P;
+                }
             }
             if (!s) {
                 s = Http.post(SITE_URL + path)
@@ -310,7 +332,10 @@ function sitePost(path, bodyStr, referer) {
                         headers: FORM_HEADERS(referer),
                         body: bodyStr
                     });
-                    if (rRetry2 && rRetry2.ok) s = rRetry2.text();
+                    if (rRetry2) {
+                        var txtRetry = rRetry2.text();
+                        if (txtRetry) s = txtRetry;
+                    }
                 }
                 if (!s) {
                     s = Http.post(SITE_URL + path)
