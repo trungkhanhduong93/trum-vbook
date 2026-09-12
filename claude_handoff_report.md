@@ -64,7 +64,9 @@ Bộ lọc của 6 nguồn chứa chuỗi `"ads"` trần — khớp luôn `"uplo
 100 %, cùng cả CDN. Giữ nettruyen và truyenqq — hai nguồn này chỉ chồng lấn 69–81 %, gỡ thêm là
 mất truyện thật.
 
-## 3. `thread` / `delay` trong plugin.json — ĐÃ XÁC MINH, đã áp cho cả 16 nguồn
+## 3. `thread` / `delay` trong plugin.json — có tác dụng thật, NHƯNG không áp bừa
+
+> ⚠️ Cập nhật 13/09/2026: áp 5 luồng/10ms cho cả 16 nguồn đã **làm chết goctruyentranh** (ảnh khi ấy nằm sau Cloudflare của domain site; 5 luồng từ IP di động CGNAT hỏng 100% ảnh). Đã gỡ ở v47, QA gate nay cấm khai cho nguồn đó. Chỉ khai khi ảnh nằm trên CDN riêng tách khỏi domain site, và phải nghiệm thu trên máy thật từng nguồn một. Xem `docs/03-bay-da-tra-gia.md` mục 34.
 
 Thử trước ở `tcomic` v6: thêm `"thread": 5` và `"delay": 10` vào `metadata`. Trum kiểm trên máy
 thật, nguồn nạp và chạy bình thường → đã áp cho **toàn bộ 16 nguồn** (commit sau), bump version

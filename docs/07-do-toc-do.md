@@ -158,11 +158,19 @@ Không nguồn nào vượt 1,8 MB cho một trang danh sách — **phần bìa 
 liên tiếp ra 850 ms — 14 882 ms — 1 360 ms. Chỉ tin số **dung lượng**, đừng tin số **thời gian**
 của phần ảnh.
 
-### Điều duy nhất plugin làm được cho tốc độ ảnh
+### Điều duy nhất plugin làm được cho tốc độ ảnh — và cái giá của nó
 
-Khai `"thread": 5` và `"delay": 10` trong `metadata` của `plugin.json`. Đã kiểm trên máy thật ở
-tcomic v6 rồi áp cho cả 16 nguồn. Xem [02 mục 10](02-api-va-gioi-han.md). Ngoài khoá này ra,
-plugin không điều khiển được gì thêm ở phần ảnh.
+Khai `"thread": 5` và `"delay": 10` trong `metadata` của `plugin.json`. Có tác dụng thật, đã kiểm
+trên máy Trum. Xem [02 mục 10](02-api-va-gioi-han.md).
+
+⛔ **Nhưng đừng mặc định khai 5/10 cho mọi nguồn.** Ngày 12/09/2026 áp cho cả 16 nguồn và
+**goctruyentranh chết ngay**: ảnh nguồn đó khi ấy bị ép về domain site nằm sau Cloudflare, 5 luồng
+dồn từ IP di động CGNAT làm hỏng 100% ảnh cả chương. Phải gỡ hai khoá ở v47 mới sống lại, và QA
+gate nay **cấm** khai chúng cho nguồn đó.
+
+**Luật:** chỉ khai `thread`/`delay` khi ảnh nằm trên **CDN riêng, tách khỏi domain site**. Ảnh nằm
+trên chính domain site (sau WAF) thì để app dùng mặc định. Áp cho một nguồn, để Trum đọc thử một
+chương trên máy thật, rồi mới áp sang nguồn khác. Xem [mục 34](03-bay-da-tra-gia.md).
 
 ---
 
