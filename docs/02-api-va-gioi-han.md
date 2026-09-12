@@ -1,7 +1,16 @@
 # API Vbook và giới hạn môi trường
 
-Mọi API dưới đây đều **đang được dùng trong plugin đã phát hành của repo này** — không có món nào
-suy đoán. Chỗ nào chưa kiểm chứng được thì ghi rõ là chưa.
+> **Cập nhật 12/09/2026 — không cần suy đoán API nữa.** Toàn bộ định nghĩa API nằm nguyên văn
+> trong chính APK. Giải nén `vBook.apk` (là file zip) rồi mở
+> `assets/composeResources/com.reader.resources/files/core.js` — đó là lớp JS mà app nạp vào
+> Rhino trước mọi script plugin. `files/crypto.js` là phần `Crypto`. Chuỗi giao diện tiếng Việt
+> nằm ở `values-vi/strings.commonMain.cvr`, mỗi dòng dạng `version:0.string|<khoá>|<base64>`.
+>
+> Tài liệu này đã đối chiếu lại với core.js. Mục [9](#9-phần-còn-lại-của-api--những-thứ-corejs-có-mà-repo-chưa-dùng)
+> liệt kê những thứ core.js có mà repo chưa dùng.
+
+Mọi API dưới đây đều **đang được dùng trong plugin đã phát hành của repo này**, hoặc đã đối chiếu
+với core.js trong APK. Chỗ nào chưa kiểm chứng được thì ghi rõ là chưa.
 
 ---
 
@@ -24,6 +33,32 @@ var res = fetch(BASE_URL + "/frontend/search/search", {
     body: "search=" + encodeURIComponent(key) + "&type=0"
 });
 ```
+
+### `.timeout(ms)` — BẮT BUỘC có, không phải tuỳ chọn
+
+```javascript
+Http.get(url).headers(H).timeout(8000).html();       // chuỗi Http
+fetch(url, { headers: H, timeout: 8000 });           // dạng fetch
+```
+
+Khoá `timeout` có thật trong dex của app, cùng nhóm với `method`, `headers`, `queries`, `body`,
+`charset`. **Không đặt thì mỗi host chết ăn trọn 10–11 giây** — đo 12/09/2026 trên 6 host:
+`nettruyenviet10` 11,1s, `nhattruyenmoi`/`nhattruyento` 10,6s, `toptruyenzone12/13/14` 10,6s mỗi
+cái, `goctruyentranhvui40` 11,07s, `cuutruyen.cc` 20s. Quy ước của repo:
+
+| Loại request | Timeout |
+|---|---|
+| Request chính (trang danh sách, chi tiết, chương) | `REQ_TIMEOUT = 8000` |
+| Mirror / dò domain dự phòng | `PROBE_TIMEOUT = 4000` |
+
+Khai hai hằng này ngay đầu `config.js` để mọi script dùng chung. Xem [bẫy 27](03-bay-da-tra-gia.md#27-không-đặt-timeout--mỗi-host-chết-ăn-1011-giây).
+
+### `fetch()` mới là hàm gốc
+
+`Http.get`/`Http.post` chỉ là lớp bọc quanh `fetch(url, options)` — đọc core.js là thấy. `fetch`
+đồng bộ, trả về object có `.status`, `.ok`, `.url`, `.headers`, `.header(k)`, `.text()`, `.html()`,
+`.json()`, `.base64()`, `.blob()`, `.readLine()`. Guide cũ xếp `fetch` vào nhóm "chưa có bằng
+chứng" là sai; nó là nền của cả hai đường.
 
 `headers()` nhận object thường: `{"User-Agent": "...", "Referer": "..."}`.
 **CẢNH BÁO:** Giá trị header phải là chuỗi **100% ASCII** (không dấu tiếng Việt, không ký tự đặc biệt). Nếu `Referer` chứa ký tự tiếng Việt có dấu, OkHttp Android sẽ crash `IllegalArgumentException: Unexpected char` (xem [03-bay-da-tra-gia.md](03-bay-da-tra-gia.md) bẫy 22). Luôn dùng `BASE_URL + "/"` cho Referer thay vì slug truyện thô.
@@ -78,6 +113,27 @@ try {
 `browser.callJs("...")` chạy JS trong trang (dùng ở luottruyen, mangak, mino* để lấy dữ liệu do
 JS sinh ra sau khi tải).
 
+**Đầy đủ các hàm của Browser (đọc từ core.js 12/09/2026):**
+
+| Hàm | Repo đã dùng? | Ghi chú |
+|---|---|---|
+| `launch(url, timeout)` | có | trả về Document đã parse |
+| `html(timeout)` | có | |
+| `callJs(script, timeout)` | có | trả Document, **ghi đè body nếu script sửa DOM** |
+| `close()` | có | |
+| `setUserAgent(ua)` | có | xem cảnh báo ngay dưới |
+| `block(["regex", ...])` | luottruyen, cuutruyen, nettruyen | chặn request trước khi WebView nạp — chặn ảnh/css/tracking là cách rẻ nhất để nhánh browser nhanh lên |
+| `waitUrl(patterns, timeout)` | **chưa nguồn nào** | chờ đúng request cần thay vì đoán thời gian chờ |
+| `urls()` | **chưa nguồn nào** | trả mảng URL mà WebView đã gọi — lấy thẳng URL ảnh mà không cần bóc DOM |
+| `getVariable(name)` | **chưa nguồn nào** | đọc biến JS toàn cục của trang |
+| `launchAsync(url)` | **chưa nguồn nào** | nạp không chờ |
+| `loadHtml(baseUrl, html)` | **chưa nguồn nào** | nạp chuỗi HTML có sẵn |
+
+⚠️ **`Engine.newBrowser()` TỰ GỌI `setUserAgent(UserAgent.system())`** ngay bên trong core.js,
+trước khi trả browser về cho plugin. Nghĩa là lời khuyên cũ "đừng gọi `setUserAgent()` ở nhánh cần
+phiên đăng nhập" **không có tác dụng** — app đã set rồi. Nếu cần UA khác thì phải gọi đè, không
+phải bỏ gọi.
+
 ### Browser dùng chung cookie với WebView của app — đã kiểm 12/08/2026
 
 `Engine.newBrowser()` **dùng chung cookie jar với WebView built-in của Vbook**. Người dùng đăng
@@ -89,7 +145,8 @@ form user/password nên plugin không thể tự POST vào). Điều kiện đ�
 1. Người dùng đăng nhập **trong WebView của app**, không phải Chrome ngoài app (khác cookie jar).
 2. Đường đọc nội dung đi qua `Engine.newBrowser()`, **không** qua `fetch`/`Http` — chưa có bằng
    chứng Vbook bắc cầu cookie sang HTTP client.
-3. **Đừng gọi `setUserAgent()`** ở nhánh cần phiên đăng nhập.
+3. ~~Đừng gọi `setUserAgent()` ở nhánh cần phiên đăng nhập.~~ **Bỏ luật này (12/09/2026):**
+   core.js gọi `setUserAgent(UserAgent.system())` sẵn trong `Engine.newBrowser()`, không tránh được.
 
 Ca thật: luottruyen v28 (`chap.js`) — [06-case-study-luottruyen.md](06-case-study-luottruyen.md).
 
@@ -286,7 +343,58 @@ kiểm tra thật:
 - `withPage(url, page)` — nối `?page=` hoặc `&page=`
 - `parseCards(doc)` — parse card danh sách, có nhánh dự phòng
 - `nextPage(doc, page)` — dò link trang kế bằng regex trên `href`
+- `REQ_TIMEOUT` / `PROBE_TIMEOUT` — hai hằng timeout, khai ngay đầu file
 
 **`Referer` trong `headers()` của request HTML là bình thường và nên có.** Cấm là cấm nối
 `|Referer=` vào **URL ảnh** trả về cho app — hai chuyện khác nhau. Đồng thời, header `Referer`
 trong request phải đảm bảo 100% ASCII (dùng `BASE_URL + "/"`), không nhét slug truyện tiếng Việt vào (xem bẫy 22).
+
+
+---
+
+## 9. Phần còn lại của API — những thứ core.js có mà repo chưa dùng
+
+Liệt kê từ `assets/composeResources/com.reader.resources/files/core.js` trong `vBook.apk`
+(12/09/2026). Cột cuối là mức độ đã kiểm chứng trong repo này.
+
+| Đối tượng | Hàm | Repo dùng chưa |
+|---|---|---|
+| `Crypto` | `md5` `sha1` `sha256` `sha512` `hmacMd5` `hmacSha1` `hmacSha256` `hmacSha512` `base64Encode` `base64Decode` `aesEncrypt` `aesDecrypt` `aesGcmEncrypt` `aesGcmDecrypt` `desEncrypt` `desDecrypt` `tripleDesEncrypt` `tripleDesDecrypt` `rc4Encrypt` `rc4Decrypt` `pbkdf2` `evpKdf` | chỉ tcomic |
+| `localStorage` | `getItem` `setItem` `removeItem` `clear` | goctruyentranh (gián tiếp) |
+| `cacheStorage` | như trên | **chưa** — bộ nhớ đệm riêng, hợp để nhớ domain hiện hành giữa các lần chạy |
+| `localCookie` | `getCookie` `setCookie` | luottruyen, goctruyentranh |
+| `localConfig` | `getItem(key)` | **chưa** — đọc cài đặt người dùng đặt cho chính tiện ích |
+| `localBook` | `getInfo` `getTableOfContent` `getChapterContent` `getNames` `addName` `getQtNames` `addQtName` `getQtVietPhrases` `addQtVietPhrase` | **chưa** |
+| `Graphics` | `createCanvas` `createImage`, canvas có `drawImage` `capture` | **chưa** — ghép/cắt ảnh ngay trong plugin |
+| `WebSocket` | `connect` `send` `message` `close` | **chưa** |
+| `Qt` | `translate(text, to, extras)` | **chưa** |
+| `Script` | `execute(script, name, input)` | **chưa** |
+| `ai` | `getToolList` `executeTool` `emitToken` `emitStatus` | **chưa** |
+| `Blob` | `fromBase64(base64, type)` | **chưa** |
+| toàn cục | `sleep(ms)` | **chưa** — dùng thay mẹo `callJs('void 0;', 2500)` để chờ |
+| `UserAgent` | `system()` `chrome()` `android()` `ios()` | gián tiếp qua `Engine.newBrowser()` |
+
+`_HtmlElement` có đúng: `select` `attr` `text` `html` `remove` `attributes` `toString`.
+`_HtmlElements` có thêm: `size` `length` `isEmpty` `get` `first` `last` `forEach` `map` `select`
+`attr` `text` `html` `remove`. **Không có `selectFirst`, không có `parent`** — đúng như mục 5.
+
+---
+
+## 10. Năm nút chỉnh tốc độ nằm trong app, không nằm trong plugin
+
+Đọc từ chuỗi giao diện trong APK. Đây là chỗ ăn tiền nhất khi người dùng kêu "tải ảnh chậm",
+và plugin **không** điều khiển được (trừ khi khai báo được `thread`/`delay`, xem dưới):
+
+| Cài đặt | Dải giá trị | Ảnh hưởng |
+|---|---|---|
+| Kết nối song song | 1–5 luồng | đo 12/09/2026: 4 luồng nhanh gấp **5,3–6,5×** so với 1 luồng |
+| Giãn cách kết nối | 10ms – 30 giây | đặt cao là tự bóp mình: 50 ảnh × 500ms = +25 giây |
+| Số lần thử lại | 0 / 1 / 3 / 5 | nhân số lần chờ trên host đã chết |
+| Kết nối bằng Cronet | bật/tắt | bật HTTP/3 + QUIC; 6/12 host ảnh của repo có `alt-svc: h3` |
+| DNS qua HTTPS | Google / Cloudflare / … | đường thoát khi ISP chặn DNS (xem bẫy 13) |
+
+Mỗi tiện ích còn có mục **Kết nối** riêng, hiện dòng "Kết nối tối đa N luồng, thời gian chờ tối
+thiểu M ms". Khoá `thread` và `delay` **có trong dex** của app nhưng **chưa xác minh** là
+`plugin.json` khai báo được — đang thử ở `tcomic/plugin.json` v6. Nếu tcomic nạp bình thường và
+màn hình đó hiện "tối đa 5 luồng / tối thiểu 10 ms" thì áp cho mọi nguồn; nếu tcomic không nạp
+được thì gỡ hai khoá đó ra.

@@ -21,6 +21,11 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 | Thể loại của truyện sai bét | [6](#6-fallback-quét-toàn-trang) |
 | Ảnh bị lặp đôi | [10](#10-trang-chương-có-2-trình-đọc) |
 | Vào web được, app thì không | [13](#13-không-vào-được--thường-là-isp-chặn-dns) |
+| "Quay lâu quá trời mới lên danh sách / mục lục" | [26](#26-dò-domain-dự-phòng-đi-xuống-số-cũ-đã-chết), [27](#27-không-đặt-timeout--mỗi-host-chết-ăn-1011-giây) |
+| Nguồn lúc được lúc không, tải lại thì chạy | [28](#28-hàm-tên-retry-nhưng-không-hề-thử-lại) |
+| Chương thiếu ảnh sau khi "siết bộ lọc rác" | [29](#29-lọc-ảnh-rác-bằng-chuỗi-con-ads-khớp-luôn-uploads) |
+| Ảnh đầu chương là banner / watermark của site | [30](#30-ảnh-watermark-của-site-nằm-ở-đầu-và-cuối-chương) |
+| Ảnh 404 sau khi thêm `safeEncodeUrl` | [31](#31-encodeuri-nhân-đôi-mã-hoá-url-đã-có-25) |
 
 ---
 
@@ -409,3 +414,150 @@ var hostIndex = (idx || 0) % 3;
 return "https://i" + hostIndex + ".wp.com/" + clean + "?w=600&quality=65&strip=all";
 ```
 
+
+
+---
+
+## 26. Dò domain dự phòng đi xuống số cũ đã chết
+
+**LỖI LẶP LẠI LẦN 2.** luottruyen v28 mắc rồi, goctruyentranh v41 mắc lại y hệt.
+
+Domain nguồn vừa bỏ thường **vẫn còn bản ghi DNS** trỏ Cloudflare. Request tới nó không fail
+nhanh mà **treo 10–15 giây** rồi mới lỗi. Domain chưa từng tồn tại thì NXDOMAIN ~0,05s, rẻ.
+
+Ca goctruyentranh v41 (đo 12/09/2026):
+
+```javascript
+var order = [cur + 1, cur - 1];   // SAI
+```
+
+`vui42` trả 301 về `vui41` nên phép kiểm tên miền trong body trượt, hàm đi tiếp xuống `vui40` —
+đã chết — và **treo đúng 11,07 giây**. Đo được nguyên chuỗi request của một lần mở danh sách:
+
+```
+412ms   /lien-he                 200
+236ms   /api/v2/home/filter      200 nhưng chỉ 107 byte: "Phiên làm việc đã hết hạn"
+526ms   vui42/lien-he            200 (301 về vui41 -> phép kiểm trượt)
+10569ms vui40/lien-he            treo, bỏ cuộc
+261ms   /api/v2/home/filter      200, 38 KB — thành công
+------- 12,0 giây
+```
+
+**Đúng:**
+
+```javascript
+var order = [cur + 1, cur + 2];   // CHỈ dò LÊN, tối đa 2 ứng viên
+...
+Http.get(cand + '/lien-he').headers(H).timeout(PROBE_TIMEOUT).string();
+```
+
+Kèm luật đã có từ luottruyen: **chỉ dò domain khi chính request hỏng**, không dò khi request
+thành công mà dữ liệu rỗng. Xem [06-case-study-luottruyen.md](06-case-study-luottruyen.md).
+
+---
+
+## 27. Không đặt timeout — mỗi host chết ăn 10–11 giây
+
+Trước 12/09/2026 chỉ 6/18 nguồn đặt timeout. 12 nguồn còn lại để mặc định, và mặc định là
+**chờ tới khi socket tự bỏ**. Đo thật:
+
+| Host chết | Thời gian treo |
+|---|---|
+| `nettruyenviet10.com` | 11,1 s |
+| `nhattruyenmoi.com`, `nhattruyento.com` | 10,6 s mỗi cái |
+| `toptruyenzone12/13/14.com` | 10,6 s mỗi cái (3 cái = 32 s) |
+| `goctruyentranhvui40.com` | 11,07 s |
+| `cuutruyen.cc` (site sập) | 20 s |
+
+Cộng dồn: toptruyen từng mất **39,2 giây** chỉ để lên trang danh sách.
+
+**Luật:** mọi request đều có timeout. `REQ_TIMEOUT = 8000` cho request chính,
+`PROBE_TIMEOUT = 4000` cho mirror và dò domain. Khai hai hằng ở đầu `config.js`.
+Cú pháp: `Http.get(u).headers(H).timeout(REQ_TIMEOUT).html()` hoặc
+`fetch(u, { headers: H, timeout: REQ_TIMEOUT })`.
+
+---
+
+## 28. Hàm tên `retry` nhưng không hề thử lại
+
+`2ten/src/src/config.js` trước v6:
+
+```javascript
+function fetchRetry(url) {          // tên hứa retry
+    try {
+        var res = fetch(url, FETCH_OPTIONS);
+        if (res && res.ok) return res;
+        return res;                 // gọi đúng MỘT lần
+    } catch (e) {
+        return null;
+    }
+}
+```
+
+Đo 12/09/2026: `www.2tenvn.com` hỏng khoảng **50 % số lần gọi** (`ECONNRESET`, connect timeout)
+rồi lần sau lại 200. Với một lần gọi, một nửa số lần mở nguồn ra danh sách trống. Sửa thành vòng
+2 lần thì nguồn chạy lại bình thường (25 truyện).
+
+**Bài học rộng hơn:** đừng tin tên hàm. Cả 8 nguồn trong repo đều có hàm tên `fetchRetry`, chỉ
+vài cái thật sự thử lại. Đọc thân hàm trước khi kết luận nguồn "đã có cơ chế dự phòng".
+
+---
+
+## 29. Lọc ảnh rác bằng chuỗi con: `"ads"` khớp luôn `"uploads"`
+
+Bản vá tháng 9/2026 thêm danh sách chặn vào 7 nguồn:
+
+```javascript
+var junkWords = ["logo", "favicon", "avatar", "icon", "banner", "button", "ads", ...];
+if (lower.indexOf(junkWords[j]) >= 0) continue;
+```
+
+`"uploads"` chứa `"ads"`. Bất kỳ CDN nào phục vụ ảnh dưới `/uploads/` — WordPress, Madara,
+phần lớn site tự host — sẽ bị **xoá sạch toàn bộ ảnh chương** mà không báo lỗi gì, chỉ ra
+"Không tìm thấy ảnh chương". Cùng họ: `"icon"` khớp `silicon`, `"thumb"` khớp `thumbnail` hợp lệ.
+
+Ở thời điểm vá, CDN của 7 nguồn đó chưa dùng `/uploads/` nên chưa nổ. Đã đổi thành `"/ads"`.
+
+**Luật:** chuỗi lọc rác phải có dấu phân cách đường dẫn (`"/ads"`, `"/icon"`) hoặc là tên file
+đầy đủ. Sau khi siết bộ lọc, **đếm lại số ảnh** của một chương đã biết trước số lượng.
+
+---
+
+## 30. Ảnh watermark của site nằm ở ĐẦU và CUỐI chương
+
+Không phải ảnh rác nào cũng có chữ "logo" hay "banner" trong URL. Đo 12/09/2026:
+
+| Nguồn | Ảnh rác | Vị trí |
+|---|---|---|
+| tcomic | `banner/banner-introduce.webp`, `banner_last_introduce.webp` | ảnh **đầu** và ảnh **cuối** |
+| zettruyen | `www.zettruyen1.com/images/zettruyen-wp.webp` | ảnh **đầu** |
+| doctruyen3q | `s2.anhvip.xyz/3qhub3.jpg` | ảnh **đầu** và ảnh **cuối** |
+
+Hậu quả nặng hơn số lượng: **trang đầu tiên người đọc nhìn thấy khi mở chương là quảng cáo**,
+không phải truyện. Hai dấu hiệu nhận ra nhanh:
+
+1. Ảnh đầu tiên nằm trên **host khác** với các ảnh còn lại (site chính thay vì CDN ảnh).
+2. Số ảnh lệch 1–2 so với nguồn khác cùng đăng đúng truyện đó.
+
+Cách kiểm: in ra ảnh `[0]`, `[1]`, `[n-2]`, `[n-1]` của một chương và nhìn bằng mắt, đừng chỉ
+đếm tổng.
+
+---
+
+## 31. `encodeURI` nhân đôi mã hoá URL đã có `%xx`
+
+`safeEncodeUrl()` thêm vào 16 nguồn tháng 9/2026 dùng `encodeURI(u)`. `encodeURI` **không** bỏ qua
+escape sẵn có — nó mã hoá luôn dấu `%`:
+
+```javascript
+encodeURI("https://a.com/a%20b.jpg")
+// -> "https://a.com/a%2520b.jpg"   -> 404
+encodeURI("https://a.com/x?u=https%3A%2F%2Fb.com%2Fc.jpg")
+// -> "...u=https%253A%252F%252Fb.com%252Fc.jpg"   -> proxy nhận sai URL
+```
+
+Kiểm 12/09/2026: chưa nguồn nào trong repo sinh URL ảnh có sẵn `%xx` nên chưa nổ. Nhưng URL đi
+qua proxy (`?url=` + `encodeURIComponent`) và tên file tiếng Việt trên WordPress đều có `%xx`.
+
+**Luật:** chỉ encode khi chuỗi **chưa** được encode. Nếu URL đã chứa `%` theo sau 2 ký tự hex thì
+trả nguyên, đừng đụng vào.

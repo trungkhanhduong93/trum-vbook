@@ -107,8 +107,20 @@ $r = Invoke-WebRequest "https://example.com/favicon-192.png" -UseBasicParsing
 
 ## Bước 3 — Viết `config.js` trước, mọi thứ khác dùng lại
 
-`config.js` là nơi đặt: hằng số site, headers, `selFirst`, `absUrl`, `fetchDoc`, `parseCards`,
-`nextPage`, `withPage`. Bảy script còn lại chỉ `load("config.js")` rồi gọi.
+`config.js` là nơi đặt: hằng số site, headers, **hai hằng timeout**, `selFirst`, `absUrl`,
+`fetchDoc`, `parseCards`, `nextPage`, `withPage`. Bảy script còn lại chỉ `load("config.js")`
+rồi gọi.
+
+Hai dòng bắt buộc có ngay đầu file, trước mọi thứ khác:
+
+```javascript
+var REQ_TIMEOUT = 8000;    // request chính
+var PROBE_TIMEOUT = 4000;  // mirror / dò domain dự phòng
+```
+
+Rồi gắn vào **mọi** request: `Http.get(u).headers(H).timeout(REQ_TIMEOUT).html()` hoặc
+`fetch(u, { headers: H, timeout: REQ_TIMEOUT })`. Bỏ qua bước này thì mỗi host chết ăn 10–11 giây
+của người đọc — xem [03 bẫy 27](03-bay-da-tra-gia.md#27-không-đặt-timeout--mỗi-host-chết-ăn-1011-giây).
 
 Khung tối thiểu — chép từ [`cuutruyen/src/config.js`](../cuutruyen/src/config.js) rồi sửa selector.
 Chi tiết từng hàm và vì sao viết như vậy: [02-api-va-gioi-han.md](02-api-va-gioi-han.md).

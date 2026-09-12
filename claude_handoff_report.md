@@ -1,3 +1,91 @@
+# TECHNICAL HANDOFF REPORT — RÀ TOÀN BỘ NGUỒN & CHẶN TREO (12/09/2026)
+
+- **Commit:** `0f42715` (branch `main`)
+- **Phạm vi:** 15 nguồn được vá, 2 nguồn bị gỡ, registry còn **16 nguồn**
+- **QA:** `python tools/qa_prepush_gate.py --all` → 5/5 chốt đạt
+
+## 0. Đọc trước: API giờ lấy được nguyên văn từ APK
+
+`vBook.apk` là file zip. Giải nén ra, `assets/composeResources/com.reader.resources/files/core.js`
+chứa **toàn bộ** lớp JS mà app nạp vào Rhino trước mọi script plugin — `Http`, `fetch`, `Response`,
+`Html`, `Engine`, `Browser`, `localStorage`, `cacheStorage`, `localCookie`, `localConfig`,
+`localBook`, `WebSocket`, `Graphics`, `Qt`, `Script`, `ai`, `sleep`. Phần `Crypto` ở `files/crypto.js`.
+Chuỗi giao diện ở `values-vi/strings.commonMain.cvr` (mỗi dòng `version:0.string|<khoá>|<base64>`).
+
+Ba chỗ tài liệu cũ nói sai, đã sửa trong [`docs/02`](docs/02-api-va-gioi-han.md):
+
+1. `Engine.newBrowser()` **tự gọi** `setUserAgent(UserAgent.system())` → luật cũ "đừng gọi
+   setUserAgent ở nhánh cần phiên đăng nhập" là vô nghĩa.
+2. `fetch(url, options)` là hàm gốc, `Http.get/post` chỉ là lớp bọc. Guide cũ xếp `fetch` vào
+   nhóm "chưa có bằng chứng".
+3. `Browser` còn có `block()`, `waitUrl()`, `urls()`, `getVariable()`, `launchAsync()`,
+   `loadHtml()` — repo mới dùng `block()` ở 3 nguồn, còn lại chưa đụng.
+
+## 1. Kết quả đo — nút thắt KHÔNG nằm ở code parse
+
+Đo bằng harness mới trong `tools/vbook-harness/` (mô phỏng đúng core.js), 2 lượt metadata + 2 lượt ảnh.
+Số đầy đủ: [`docs/07-do-toc-do.md`](docs/07-do-toc-do.md).
+
+- Phần dữ liệu (home → gen → detail → toc → chap) của **14/18 nguồn xong trong 0,5–2,0 giây**.
+- Phần ảnh là **5–41 MB mỗi chương**. Đây mới là chỗ người đọc thấy quay.
+- Cùng bộ ảnh, **4 luồng nhanh gấp 5,3–6,5×** so với 1 luồng. Đòn bẩy lớn nhất nằm ở cài đặt
+  "Kết nối song song" trong app, không nằm ở plugin.
+- Đã thử tham số resize trên **chính CDN nguồn** (moe-cdn, ibyteimg, pstatic, vnht):
+  **không CDN nào hỗ trợ**. Không có cách giảm MB mà không kéo host lạ vào → không làm.
+
+## 2. Đã vá gì
+
+**Timeout (12 nguồn chưa có).** `REQ_TIMEOUT = 8000` cho request chính, `PROBE_TIMEOUT = 4000`
+cho mirror/dò domain. Trước đó mỗi host chết ăn trọn 10–11 giây: `nettruyenviet10` 11,1s,
+`toptruyenzone12/13/14` 10,6s mỗi cái (toptruyen từng mất **39,2s** để lên danh sách),
+`goctruyentranhvui40` 11,07s, `cuutruyen.cc` 20s.
+
+**goctruyentranh (v42) — đây là "quay lâu quá trời" người dùng báo.** `probeDomain()` dò
+`[cur+1, cur-1]`. `vui42` trả 301 về `vui41` nên phép kiểm tên miền trong body trượt, hàm rơi
+xuống `vui40` đã chết và treo 11,07s. Đổi thành `[cur+1, cur+2]` + timeout. **Lỗi lặp lại lần 2**
+— luottruyen v28 đã mắc y hệt, xem [`docs/03` bẫy 26](docs/03-bay-da-tra-gia.md).
+
+**toptruyen (v20):** `maxNum` từ `startNum+3` xuống `startNum+1`.
+
+**2ten (v6):** `fetchRetry()` gọi đúng 1 lần dù tên là retry. Site hỏng ~50% số lần gọi
+(`ECONNRESET` / connect timeout) rồi lần sau lại 200 → một nửa số lần mở nguồn ra danh sách trống.
+Sửa thành 2 lần thử → nguồn chạy lại (25 truyện).
+
+**luottruyen (v35):** `fetchRetry()` gọi `fetch()` không bọc try/catch, lỗi mạng là chết cả script.
+Đã bọc. Phần còn lại của nguồn này **không có lỗi** — chương vẫn 302 về `/Account/Login`, chỉ đọc
+được qua WebView đã đăng nhập Gmail trong app, plugin đã báo đúng câu hướng dẫn.
+
+**Ảnh rác trong chương:** tcomic (v6) lọc 2 banner ở đầu và cuối; zettruyen (v20) lọc watermark
+`zettruyen-wp.webp` ở ảnh đầu; doctruyen3q (v5) lọc watermark `3qhub` ở cả ảnh đầu và ảnh cuối.
+Bộ lọc của 6 nguồn chứa chuỗi `"ads"` trần — khớp luôn `"uploads"` — đã đổi thành `"/ads"`.
+
+**Gỡ 2 nguồn trùng tuyệt đối** (so danh mục trang 1 bằng `tools/vbook-harness/overlap.js`):
+`nhattruyen` = `nettruyen` 100 %, cùng đường dẫn ảnh chỉ khác tên CDN; `truyenggvn` = `truyenqq`
+100 %, cùng cả CDN. Giữ nettruyen và truyenqq — hai nguồn này chỉ chồng lấn 69–81 %, gỡ thêm là
+mất truyện thật.
+
+## 3. Một thử nghiệm CHƯA có kết luận
+
+`tcomic/plugin.json` v6 được thêm `"thread": 5` và `"delay": 10` vào `metadata`. Khoá `thread`
+và `delay` **có trong dex** của app, và app có màn hình "Kết nối tối đa N luồng, thời gian chờ
+tối thiểu M ms" cho từng tiện ích — nhưng **chưa xác minh** được `plugin.json` khai báo được.
+
+- Nếu tcomic nạp bình thường **và** màn hình đó hiện "tối đa 5 luồng / tối thiểu 10 ms" → áp cho
+  cả 16 nguồn, đây sẽ là mức tăng tốc ảnh lớn nhất còn lại.
+- Nếu tcomic **không nạp được** sau bản này → gỡ hai khoá đó khỏi `tcomic/plugin.json`, repack, bump.
+
+## 4. Việc còn treo
+
+- `cuutruyen.cc` sập: 5/5 lần thử không trả byte nào trong 12 giây (TLS bắt tay xong rồi treo).
+  Worker ảnh `dex.cdn-07077.workers.dev` và `api.mangadex.org` vẫn sống. Đã thêm timeout để không
+  quay 20 giây, còn lại chờ site tự sống.
+- `nettruyen/src/toc.js` vẫn đặt `"Referer": url` (URL truyện) thay vì `BASE_URL + "/"`. Slug
+  nettruyen hiện toàn ASCII nên chưa nổ, nhưng đây đúng là hình dạng của bẫy 22.
+- Nhánh `Engine.newBrowser()` trong `goctruyentranh/src/chap.js` **luôn vô dụng** vì site trả
+  `X-Frame-Options: DENY` ở mọi path. Giữ lại làm đường cuối, nhưng đừng tốn công vá nó.
+
+---
+
 # TECHNICAL HANDOFF REPORT - DAMCONUONG (v6), MIMIMOE (v12), MINO (v28) & REPO CLEANUP
 
 - **Plugins:** `damconuong/` (v6 - MỚI), `mimimoe/` (v12), `minotruyen/` (v28), `minomanga/` (v28)
