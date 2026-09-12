@@ -1,7 +1,16 @@
 load('config.js');
 
 function siteImage(u) {
-    var url = String(u).trim().replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL);
+    var url = String(u).trim();
+    if (url.indexOf('//') === 0) {
+        url = 'https:' + url;
+    } else if (url.indexOf('http') !== 0) {
+        if (url.charAt(0) === '/') {
+            url = SITE_URL + url;
+        } else {
+            url = SITE_URL + '/' + url;
+        }
+    }
     if (GTT_IMG_PROXY) return GTT_IMG_PROXY + encodeURIComponent(url);
     return url;
 }
@@ -84,8 +93,8 @@ function imagesFromDoc(doc) {
         var el = imgs.get(i);
         var src = el.attr('src') || el.attr('data-src') || el.attr('data-original') || '';
         src = String(src).trim();
-        if (src.indexOf('http') !== 0) continue;
-        if (src.indexOf('gtt-bk.pro') < 0) continue;
+        if (src.indexOf('http') !== 0 && src.indexOf('//') !== 0 && src.indexOf('/image/') !== 0) continue;
+        if (src.indexOf('gtt-bk.pro') < 0 && src.indexOf('/image/') < 0) continue;
         src = siteImage(src);
         if (seen[src]) continue;
         seen[src] = true;

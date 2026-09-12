@@ -174,8 +174,9 @@ class QAGateKeeper:
         print(f"\n--- [CHỐT 4] LIVE RUNTIME & TẢI ẢNH THẬT ({plugin_name}) ---")
         test_images = []
         if plugin_name == "goctruyentranh":
-            # Test ảnh thật của GocTruyenTranh
+            # Test ảnh thật của GocTruyenTranh (cả CDN gốc và domain site)
             test_images = [
+                ("https://goctruyentranhvui41.com", "https://vn3.gtt-bk.pro/image/1DsK8xVv1sikeZ4aFcI5SqXrvzhgmPFQy?exp=iyJyaAv2FgTcQbC354RA8g&verify=1789232689-02b5R8Sz5v0wNgU0fdYmsZYobKRobC50tRda3sj%2Bir8%3D"),
                 ("https://goctruyentranhvui41.com", "https://goctruyentranhvui41.com/image/cau-be-shotgun-0000032407-25-03-2021/196zIBkgOS0mzTa90RCinbS2nHaveXGrr?code=gtt-yes")
             ]
         elif plugin_name == "luottruyen":
