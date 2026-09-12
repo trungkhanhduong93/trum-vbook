@@ -1,59 +1,39 @@
 load("config.js");
 
 // ============================================================
-// v17 — PHÉP THỬ CUỐI, chọn đúng kiểu đường dẫn ảnh.
+// KẾT LUẬN SAU 4 BẢN THỬ (v14 → v17): KHÔNG đọc được chương trong app.
 //
-// v16: app báo "Không thể tải hình ảnh". Đó là câu của chính bộ tải ảnh trong
-// app (chuỗi error_load_image trong APK), tức là plugin giao hàng thành công
-// nhưng app không hiểu kiểu đường dẫn "data:image/png;base64,...".
+// Ảnh trang của cuutruyen.net bị cắt thành dải ngang rồi đảo lộn. Muốn hiện
+// đúng thì phải ghép lại rồi giao ảnh đã ghép cho app. Đo trên máy thật:
 //
-// Trong dex của app có 6 kiểu đường dẫn ảnh nằm cạnh nhau:
-//   file · content · android.resource · asset · data · base64
-// Chữ "base64" đứng riêng như một kiểu độc lập => nhiều khả năng app có bộ đọc
-// riêng cho nó, và đó mới là chỗ capture() sinh ra để dùng.
+//   v15 (bản dò)  Graphics=có · tải 486.540 ký tự b64 · createImage 1500x958
+//                 capture() trả base64 PNG trần, dài 1.813.920 ký tự
+//                 => KHÂU GHÉP CHẠY ĐÚNG, không hỏng chỗ nào.
+//   v16 (3 trang) app báo "Không thể tải hình ảnh" — đây là chuỗi
+//                 error_load_image của chính bộ tải ảnh trong app.
+//   v17 (3 kiểu)  thử cả "base64:", chuỗi trần, và "data:image/png;base64,"
+//                 cho cùng một trang. Không kiểu nào hiện được.
 //
-// Bản này lấy ĐÚNG MỘT trang rồi trả về BA lần, mỗi lần một kiểu:
-//   trang 1: base64:<chuỗi>
-//   trang 2: <chuỗi> trần, không tiền tố
-//   trang 3: data:image/png;base64,<chuỗi>   (kiểu đã biết là hỏng, để đối chứng)
+// Nghĩa là: plugin ghép được ảnh, nhưng KHÔNG có đường nào giao ảnh tự dựng cho
+// trình đọc của Vbook. Trình đọc chỉ nhận URL http để tự tải. Đây là giới hạn
+// của app, không phải lỗi nguồn — đừng viết lại lần thứ năm.
 //
-// Trang nào hiện được thì đó là kiểu đúng. Không trang nào hiện thì đường ghép
-// ảnh trong plugin là ngõ cụt, chuyển nguồn sang chỉ duyệt + đọc bằng Trang nguồn.
+// Nguồn vẫn dùng tốt để: duyệt danh sách, tìm kiếm, xem chi tiết, theo dõi
+// truyện mới, và mở mục lục. Đọc thì bấm nút "Trang nguồn".
+//
+// Nếu về sau site bỏ xáo trộn (trang nào không có drm_data) thì hàm dưới tự
+// trả URL trần và chương đó đọc được ngay, không cần sửa gì thêm.
 // ============================================================
 
-function rawCapture(p) {
-    var raw = imgUrl(p.image_url);
-    if (!raw) return null;
-    var bands = drmDecode(p.drm_data);
-    if (!bands) return null;
-    if (typeof Graphics === "undefined" || !Graphics.createImage) return null;
+var HUONG_DAN = "Cứu Truyện xáo trộn ảnh từng trang. Vbook ghép lại được nhưng "
+    + "không có cách nào đưa ảnh tự dựng vào trình đọc — đã thử cả 3 kiểu đường dẫn. "
+    + "Bấm \"Trang nguồn\" để đọc chương này trên web.";
 
-    var b64 = null;
-    var cands = imgCandidates(raw);
-    for (var c = 0; c < cands.length && !b64; c++) {
-        try {
-            var blob = Http.get(cands[c]).headers(HEADERS).timeout(REQ_TIMEOUT).blob();
-            if (blob && blob.base64) b64 = blob.base64();
-        } catch (eDl) {}
-    }
-    if (!b64) return null;
-
-    try {
-        var img = Graphics.createImage(b64);
-        b64 = null;
-        if (!img) return null;
-        var w = img.width;
-        var canvas = Graphics.createCanvas(w, img.height);
-        var sy = 0;
-        for (var i = 0; i < bands.length; i++) {
-            canvas.drawImage(img, 0, sy, w, bands[i].h, 0, bands[i].sy, w, bands[i].h);
-            sy += bands[i].h;
-        }
-        var out = canvas.capture();
-        return out ? String(out) : null;
-    } catch (eDraw) {
-        return null;
-    }
+function plainImage(p) {
+    if (!p) return null;
+    if (p.drm_data) return null;
+    if (String(p.image_url || '').indexOf('scrambled') >= 0) return null;
+    return imgUrl(p.image_url);
 }
 
 function execute(url) {
@@ -64,14 +44,18 @@ function execute(url) {
     if (!json || !json.data) return Response.error("Không tải được nội dung chương.");
 
     var pages = json.data.pages || [];
-    if (!pages.length) return Response.error("Chương này chưa có trang nào.");
+    if (!pages.length) return Response.error("Chương này chưa có trang nào trên Cứu Truyện.");
 
-    var b64 = rawCapture(pages[0]);
-    if (!b64) return Response.error("PHÉP THỬ: không ghép được trang đầu.");
+    // Đường sống duy nhất: trang nào KHÔNG bị xáo trộn thì trả thẳng URL.
+    var images = [];
+    for (var i = 0; i < pages.length; i++) {
+        var u = plainImage(pages[i]);
+        if (u) images.push(u);
+    }
 
-    return Response.success([
-        "base64:" + b64,
-        b64,
-        "data:image/png;base64," + b64
-    ]);
+    // Chỉ đọc được khi TOÀN BỘ trang đều sạch. Thiếu trang giữa chương còn tệ
+    // hơn báo lỗi vì người đọc không biết mình đang đọc thiếu.
+    if (images.length === pages.length) return Response.success(images);
+
+    return Response.error(HUONG_DAN);
 }
