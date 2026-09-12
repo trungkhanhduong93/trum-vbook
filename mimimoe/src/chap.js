@@ -21,12 +21,17 @@ function execute(url) {
     }
 
     var images = [];
+    var seen = {};
     for (var i = 0; i < data.pages.length; i++) {
         var p = data.pages[i];
         if (!p) continue;
         var src = p.image_url || p.url || "";
         if (!src) continue;
-        images.push(src);
+        src = String(src).trim();
+        var finalUrl = resolveUrl(src);
+        if (!finalUrl || seen[finalUrl]) continue;
+        seen[finalUrl] = true;
+        images.push(finalUrl);
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");

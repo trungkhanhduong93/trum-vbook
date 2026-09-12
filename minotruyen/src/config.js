@@ -37,10 +37,22 @@ function jsonGet(url) {
     return null;
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
 function bookCover(b) {
-    if (b && b.cover && b.cover.imageUrl) return b.cover.imageUrl;
-    if (b && b.covers && b.covers.length > 0 && b.covers[0].url) return b.covers[0].url;
-    return "";
+    var c = "";
+    if (b && b.cover && b.cover.imageUrl) c = b.cover.imageUrl;
+    else if (b && b.covers && b.covers.length > 0 && b.covers[0].url) c = b.covers[0].url;
+    if (!c) return "";
+    if (c.indexOf("//") === 0) c = "https:" + c;
+    return safeEncodeUrl(c);
 }
 
 function bookLink(b) {
@@ -156,7 +168,7 @@ function fetchChapterImagesApi(chapterId, bookId) {
             }
             if (u) {
                 if (u.indexOf("//") === 0) u = "https:" + u;
-                images.push(u);
+                images.push(safeEncodeUrl(u));
             }
         }
     }

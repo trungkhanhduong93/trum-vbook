@@ -2,7 +2,7 @@ load("config.js");
 
 function execute() {
     return Response.success([
-        { title: "Mới Cập Nhật", input: "/", script: "gen.js" },
+        { title: "Mới Cập Nhật", input: "/danh-sach", script: "gen.js" },
         { title: "Manhwa 18+", input: "/genres/manhwa", script: "gen.js" },
         { title: "Hentai Không Che", input: "/genres/hentai-khong-che", script: "gen.js" },
         { title: "3D Hentai", input: "/genres/3d-hentai", script: "gen.js" },

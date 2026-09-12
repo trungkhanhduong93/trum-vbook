@@ -221,22 +221,24 @@ class QAGateKeeper:
                 self.log_fail("GATE-4", f"Lỗi gọi ComicService NhatTruyen: {e}")
             test_images = []
         elif plugin_name == "cuutruyen":
-            try:
-                manga_id = "0c3d2ca2-0857-4a6c-be97-59ffa3e29873"
-                api_url = f"https://api.mangadex.org/manga/{manga_id}/feed?translatedLanguage%5B%5D=vi&limit=500&order%5Bchapter%5D=asc"
-                req = urllib.request.Request(api_url, headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-                })
-                with urllib.request.urlopen(req, timeout=15) as resp:
-                    data = json.loads(resp.read().decode('utf-8'))
-                    total_chaps = len(data.get("data", []))
-                    if total_chaps > 100:
-                        self.log_pass("GATE-4", f"CuuTruyen MangaDex feed mở khóa thành công {total_chaps} chương (>100 giới hạn cũ).")
-                    else:
-                        self.log_fail("GATE-4", f"CuuTruyen MangaDex feed chỉ trả về {total_chaps} chương.")
-            except Exception as e:
-                self.log_fail("GATE-4", f"Lỗi gọi MangaDex feed CuuTruyen: {e}")
-            test_images = []
+            for attempt in range(3):
+                try:
+                    manga_id = "0c3d2ca2-0857-4a6c-be97-59ffa3e29873"
+                    api_url = f"https://api.mangadex.org/manga/{manga_id}/feed?translatedLanguage%5B%5D=vi&limit=500&order%5Bchapter%5D=asc"
+                    req = urllib.request.Request(api_url, headers={
+                        "User-Agent": "vBook-QA/1.0"
+                    })
+                    with urllib.request.urlopen(req, timeout=15) as resp:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        total_chaps = len(data.get("data", []))
+                        if total_chaps > 100:
+                            self.log_pass("GATE-4", f"CuuTruyen MangaDex feed mở khóa thành công {total_chaps} chương (>100 giới hạn cũ).")
+                        else:
+                            self.log_fail("GATE-4", f"CuuTruyen MangaDex feed chỉ trả về {total_chaps} chương.")
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        self.log_fail("GATE-4", f"Lỗi gọi MangaDex feed CuuTruyen: {e}")
         elif plugin_name == "luottruyennew":
             try:
                 story_url = "https://luottruyen.net/hardcore-leveling-warrior-season-3"

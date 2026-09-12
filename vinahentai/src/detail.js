@@ -17,6 +17,10 @@ function execute(url) {
     // Cover
     var coverEl = selFirst(doc, "img[src*='manga-posters'], img[src*='poster'], img[src*='story-images'], img[srcset*='manga-posters']");
     var cover = imgSrc(coverEl);
+    if (!cover) {
+        var metaImg = selFirst(doc, "meta[property='og:image']");
+        if (metaImg) cover = resolveUrl(metaImg.attr("content"));
+    }
 
     // Author
     var authorEls = doc.select("a[href*='/authors/']");

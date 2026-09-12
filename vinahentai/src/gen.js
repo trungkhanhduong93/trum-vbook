@@ -2,6 +2,9 @@ load("config.js");
 
 function execute(url, page) {
     if (!page) page = "1";
+    if (!url || url === "/" || url === "") {
+        url = "/danh-sach";
+    }
 
     var finalUrl = resolveUrl(url);
     if (finalUrl.indexOf("?") >= 0) {

@@ -358,6 +358,26 @@ function comicLink(slug, id) {
     return "/truyen-tranh/" + slug + "-" + id;
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
+function resolveUrl(u) {
+    if (!u) return "";
+    u = String(u).trim();
+    if (!u) return "";
+    var full = u;
+    if (u.indexOf("http") === 0) full = u;
+    else if (u.indexOf("//") === 0) full = "https:" + u;
+    else full = SITE_URL + (u.charAt(0) === "/" ? u : "/" + u);
+    return safeEncodeUrl(full);
+}
+
 function mapComicCard(c) {
     if (!c) return null;
     var slug = c.slug || "";
@@ -369,11 +389,12 @@ function mapComicCard(c) {
     } else if (c.updated_at) {
         desc = c.updated_at;
     }
+    var thumb = c.thumbnail ? resolveUrl(c.thumbnail) : "";
     return {
         name: c.title || "",
         link: comicLink(slug, id),
         description: desc,
-        cover: c.thumbnail || "",
+        cover: thumb,
         host: SITE_URL
     };
 }

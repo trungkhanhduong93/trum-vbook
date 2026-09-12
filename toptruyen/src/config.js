@@ -136,10 +136,24 @@ function selFirst(el, css) {
     return items && items.size() > 0 ? items.get(0) : null;
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
 function resolveUrl(url) {
-    if (!url) return BASE_URL;
-    if (url.indexOf("http") === 0) return url;
-    return BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
+    if (!url) return "";
+    url = String(url).trim();
+    if (!url) return "";
+    var full = url;
+    if (url.indexOf("http") === 0) full = url;
+    else if (url.indexOf("//") === 0) full = "https:" + url;
+    else full = BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
+    return safeEncodeUrl(full);
 }
 
 // Story card parser supporting both old and new layout

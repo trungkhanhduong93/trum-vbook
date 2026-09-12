@@ -18,6 +18,8 @@ function execute(url) {
         imgEls = doc.select(".reading-content img");
     }
 
+    var junkWords = ["logo", "avatar", "icon", "follow", "/comics/top/", "banner", "button", "ads", "pepe", "placeholder", "loading"];
+
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 
@@ -26,18 +28,21 @@ function execute(url) {
         src = src.trim();
 
         if (src.indexOf("data:image") >= 0) continue;
-        if (src.indexOf("logo") >= 0) continue;
-        if (src.indexOf("avatar") >= 0) continue;
-        if (src.indexOf("/icon-") >= 0) continue;
-        if (src.indexOf("follow.png") >= 0) continue;
-        if (src.indexOf("/comics/top/") >= 0) continue;
 
-        if (src.indexOf("//") === 0) src = "https:" + src;
-        else if (src.indexOf("http") !== 0) src = resolveUrl(src);
+        var lower = src.toLowerCase();
+        var isJunk = false;
+        for (var j = 0; j < junkWords.length; j++) {
+            if (lower.indexOf(junkWords[j]) >= 0) {
+                isJunk = true;
+                break;
+            }
+        }
+        if (isJunk) continue;
 
-        if (seen[src]) continue;
-        seen[src] = true;
-        images.push(src); // URL trần — Vbook ImageLoader KHÔNG parse |Referer= (gãy ảnh)
+        var finalUrl = resolveUrl(src);
+        if (!finalUrl || seen[finalUrl]) continue;
+        seen[finalUrl] = true;
+        images.push(finalUrl);
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");

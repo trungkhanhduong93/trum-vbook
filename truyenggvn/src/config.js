@@ -18,13 +18,25 @@ function trimText(s) {
     return s ? String(s).replace(/^\s+|\s+$/g, "") : "";
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
 function resolveUrl(href) {
     if (!href) return "";
     href = trimText(href);
-    if (href.indexOf("http") === 0) return href;
-    if (href.indexOf("//") === 0) return "https:" + href;
-    if (href.charAt(0) === "/") return BASE_URL + href;
-    return BASE_URL + "/" + href;
+    if (!href) return "";
+    var full = href;
+    if (href.indexOf("http") === 0) full = href;
+    else if (href.indexOf("//") === 0) full = "https:" + href;
+    else if (href.charAt(0) === "/") full = BASE_URL + href;
+    else full = BASE_URL + "/" + href;
+    return safeEncodeUrl(full);
 }
 
 function fetchRetry(url) {

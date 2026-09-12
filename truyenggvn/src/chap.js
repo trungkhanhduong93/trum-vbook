@@ -12,6 +12,8 @@ function execute(url) {
         n = imgEls.size();
     }
 
+    var junkWords = ["logo", "icon", "banner", "avatar", "ads", "button", "follow", "pepe", "no_image", "placeholder", "loading"];
+
     var images = [];
     var seen = {};
     for (var i = 0; i < n; i++) {
@@ -20,10 +22,19 @@ function execute(url) {
         if (!src) continue;
         src = trimText(src);
         if (!src || src.indexOf("data:") === 0) continue;
-        if (src.indexOf("logo") !== -1 || src.indexOf("icon") !== -1 || src.indexOf("banner") !== -1 || src.indexOf("no_image") !== -1) continue;
+
+        var lower = src.toLowerCase();
+        var isJunk = false;
+        for (var j = 0; j < junkWords.length; j++) {
+            if (lower.indexOf(junkWords[j]) !== -1) {
+                isJunk = true;
+                break;
+            }
+        }
+        if (isJunk) continue;
 
         var finalSrc = resolveUrl(src);
-        if (seen[finalSrc]) continue;
+        if (!finalSrc || seen[finalSrc]) continue;
         seen[finalSrc] = true;
         images.push(finalSrc);
     }

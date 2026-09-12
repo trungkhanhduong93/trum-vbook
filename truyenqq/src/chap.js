@@ -9,33 +9,37 @@ function execute(url) {
 
     var imgEls = doc.select("div.page-chapter img");
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".chapter_content img");
+        imgEls = doc.select(".chapter_content div.page-chapter img");
     }
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select("img.lazy");
+        imgEls = doc.select(".chapter_content img");
     }
+
+    var junkWords = ["logo", "avatar", "icon", "banner", "button", "ads", "pepe", "follow", "facebook", "thumb", "placeholder", "loading"];
 
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);
 
-        var src = img.attr("data-original") || img.attr("data-src") || img.attr("src") || "";
-        if (!src) src = img.attr("data-cdn") || "";
+        var src = img.attr("data-original") || img.attr("data-src") || img.attr("data-cdn") || img.attr("src") || "";
         if (!src) continue;
         src = src.trim();
 
         if (src.indexOf("data:image") >= 0) continue;
-        if (src.indexOf("logo") >= 0) continue;
-        if (src.indexOf("avatar") >= 0) continue;
 
-        if (src.indexOf("//") === 0) {
-            src = "https:" + src;
-        } else if (src.indexOf("http") !== 0) {
-            src = resolveUrl(src);
+        var lower = src.toLowerCase();
+        var isJunk = false;
+        for (var j = 0; j < junkWords.length; j++) {
+            if (lower.indexOf(junkWords[j]) >= 0) {
+                isJunk = true;
+                break;
+            }
         }
+        if (isJunk) continue;
 
-        if (seen[src]) continue;
-        seen[src] = true;
-        images.push(src);
+        var finalUrl = resolveUrl(src);
+        if (!finalUrl || seen[finalUrl]) continue;
+        seen[finalUrl] = true;
+        images.push(finalUrl);
     }
 
     if (images.length === 0) return Response.error("Không tìm thấy ảnh chương");

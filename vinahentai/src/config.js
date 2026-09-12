@@ -36,8 +36,9 @@ function safeEncodeUrl(u) {
 }
 
 function resolveUrl(u) {
-    if (!u) return BASE_URL;
+    if (!u) return "";
     u = String(u).trim();
+    if (!u) return "";
     var full = u;
     if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) full = u;
     else if (u.indexOf("//") === 0) full = "https:" + u;
@@ -62,6 +63,7 @@ function imgSrc(el) {
     if (!s || s.indexOf("data:image") === 0) {
         s = el.attr("data-src") || el.attr("data-original") || el.attr("data-lazy-src") || "";
     }
+    if (!s || s.indexOf("data:image") === 0) return "";
     return resolveUrl(s);
 }
 
@@ -126,6 +128,10 @@ function parseItems(doc) {
         }
         if (!title && imgEl) {
             title = imgEl.attr("alt");
+        }
+        if (!title) {
+            var h3 = selFirst(a, "h3");
+            if (h3) title = txt(h3);
         }
         if (!title) {
             title = txt(a);

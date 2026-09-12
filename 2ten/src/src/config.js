@@ -26,12 +26,25 @@ function txt(el) {
     return el ? el.text().trim() : "";
 }
 
+function safeEncodeUrl(u) {
+    if (!u) return "";
+    try {
+        return encodeURI(u);
+    } catch (e) {
+        return u;
+    }
+}
+
 function resolveUrl(u) {
-    if (!u) return BASE_URL;
+    if (!u) return "";
     u = String(u).trim();
-    if (u.indexOf("//") === 0) return "https:" + u;
-    if (u.indexOf("http") === 0) return u;
-    return BASE_URL + (u.charAt(0) === "/" ? u : "/" + u);
+    if (!u) return "";
+    var full = u;
+    if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) full = u;
+    else if (u.indexOf("//") === 0) full = "https:" + u;
+    else if (u.indexOf("/") === 0) full = BASE_URL + u;
+    else full = BASE_URL + "/" + u;
+    return safeEncodeUrl(full);
 }
 
 // Lấy src ảnh (ưu tiên data-src lazy-load nếu có)

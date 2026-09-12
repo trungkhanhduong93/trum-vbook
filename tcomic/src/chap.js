@@ -25,11 +25,10 @@ function execute(url) {
         var img = images[i];
         var link = img && img.src ? String(img.src).trim() : "";
         if (!link) continue;
-        if (link.indexOf("//") === 0) link = "https:" + link;
-        if (!seen[link]) {
-            seen[link] = true;
-            data.push(link);
-        }
+        var finalUrl = resolveUrl(link);
+        if (!finalUrl || seen[finalUrl]) continue;
+        seen[finalUrl] = true;
+        data.push(finalUrl);
     }
 
     if (data.length === 0) return null;

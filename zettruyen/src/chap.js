@@ -19,6 +19,8 @@ function execute(url) {
     var data = [];
     var seen = {};
     var n = (imgs.size ? imgs.size() : imgs.length);
+    var junkWords = ["logo", "/icons/", "icon", "thumb-default", "/thumb/", "banner", "avatar", "ads", "button", "pepe", "placeholder", "loading", "follow"];
+
     for (var i = 0; i < n; i++) {
         var e = (imgs.get ? imgs.get(i) : imgs[i]);
         var link = e.attr("src") || e.attr("data-src") || "";
@@ -30,16 +32,22 @@ function execute(url) {
         if (!link) continue;
         link = link.trim();
 
-        if (link.indexOf("//") === 0) link = "https:" + link;
         if (link.indexOf("data:") === 0) continue;
-        if (link.indexOf("logo") !== -1) continue;
-        if (link.indexOf("/icons/") !== -1) continue;
-        if (link.indexOf("thumb-default") !== -1) continue;
-        if (link.indexOf("/thumb/") !== -1) continue;
 
-        if (seen[link]) continue;
-        seen[link] = true;
-        data.push(link);
+        var lower = link.toLowerCase();
+        var isJunk = false;
+        for (var j = 0; j < junkWords.length; j++) {
+            if (lower.indexOf(junkWords[j]) !== -1) {
+                isJunk = true;
+                break;
+            }
+        }
+        if (isJunk) continue;
+
+        var finalUrl = resolveUrl(link);
+        if (!finalUrl || seen[finalUrl]) continue;
+        seen[finalUrl] = true;
+        data.push(finalUrl);
     }
 
     if (data.length === 0) return Response.error("Không tìm thấy ảnh chương");
