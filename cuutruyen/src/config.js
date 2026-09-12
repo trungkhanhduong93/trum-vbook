@@ -1,32 +1,65 @@
-var SITE_URL = "https://cuutruyen.cc";
-// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+// ============================================================
+// config.js — Cứu Truyện (cuutruyen.net)
+//
+// v10 (12/09/2026): VIẾT LẠI HOÀN TOÀN. Nguồn cũ trỏ cuutruyen.cc — đó là một
+// site KHÁC (mirror MangaDex, HTML tĩnh, ảnh không xáo trộn) và nay đã chết:
+// đo 5/5 lần không trả byte nào trong 12 giây.
+//
+// cuutruyen.net mới là Cứu Truyện thật: Vue SPA (manga4u_app), HTML trả về chỉ
+// là khung rỗng 3 KB -> KHÔNG scrape được, bắt buộc đi qua API JSON /api/v2.
+//
+// KHÔNG cần đăng nhập để đọc: đã đo, mọi endpoint danh sách / chi tiết / mục lục
+// / chương đều trả 200 khi không gửi token. Đăng nhập chỉ để đồng bộ tủ truyện,
+// và KHÔNG gỡ được xáo trộn ảnh (đã kiểm bằng tài khoản thật).
+// ============================================================
+
+var SITE_URL = 'https://www.cuutruyen.net';
+var HOST = SITE_URL;
+var API = SITE_URL + '/api/v2';
+
+// Không đặt timeout thì host chết ăn trọn 10-11 giây (đo 12/09/2026).
 var REQ_TIMEOUT = 8000;
 var PROBE_TIMEOUT = 4000;
 
-var HOST = SITE_URL;
+var UA = 'Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36';
 
+// Header định danh của web chính chủ. Không bắt buộc (API vẫn trả 200 nếu thiếu)
+// nhưng gửi cho giống client thật, tránh bị siết về sau.
 var HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
-    "Referer": SITE_URL + "/"
+    'User-Agent': UA,
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'vi-VN,vi;q=0.9',
+    'Cuutruyen-Client': 'OfficialWebApp-20250805',
+    'Referer': SITE_URL + '/'
 };
 
-// Site bọc mọi ảnh chương qua worker Cloudflare này. GIỮ NGUYÊN, đừng bóc ra trả
-// thẳng mangadex.network: mạng di động VN chặn mangadex.network, worker thì không
-// (đã trả giá ở v3→v4). Prefix này hardcode vì đường nhanh không tải HTML chương
-// nữa — site đổi worker thì sửa đúng một dòng ở đây.
-var IMG_PROXY = "https://dex.cdn-07077.workers.dev/?url=";
+var PER_PAGE = 24;
 
-// Chapter id của cuutruyen chính là chapter id MangaDex (đã đối chiếu khớp tuyệt
-// đối 45/45 URL). at-home trả 6,6KB JSON thay cho 662KB HTML trang chương.
-var MDX_AT_HOME = "https://api.mangadex.org/at-home/server/";
+// Kho ảnh của site có 2 gương, lấy từ chính bundle của web chính chủ:
+//   const c = ["https://storage-ct.lrclib.net", "https://storage-ct-riften.site"]
+// API luôn trả URL trỏ gương thứ nhất, web tự dò sang gương hai khi gương một hỏng.
+//
+// ⚠️ Đo 12/09/2026: CẢ HAI gương đều NXDOMAIN ở Google DNS và Cloudflare DNS
+// (Status 3, kèm SOA của chính lrclib.net). Tức là kho ảnh của Cứu Truyện đang
+// chết trên toàn cầu, không phải ISP chặn và không phải lỗi plugin. Giữ danh sách
+// này để khi site dựng lại gương nào thì nguồn tự đi theo, không cần vá lại.
+var IMG_MIRRORS = [
+    'https://storage-ct.lrclib.net',
+    'https://storage-ct-riften.site'
+];
 
-function proxiedImage(innerUrl) {
-    return IMG_PROXY + encodeURIComponent(innerUrl);
+// Đổi host của URL ảnh sang từng gương, giữ nguyên phần đường dẫn.
+function imgCandidates(url) {
+    var u = String(url || '').trim();
+    if (!u) return [];
+    var path = u.replace(/^https?:\/\/[^\/]+/, '');
+    var out = [];
+    for (var i = 0; i < IMG_MIRRORS.length; i++) out.push(IMG_MIRRORS[i] + path);
+    if (out.length === 0) out.push(u);
+    return out;
 }
 
-// Rhino-Jsoup của Vbook KHÔNG có selectFirst() — luôn đi qua helper này.
+// Rhino-Jsoup của Vbook KHÔNG có selectFirst() — giữ helper cho script nào cần.
 function selFirst(el, css) {
     if (!el) return null;
     var items = el.select(css);
@@ -34,164 +67,147 @@ function selFirst(el, css) {
 }
 
 function absUrl(url) {
-    url = String(url || "").trim();
-    if (!url) return "";
-    if (url.indexOf("http") === 0) return url;
-    if (url.indexOf("//") === 0) return "https:" + url;
-    if (url.indexOf("/") === 0) return SITE_URL + url;
-    return SITE_URL + "/" + url;
+    url = String(url || '').trim();
+    if (!url) return '';
+    if (url.indexOf('http') === 0) return url;
+    if (url.indexOf('//') === 0) return 'https:' + url;
+    return SITE_URL + (url.charAt(0) === '/' ? url : '/' + url);
 }
 
-// Ảnh bìa của site có 3 mức: {file}.jpg.256.jpg (~70KB), .512.jpg (~250KB)
-// và bản gốc không hậu tố (đo được 12MB — tuyệt đối không dùng).
-// Danh sách dùng 256 cho nhẹ, trang chi tiết dùng 512 cho nét.
-function coverAt(url, size) {
-    url = String(url || "");
-    if (!url) return "";
-    if (/\.(256|512)\.jpg$/.test(url)) return url.replace(/\.(256|512)\.jpg$/, "." + size + ".jpg");
-    if (url.indexOf("/covers/") >= 0) return url + "." + size + ".jpg";
-    return url;
-}
-
-// Nhận diện challenge Cloudflare qua <title>. KHÔNG dựng outerHtml() để dò chuỗi:
-// trang chi tiết nặng ~460KB, dựng nguyên chuỗi trong Rhino vừa chậm vừa dễ chết ngầm.
-function isChallenge(doc) {
-    if (!doc) return true;
-    var title = "";
-    try { title = String(doc.select("title").text()); } catch (e) {}
-    return title.indexOf("Just a moment") !== -1 ||
-           title.indexOf("Cloudflare") !== -1 ||
-           title.indexOf("Attention Required") !== -1;
-}
-
-// Đường HTTP thường là đủ (đã đo: site trả HTML đầy đủ cho cả UA okhttp lẫn
-// không UA). Nhánh browser chỉ để cứu trường hợp Cloudflare bật challenge cho
-// OkHttp theo TLS fingerprint — bản v1 của nguồn này từng chết đúng vì vậy.
-function fetchDoc(url) {
-    var doc = null;
+// Gọi API JSON. Trả object đã parse, hoặc null nếu hỏng.
+function apiGet(path) {
+    var s = null;
     try {
-        doc = Http.get(url).headers(HEADERS).timeout(REQ_TIMEOUT).html();
-    } catch (e) {}
+        s = Http.get(API + path).headers(HEADERS).timeout(REQ_TIMEOUT).string();
+    } catch (eHttp) {}
 
-    if (doc && !isChallenge(doc)) return doc;
-
-    var browser = null;
-    try {
-        browser = Engine.newBrowser();
+    if (!s) {
         try {
-            browser.block([".*google.*", ".*facebook.*", ".*analytics.*", ".*doubleclick.*", ".*adservice.*", ".*\\.css.*", ".*\\.gif"]);
-        } catch (eBlock) {}
-        try { browser.setUserAgent(HEADERS["User-Agent"]); } catch (e2) {}
-        browser.launch(url, 4);
-        var bdoc = browser.html();
-        if (bdoc) return bdoc;
-    } catch (err) {
-    } finally {
-        if (browser) {
-            try { browser.close(); } catch (e3) {}
-        }
+            var res = fetch(API + path, { headers: HEADERS, timeout: REQ_TIMEOUT });
+            if (res && res.ok) s = res.text();
+        } catch (eFetch) {}
     }
 
-    return doc;
+    if (!s) return null;
+    try {
+        return JSON.parse(s);
+    } catch (eJson) {
+        return null;
+    }
 }
 
-function withPage(url, page) {
-    var p = parseInt(page, 10);
-    if (!p || p <= 1) return url;
-    return url + ((url.indexOf("?") >= 0) ? "&" : "?") + "page=" + p;
+// Đường dẫn trang chi tiết mà app dùng làm link truyện, khớp regexp trong plugin.json.
+function mangaLink(id) {
+    return SITE_URL + '/mangas/' + id;
 }
 
-// URL lọc theo thẻ. Cú pháp tag_query của site nhận cả AND/OR/NOT, đặt tên thẻ
-// trong ngoặc kép để khớp đúng cụm (vd "Slice of Life" không bị tách thành 3 từ).
-function tagUrl(tag) {
-    return SITE_URL + "/search?tag_query=" + encodeURIComponent('"' + tag + '"');
+function chapterLink(mangaId, chapterId) {
+    return SITE_URL + '/mangas/' + mangaId + '/chapters/' + chapterId;
 }
 
-// Mỗi card ở trang danh sách/tìm kiếm/thẻ là một div.snap-start:
-//   <a href=".../mangas/{uuid}"><img class="manga-cover" src="{cover}" alt="{tên}"></a>
-//   <div><a ...><h3>{tên}</h3></a><h4><a ...><span>C. {số}</span> - <span>{thời gian}</span></a></h4></div>
-//
-// Đi từ khối card xuống, KHÔNG đi từ <img> rồi ngược lên bằng .parent():
-// parent() từng ném TypeError trong Vbook (ghi chú ở zettruyen/src/search.js).
-function parseCards(doc) {
+// Lấy số cuối cùng trong URL — dùng cho cả link truyện lẫn link chương.
+function lastId(url) {
+    var m = String(url || '').match(/(\d+)\/?(?:[?#].*)?$/);
+    return m ? m[1] : '';
+}
+
+function mangaIdFromUrl(url) {
+    var m = String(url || '').match(/\/mangas\/(\d+)/);
+    return m ? m[1] : lastId(url);
+}
+
+// Card danh sách. API trả cover_mobile_url nhẹ hơn cover_url rõ rệt — dùng bản
+// mobile cho trang danh sách, giữ bản đầy đủ cho trang chi tiết.
+function mapCard(m) {
+    if (!m || !m.id || !m.name) return null;
+    var desc = '';
+    if (m.newest_chapter_number) desc = 'Chương ' + m.newest_chapter_number;
+    if (m.author_name) desc = desc ? (desc + ' · ' + m.author_name) : String(m.author_name);
+    return {
+        name: String(m.name),
+        link: mangaLink(m.id),
+        cover: absUrl(m.cover_mobile_url || m.cover_url),
+        description: desc,
+        host: HOST
+    };
+}
+
+function mapList(json) {
     var out = [];
-    if (!doc) return out;
-
-    var seen = {};
-    var cards = doc.select("div.snap-start");
-
-    for (var i = 0; i < cards.size(); i++) {
-        var card = cards.get(i);
-
-        var a = selFirst(card, "a[href*='/mangas/']");
-        if (!a) continue;
-        var link = absUrl(a.attr("href"));
-        if (!link || seen[link]) continue;
-
-        var img = selFirst(card, "img.manga-cover");
-        if (!img) img = selFirst(card, "img");
-
-        var name = "";
-        var h3 = selFirst(card, "h3");
-        if (h3) name = String(h3.text()).trim();
-        if (!name && img) name = String(img.attr("alt") || "").trim();
-        if (!name) continue;
-
-        var cover = img ? absUrl(img.attr("src") || img.attr("data-src")) : "";
-        cover = coverAt(cover, 256);
-
-        var desc = "";
-        var h4 = selFirst(card, "h4");
-        if (h4) desc = String(h4.text()).trim().replace(/\s+/g, " ");
-
-        seen[link] = true;
-        out.push({
-            name: name,
-            link: link,
-            cover: cover,
-            description: desc,
-            host: HOST
-        });
+    if (!json || !json.data) return out;
+    for (var i = 0; i < json.data.length; i++) {
+        var c = mapCard(json.data[i]);
+        if (c) out.push(c);
     }
-
-    if (out.length > 0) return out;
-
-    // Site đổi khung card: gom theo chính link truyện. Vẫn bám họ selector của
-    // trang danh sách (a[href*=/mangas/]) chứ không nới ra quét toàn trang.
-    var links = doc.select("a[href*='/mangas/']");
-    for (var j = 0; j < links.size(); j++) {
-        var la = links.get(j);
-        var lnk = absUrl(la.attr("href"));
-        if (!lnk || seen[lnk]) continue;
-
-        var limg = selFirst(la, "img");
-        var lname = limg ? String(limg.attr("alt") || "").trim() : "";
-        if (!lname) lname = String(la.text()).trim();
-        if (!lname) continue;
-
-        seen[lnk] = true;
-        out.push({
-            name: lname,
-            link: lnk,
-            cover: limg ? coverAt(absUrl(limg.attr("src") || limg.attr("data-src")), 256) : "",
-            description: "",
-            host: HOST
-        });
-    }
-
     return out;
 }
 
-// Nút "Trang sau" là <a href="...?page=N">; ở trang cuối site đổi nó thành
-// <a> không href (button-disabled) nên không còn link nào khớp -> hết trang.
-function nextPage(doc, page) {
-    if (!doc) return null;
-    var want = parseInt(page, 10) + 1;
-    var links = doc.select("a[href*=page]");
-    for (var i = 0; i < links.size(); i++) {
-        var href = String(links.get(i).attr("href") || "");
-        var m = href.match(/[?&]page=(\d+)/);
-        if (m && parseInt(m[1], 10) >= want) return String(want);
+// _metadata: { total_count, total_pages, current_page, per_page }
+function nextPageFrom(json, page) {
+    var p = parseInt(page, 10) || 1;
+    if (!json || !json._metadata) {
+        return (json && json.data && json.data.length >= PER_PAGE) ? String(p + 1) : null;
     }
-    return null;
+    var total = parseInt(json._metadata.total_pages, 10) || 0;
+    return (p < total) ? String(p + 1) : null;
+}
+
+function withPage(path, page) {
+    var p = parseInt(page, 10) || 1;
+    var sep = (path.indexOf('?') >= 0) ? '&' : '?';
+    return path + sep + 'page=' + p + '&per_page=' + PER_PAGE;
+}
+
+// Lọc theo thẻ dùng cú pháp riêng của site: q phải là TOKEN TRONG NGOẶC KÉP.
+// q=crime -> "Unknown token: crime"; q="crime" -> trả đúng danh sách.
+function tagPath(tag) {
+    return '/mangas/search_by_tags?q=' + encodeURIComponent('"' + tag + '"');
+}
+
+// ─── Xáo trộn ảnh (DRM) ────────────────────────────────────────────────
+// Mọi trang của cuutruyen.net đều là ảnh bị xáo trộn theo DẢI NGANG, kèm
+// trường drm_data. Đã kiểm 6 truyện khác nhau: 100% số trang đều có drm_data,
+// kể cả khi đã đăng nhập.
+//
+// drm_data = base64( XOR( chuỗi, "3141592653589793" ) )
+// giải ra: "#v4|300-150|900-150|450-150|0-150|1050-102|150-150|750-150|600-150"
+//          tức là dải thứ i của ảnh ĐÚNG lấy từ toạ độ y=300 cao 150 của ảnh gốc.
+var DRM_KEY = '3141592653589793';
+
+function drmDecode(drm) {
+    if (!drm) return null;
+    var raw;
+    try {
+        raw = Crypto.base64Decode(String(drm).replace(/\s+/g, ''));
+    } catch (e) {
+        return null;
+    }
+    if (!raw) return null;
+    var out = '';
+    for (var i = 0; i < raw.length; i++) {
+        out += String.fromCharCode(raw.charCodeAt(i) ^ DRM_KEY.charCodeAt(i % DRM_KEY.length));
+    }
+    if (out.indexOf('#v4|') !== 0) return null;
+
+    var parts = out.substring(4).split('|');
+    var bands = [];
+    for (var j = 0; j < parts.length; j++) {
+        var kv = parts[j].split('-');
+        if (kv.length !== 2) continue;
+        var sy = parseInt(kv[0], 10);
+        var h = parseInt(kv[1], 10);
+        if (isNaN(sy) || isNaN(h) || h <= 0) continue;
+        bands.push({ sy: sy, h: h });
+    }
+    return bands.length ? bands : null;
+}
+
+// Dải đã đúng thứ tự thì khỏi vẽ lại — trả thẳng URL cho app tải, nhanh nhất.
+function drmIsIdentity(bands) {
+    var y = 0;
+    for (var i = 0; i < bands.length; i++) {
+        if (bands[i].sy !== y) return false;
+        y += bands[i].h;
+    }
+    return true;
 }

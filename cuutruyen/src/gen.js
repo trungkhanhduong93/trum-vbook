@@ -1,11 +1,10 @@
 load("config.js");
 
-function execute(url, page) {
-    var p = page ? parseInt(page, 10) : 1;
-    if (!p || p < 1) p = 1;
+function execute(input, page) {
+    var p = parseInt(page, 10) || 1;
+    var json = apiGet(withPage(String(input), p));
+    if (!json) return Response.error("Không tải được danh sách truyện từ Cứu Truyện.");
+    if (json.status === "error") return Response.error(json.message || "Cứu Truyện trả về lỗi.");
 
-    var doc = fetchDoc(withPage(url, p));
-    if (!doc) return Response.success([], null);
-
-    return Response.success(parseCards(doc), nextPage(doc, p));
+    return Response.success(mapList(json), nextPageFrom(json, p));
 }

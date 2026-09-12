@@ -2,9 +2,9 @@
   "metadata": {
     "name": "CuuTruyen",
     "author": "tkd1793",
-    "version": 10,
-    "source": "https://cuutruyen.cc",
-    "regexp": "(www\\.)?cuutruyen\\.cc\\/mangas\\/[a-f0-9-]+\\/?$",
+    "version": 11,
+    "source": "https://www.cuutruyen.net",
+    "regexp": "(www\\.)?cuutruyen\\.net\\/mangas\\/\\d+",
     "description": "Đọc truyện trên trang Cứu Truyện",
     "locale": "vi_VN",
     "language": "javascript",

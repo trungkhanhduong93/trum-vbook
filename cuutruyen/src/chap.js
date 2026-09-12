@@ -1,84 +1,90 @@
 load("config.js");
 
-// ─── Ảnh chương ─────────────────────────────────────────────────────────────
-// Đường nhanh: hỏi at-home API của MangaDex (6,6KB JSON) thay vì tải trang chương
-// 662KB rồi để Jsoup dựng DOM. Chapter id của cuutruyen chính là chapter id
-// MangaDex; URL dựng ra đã đối chiếu khớp tuyệt đối 45/45 với HTML của site.
+// Mọi trang của cuutruyen.net là ảnh bị xáo trộn theo dải ngang (xem drmDecode
+// trong config.js). App chỉ nhận URL ảnh nên việc ghép lại phải làm ngay trong
+// plugin bằng Graphics của Vbook: tải ảnh -> vẽ từng dải vào đúng chỗ -> xuất ra.
 //
-// Đường dự phòng: nếu at-home hỏng hoặc bị chặn thì quay lại parse HTML như cũ.
-//
-// URL ảnh vẫn đi qua worker của site (xem IMG_PROXY trong config.js).
-// v3 từng bóc lớp worker để trả thẳng cmdxd98sb0x3yprd.mangadex.network: máy dev
-// đo nhanh hơn 1,9-4,4 lần, nhưng trên điện thoại ảnh KHÔNG tải được vì mạng di
-// động VN chặn mangadex.network. Không bóc nữa.
-// Luật cứng: chỉ trả URL trần, KHÔNG nối "|Referer=" vào URL ảnh.
+// Hai điều đã đo và cần nhớ:
+//  - Đăng nhập KHÔNG gỡ được xáo trộn: tài khoản thật vẫn nhận 21/21 trang scrambled.
+//  - CDN ảnh là storage-ct.lrclib.net, không nhận tham số resize nào.
 
-function chapterId(url) {
-    var m = String(url || "").match(/\/chapters\/([a-f0-9-]{8,})/i);
-    return m ? m[1] : "";
-}
+var DRM_MSG = "Kho ảnh của Cứu Truyện (storage-ct.lrclib.net) hiện không phân giải được tên miền, "
+    + "và ảnh của site còn bị xáo trộn theo dải. Chưa đọc được chương cho tới khi site dựng lại kho ảnh.";
 
-function imagesFromApi(url) {
-    var id = chapterId(url);
-    if (!id) return [];
+function pageImage(p) {
+    if (!p) return null;
+    var raw = absUrl(p.image_url);
+    if (!raw) return null;
 
-    var json = null;
+    var bands = drmDecode(p.drm_data);
+
+    // Không có drm_data, hoặc các dải vốn đã đúng thứ tự -> trả URL trần,
+    // app tự tải, nhanh nhất và nhẹ nhất.
+    if (!bands || drmIsIdentity(bands)) return raw;
+
+    if (typeof Graphics === "undefined" || !Graphics.createImage) return null;
+
+    // Thử lần lượt từng gương kho ảnh; gương nào tải được thì dùng.
+    var b64 = null;
+    var cands = imgCandidates(raw);
+    for (var c = 0; c < cands.length && !b64; c++) {
+        try {
+            var blob = Http.get(cands[c]).headers(HEADERS).timeout(REQ_TIMEOUT).blob();
+            if (blob && blob.base64) b64 = blob.base64();
+        } catch (eDl) {}
+    }
+    if (!b64) return null;
+
+    var out = null;
     try {
-        var s = Http.get(MDX_AT_HOME + id).headers(HEADERS).timeout(REQ_TIMEOUT).string();
-        if (s) json = JSON.parse(s);
-    } catch (e) {
-        return [];
+        var img = Graphics.createImage(b64);
+        b64 = null; // nhả sớm, ảnh gốc ~800 KB nên chuỗi base64 rất nặng
+        if (!img) return null;
+
+        var w = img.width;
+        var canvas = Graphics.createCanvas(w, img.height);
+        var dy = 0;
+        for (var i = 0; i < bands.length; i++) {
+            canvas.drawImage(img, 0, bands[i].sy, w, bands[i].h, 0, dy, w, bands[i].h);
+            dy += bands[i].h;
+        }
+        out = canvas.capture();
+    } catch (eDraw) {
+        return null;
     }
 
-    if (!json || !json.baseUrl || !json.chapter || !json.chapter.hash) return [];
-
-    // dataSaver là bản site đang dùng (nhẹ hơn); chỉ rơi về data khi chương
-    // không có bản nén.
-    var files = json.chapter.dataSaver;
-    var kind = "/data-saver/";
-    if (!files || !files.length) {
-        files = json.chapter.data;
-        kind = "/data/";
-    }
-    if (!files || !files.length) return [];
-
-    var out = [];
-    for (var i = 0; i < files.length; i++) {
-        var name = String(files[i] || "").trim();
-        if (name) out.push(proxiedImage(json.baseUrl + kind + json.chapter.hash + "/" + name));
-    }
-    return out;
-}
-
-function imagesFromHtml(url) {
-    var doc = fetchDoc(url);
-    if (!doc) return [];
-
-    var images = [];
-    var seen = {};
-
-    // Trang chương dựng 2 trình đọc (#classic-reader và #zen-reader) với cùng
-    // bộ ảnh — bám #classic-reader để không lấy trùng gấp đôi.
-    var imgs = doc.select("#classic-reader img[data-src]");
-    if (!imgs || imgs.size() === 0) imgs = doc.select("img.lazy-load[data-src]");
-
-    for (var i = 0; i < imgs.size(); i++) {
-        var src = String(imgs.get(i).attr("data-src") || "").trim();
-        if (!src || src.indexOf("data:image") === 0) continue;
-
-        src = absUrl(src);
-        if (seen[src]) continue;
-        seen[src] = true;
-        images.push(src);
-    }
-
-    return images;
+    if (!out) return null;
+    out = String(out);
+    if (out.indexOf("http") === 0 || out.indexOf("data:") === 0) return out;
+    return "data:image/png;base64," + out;
 }
 
 function execute(url) {
-    var images = imagesFromApi(url);
-    if (!images.length) images = imagesFromHtml(url);
+    var cid = lastId(url);
+    if (!cid) return Response.error("Không đọc được mã chương từ đường dẫn.");
 
-    if (images.length === 0) return Response.error("Chương này chưa có ảnh trên Cứu Truyện");
+    var json = apiGet("/chapters/" + cid);
+    if (!json || !json.data) return Response.error("Không tải được nội dung chương.");
+
+    var pages = json.data.pages || [];
+    if (!pages.length) return Response.error("Chương này chưa có trang nào trên Cứu Truyện.");
+
+    var images = [];
+    var failed = 0;
+    for (var i = 0; i < pages.length; i++) {
+        var u = pageImage(pages[i]);
+        if (u) images.push(u);
+        else failed++;
+    }
+
+    if (!images.length) return Response.error(DRM_MSG);
+
+    // Thiếu vài trang giữa chương còn tệ hơn báo lỗi: người đọc không biết mình
+    // đang đọc thiếu. Thiếu quá 1/4 thì báo thẳng.
+    if (failed > 0 && failed * 4 > pages.length) {
+        return Response.error("Chỉ ghép được " + images.length + "/" + pages.length
+            + " trang. " + DRM_MSG);
+    }
+
     return Response.success(images);
 }

@@ -1,35 +1,20 @@
 load("config.js");
 
-// 3 thẻ trạng thái này có trong ô chọn thẻ của site nhưng lọc ra 0 truyện (đã đo
-// cả ba) — bỏ đi để khỏi hiện danh mục rỗng.
-var SKIP_TAGS = {
-    "Tạm ngưng": 1,
-    "Đang tiến hành": 1,
-    "Đã hoàn thành": 1
-};
-
-// Site không có trang /tags, nhưng trang /search nhúng sẵn toàn bộ thẻ dưới dạng
-// <a class="tag-btn" data-tag="{tên}">. Lấy động từ đó để khỏi lệch khi site thêm thẻ.
+// Site không có endpoint liệt kê thẻ (/tags trả 404). Danh sách dưới đây lấy từ
+// trường tags của chính API chi tiết truyện, đã thử từng thẻ và đều ra kết quả.
 function execute() {
-    var doc = fetchDoc(SITE_URL + "/search");
-    if (!doc) return Response.success([]);
-
-    var genres = [];
-    var seen = {};
-
-    var btns = doc.select("a.tag-btn");
-    for (var i = 0; i < btns.size(); i++) {
-        var tag = String(btns.get(i).attr("data-tag") || "").trim();
-        if (!tag) tag = String(btns.get(i).text()).trim();
-        if (!tag || seen[tag] || SKIP_TAGS[tag]) continue;
-        seen[tag] = true;
-
-        genres.push({
-            title: tag,
-            input: tagUrl(tag),
-            script: "gen.js"
-        });
+    var tags = [
+        ["Action", "action"], ["Adventure", "adventure"], ["Comedy", "comedy"],
+        ["Drama", "drama"], ["Fantasy", "fantasy"], ["Romance", "romance"],
+        ["Slice of Life", "slice of life"], ["Isekai", "isekai"],
+        ["School Life", "school life"], ["Supernatural", "supernatural"],
+        ["Sci-Fi", "sci-fi"], ["Mystery", "mystery"], ["Horror", "horror"],
+        ["Psychological", "psychological"], ["Sports", "sports"],
+        ["Historical", "historical"], ["Crime", "crime"], ["Animals", "animals"]
+    ];
+    var out = [];
+    for (var i = 0; i < tags.length; i++) {
+        out.push({ title: tags[i][0], input: tagPath(tags[i][1]), script: "gen.js" });
     }
-
-    return Response.success(genres);
+    return Response.success(out);
 }
