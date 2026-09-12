@@ -55,8 +55,8 @@
     {
       "name": "Mino Truyện",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=31",
-      "version": 31,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/plugin.zip?v=32",
+      "version": 32,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minotruyen/icon.png",
@@ -67,8 +67,8 @@
     {
       "name": "Mino Manga",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=31",
-      "version": 31,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/plugin.zip?v=32",
+      "version": 32,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minomanga/icon.png",
@@ -79,8 +79,8 @@
     {
       "name": "Mino Hentai",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip?v=31",
-      "version": 31,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip?v=32",
+      "version": 32,
       "source": "https://minotruyenv7.xyz",
       "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/icon.png",
