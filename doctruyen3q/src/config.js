@@ -43,6 +43,24 @@ function swapDomainTo(url, targetDomain) {
     return String(url).replace(/^https?:\/\/(?:www\.)?doctruyen3q[a-z0-9-]*\.[a-z]+/i, targetDomain);
 }
 
+// Trang trả về có đúng là DocTruyen3Q không.
+//
+// Kiểm bằng "title không phải lỗi" là CHƯA ĐỦ: đo 12/09/2026 thì
+// doctruyen3q.me trả 200 kèm title "A3346270750384559" — một trang đỗ tên
+// miền, 66 KB, không có gì bên trong. Kiểu kiểm cũ nhận nó là gương hợp lệ,
+// setBase sang đó, rồi mọi selector trả rỗng mà không ai hiểu vì sao.
+function isRealSite(doc) {
+    if (!doc) return false;
+    var t = doc.select("title").text() || "";
+    if (!t) return false;
+    if (t.indexOf("Just a moment") >= 0) return false;
+    if (t.indexOf("Cloudflare") >= 0) return false;
+    if (t.indexOf("404") >= 0) return false;
+    // Dấu hiệu của chính site: tên trong title, hoặc khung danh sách truyện.
+    if (/3q|truy[eệ]n/i.test(t)) return true;
+    return doc.select("div.items, .list-chapter, .story-detail, #ctl00_divCenter").size() > 0;
+}
+
 function fetchRetry(url) {
     syncBaseFromUrl(url);
     var currentUrl = swapDomainTo(url, BASE_URL);
@@ -73,12 +91,9 @@ function fetchRetry(url) {
                 "Accept-Language": FETCH_HEADERS["Accept-Language"],
                 "Referer": mirror + "/"
             }).timeout(PROBE_TIMEOUT).html();
-            if (res) {
-                var t = res.select("title").text();
-                if (t && t.indexOf("Just a moment") === -1 && t.indexOf("Cloudflare") === -1 && t.indexOf("404") === -1) {
-                    setBase(mirror);
-                    return res;
-                }
+            if (res && isRealSite(res)) {
+                setBase(mirror);
+                return res;
             }
         } catch (err) {}
     }

@@ -3,14 +3,20 @@ load("config.js");
 function execute(url) {
     // Ảnh nằm trực tiếp trong .reading-content .item img (không lazy-load)
     // → tải 1 request, parse src thẳng, không cần trình duyệt → nhanh.
-    var res = fetch(url, {
-        headers: {
-            "User-Agent": FETCH_HEADERS["User-Agent"],
-            "Referer": BASE_URL + "/",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"
-        }
-    });
+    // fetch NEM exception khi loi mang: khong bat thi ca chap.js chet cam va
+    // app quay mai. Va khong dat timeout thi host chet an tron 10-11 giay.
+    var res = null;
+    try {
+        res = fetch(url, {
+            timeout: REQ_TIMEOUT,
+            headers: {
+                "User-Agent": FETCH_HEADERS["User-Agent"],
+                "Referer": BASE_URL + "/",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"
+            }
+        });
+    } catch (eFetch) {}
     if (!res || !res.ok) {
         return Response.error("Không tải được trang chương: " + (res ? res.status : "null"));
     }

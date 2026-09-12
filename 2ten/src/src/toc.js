@@ -22,15 +22,19 @@ function execute(url) {
 }
 
 function chaptersViaAjax(base, referer) {
-    var res = fetch(base + "ajax/chapters/", {
-        method: "POST",
-        headers: {
-            "User-Agent": FETCH_HEADERS["User-Agent"],
-            "Referer": referer,
-            "X-Requested-With": "XMLHttpRequest",
-            "Accept": "text/html, */*; q=0.01"
-        }
-    });
+    var res = null;
+    try {
+        res = fetch(base + "ajax/chapters/", {
+            method: "POST",
+            timeout: REQ_TIMEOUT,
+            headers: {
+                "User-Agent": FETCH_HEADERS["User-Agent"],
+                "Referer": referer,
+                "X-Requested-With": "XMLHttpRequest",
+                "Accept": "text/html, */*; q=0.01"
+            }
+        });
+    } catch (eFetch) {}
     if (!res || !res.ok) return [];
     var doc = res.html();
     if (!doc) return [];

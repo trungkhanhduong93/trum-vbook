@@ -14,7 +14,8 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 8000 };
+var REQ_TIMEOUT = 8000;    // request chính — host chết ăn 10-11s nếu không đặt
+var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: REQ_TIMEOUT };
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function selFirst(el, css) {

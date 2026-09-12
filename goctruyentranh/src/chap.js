@@ -113,6 +113,18 @@ function loadAllViaBrowser(pageUrl, comicId, chapNum, nameEn) {
         } catch (eBlock) {}
 
         try { browser.launch(pageUrl, 4); } catch (e) {}
+
+        // Site trả 'x-frame-options: DENY' và "frame-ancestors 'self'" trên cả
+        // trang chủ lẫn trang chương (đo lại 12/09/2026), nên WebView của vBook
+        // đứng lại ở trang trắng. Trước đây vẫn bơm JS vào cái trang trắng đó
+        // rồi thử lại thêm một vòng: 4+2+4+2+4 = tới 16 giây chờ để rồi vẫn
+        // hỏng. Nhận ra trang không nạp được thì thoát ngay ở giây thứ 4.
+        var rawHtml = '';
+        try { rawHtml = String(browser.html() || ''); } catch (e) {}
+        if (rawHtml.length < 2000 || rawHtml.indexOf('<script') < 0) {
+            return { err: 'BLANK', detail: 'trang khong nap duoc trong WebView (' + rawHtml.length + ' ky tu)' };
+        }
+
         try { browser.callJs('void 0;', 2); } catch (e) {}
 
         var domImgs = null;
@@ -223,8 +235,9 @@ function execute(url) {
         }
     }
 
-    if (b && b.err === 'CFWALL') {
-        return Response.error('[GTT-CF] Cloudflare chặn. Hãy bấm "Trang nguồn" bên dưới một lần để vượt xác minh.');
+    if (b && (b.err === 'CFWALL' || b.err === 'BLANK')) {
+        return Response.error('[GTT-CF] Máy chủ không trả ảnh và trang không mở được trong app. '
+            + 'Bấm "Trang nguồn" bên dưới một lần để vượt xác minh rồi thử lại.');
     }
 
     if (isLockedChapter(detail.result, chapNum)) {

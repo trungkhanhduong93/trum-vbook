@@ -11,18 +11,22 @@ function execute(keyword, page) {
     var p = page ? parseInt(page) : 1;
 
     if (p === 1) {
-        var res = fetch(BASE_URL + "/frontend/search/search", {
-            method: "POST",
-            timeout: REQ_TIMEOUT,
-            headers: {
-                "User-Agent": FETCH_HEADERS["User-Agent"],
-                "Referer": BASE_URL + "/",
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "Accept": "text/html, */*; q=0.01"
-            },
-            body: "search=" + encodeURIComponent(kw) + "&type=0"
-        });
+        // fetch nem exception khi loi mang -> khong bat thi tim kiem chet cam.
+        var res = null;
+        try {
+            res = fetch(BASE_URL + "/frontend/search/search", {
+                method: "POST",
+                timeout: REQ_TIMEOUT,
+                headers: {
+                    "User-Agent": FETCH_HEADERS["User-Agent"],
+                    "Referer": BASE_URL + "/",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "Accept": "text/html, */*; q=0.01"
+                },
+                body: "search=" + encodeURIComponent(kw) + "&type=0"
+            });
+        } catch (eFetch) {}
 
         if (res && res.ok) {
             var doc = res.html();

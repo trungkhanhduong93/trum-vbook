@@ -4,7 +4,7 @@ function execute() {
     var url = API_URL + "/api/web/categories";
     var json = null;
     try {
-        var s = Http.get(url).headers(REQ_HEADERS()).string();
+        var s = Http.get(url).headers(REQ_HEADERS()).timeout(8000).string();
         if (s) json = JSON.parse(s);
     } catch (e) {}
 

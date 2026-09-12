@@ -20,7 +20,7 @@ function execute(url) {
 
     if (!html) {
         try {
-            html = Http.get(fullUrl).headers(FETCH_HEADERS).string();
+            html = Http.get(fullUrl).headers(FETCH_HEADERS).timeout(8000).string();
         } catch (eHttp) {}
     }
 
