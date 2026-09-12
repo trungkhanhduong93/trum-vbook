@@ -6,14 +6,16 @@ load("config.js");
 //
 // Hai điều đã đo và cần nhớ:
 //  - Đăng nhập KHÔNG gỡ được xáo trộn: tài khoản thật vẫn nhận 21/21 trang scrambled.
-//  - CDN ảnh là storage-ct.lrclib.net, không nhận tham số resize nào.
+//  - API ghi URL ảnh trỏ storage-ct.lrclib.net (đã chết). Gương sống là
+//    storage-bravo.cuutruyen.net — xem IMG_MIRRORS trong config.js.
 
-var DRM_MSG = "Kho ảnh của Cứu Truyện (storage-ct.lrclib.net) hiện không phân giải được tên miền, "
-    + "và ảnh của site còn bị xáo trộn theo dải. Chưa đọc được chương cho tới khi site dựng lại kho ảnh.";
+var DRM_MSG = "Cứu Truyện xáo trộn ảnh theo dải ngang. Bản Vbook này chưa ghép lại được "
+    + "(thiếu Graphics hoặc tải ảnh hỏng). Tạm thời đọc chương bằng nút Trang nguồn.";
 
 function pageImage(p) {
     if (!p) return null;
-    var raw = absUrl(p.image_url);
+    // Đổi sang gương sống ngay từ đây: URL do API trả về trỏ host đã chết.
+    var raw = imgUrl(p.image_url);
     if (!raw) return null;
 
     var bands = drmDecode(p.drm_data);
@@ -41,12 +43,15 @@ function pageImage(p) {
         b64 = null; // nhả sớm, ảnh gốc ~800 KB nên chuỗi base64 rất nặng
         if (!img) return null;
 
+        // CHIỀU GHÉP: dải thứ i của ảnh TẢI VỀ (lấy tuần tự từ trên xuống) phải
+        // đặt vào toạ độ y = bands[i].sy của ảnh ĐÚNG. Đã dựng thử cả hai chiều
+        // trên trang thật rồi nhìn bằng mắt: chiều ngược lại ra ảnh vẫn vỡ khung.
         var w = img.width;
         var canvas = Graphics.createCanvas(w, img.height);
-        var dy = 0;
+        var sy = 0;
         for (var i = 0; i < bands.length; i++) {
-            canvas.drawImage(img, 0, bands[i].sy, w, bands[i].h, 0, dy, w, bands[i].h);
-            dy += bands[i].h;
+            canvas.drawImage(img, 0, sy, w, bands[i].h, 0, bands[i].sy, w, bands[i].h);
+            sy += bands[i].h;
         }
         out = canvas.capture();
     } catch (eDraw) {

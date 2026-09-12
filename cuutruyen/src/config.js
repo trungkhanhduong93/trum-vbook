@@ -35,27 +35,40 @@ var HEADERS = {
 
 var PER_PAGE = 24;
 
-// Kho ảnh của site có 2 gương, lấy từ chính bundle của web chính chủ:
-//   const c = ["https://storage-ct.lrclib.net", "https://storage-ct-riften.site"]
-// API luôn trả URL trỏ gương thứ nhất, web tự dò sang gương hai khi gương một hỏng.
+// Kho ảnh của site có NHIỀU gương và API trả về gương ĐÃ CHẾT.
 //
-// ⚠️ Đo 12/09/2026: CẢ HAI gương đều NXDOMAIN ở Google DNS và Cloudflare DNS
-// (Status 3, kèm SOA của chính lrclib.net). Tức là kho ảnh của Cứu Truyện đang
-// chết trên toàn cầu, không phải ISP chặn và không phải lỗi plugin. Giữ danh sách
-// này để khi site dựng lại gương nào thì nguồn tự đi theo, không cần vá lại.
+// API luôn ghi image_url/cover_url trỏ storage-ct.lrclib.net — tên miền này
+// NXDOMAIN ở cả 4 dịch vụ tra cứu độc lập (Google, Cloudflare, AdGuard, dns.sb).
+// Web chính chủ không dùng URL đó: nó tự dò rồi chọn gương nhanh nhất, console
+// in ra "Choose fastest storage server: https://storage-bravo.cuutruyen.net".
+//
+// => PHẢI đổi host của mọi URL ảnh sang gương sống. Đây không phải tối ưu tốc độ,
+//    mà là điều kiện để ảnh tải được. Đã kiểm: bravo trả 200 đúng 792.497 byte,
+//    khớp image_url_size của API.
+var IMG_PRIMARY = 'https://storage-bravo.cuutruyen.net';
 var IMG_MIRRORS = [
+    IMG_PRIMARY,
     'https://storage-ct.lrclib.net',
     'https://storage-ct-riften.site'
 ];
 
-// Đổi host của URL ảnh sang từng gương, giữ nguyên phần đường dẫn.
+function stripHost(url) {
+    return String(url || '').trim().replace(/^https?:\/\/[^\/]+/, '');
+}
+
+// Ảnh bìa: app tự tải nên chỉ đưa được đúng một URL -> dùng gương chính.
+function imgUrl(url) {
+    var path = stripHost(url);
+    if (!path) return '';
+    return IMG_PRIMARY + path;
+}
+
+// Ảnh chương: plugin tự tải nên thử lần lượt từng gương.
 function imgCandidates(url) {
-    var u = String(url || '').trim();
-    if (!u) return [];
-    var path = u.replace(/^https?:\/\/[^\/]+/, '');
+    var path = stripHost(url);
+    if (!path) return [];
     var out = [];
     for (var i = 0; i < IMG_MIRRORS.length; i++) out.push(IMG_MIRRORS[i] + path);
-    if (out.length === 0) out.push(u);
     return out;
 }
 
@@ -136,7 +149,7 @@ function mapCard(m) {
     return {
         name: String(m.name),
         link: mangaLink(m.id),
-        cover: absUrl(m.cover_mobile_url || m.cover_url),
+        cover: imgUrl(m.cover_mobile_url || m.cover_url),
         description: desc,
         host: HOST
     };

@@ -46,7 +46,7 @@ function execute(url) {
 
     return Response.success({
         name: String(m.name || ""),
-        cover: absUrl(m.cover_url || m.cover_mobile_url),
+        cover: imgUrl(m.cover_url || m.cover_mobile_url),
         host: HOST,
         author: author,
         description: desc,
