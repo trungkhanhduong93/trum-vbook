@@ -1,31 +1,30 @@
 load("config.js");
 
 // ============================================================
-// v16 — BẢN THỬ SỨC CHỨA, vẫn chưa phải bản đọc đầy đủ.
+// v17 — PHÉP THỬ CUỐI, chọn đúng kiểu đường dẫn ảnh.
 //
-// Kết quả dò v15 trên máy thật (chương 58 trang):
-//   Graphics=có | tải=486.540 ký tự b64 | createImage=1500x958
-//   capture kiểu=string | capture dài=1.813.920 | capture đầu=iVBORw0KGgo...
+// v16: app báo "Không thể tải hình ảnh". Đó là câu của chính bộ tải ảnh trong
+// app (chuỗi error_load_image trong APK), tức là plugin giao hàng thành công
+// nhưng app không hiểu kiểu đường dẫn "data:image/png;base64,...".
 //
-// Đọc ra: capture() trả base64 PNG TRẦN (không có tiền tố data:), tức là khâu
-// ghép chạy đúng. Vấn đề là KÍCH THƯỚC: ảnh gốc JPEG 365 KB, ghép xong thành
-// PNG 1,4 MB — gấp 3,7 lần. Một chương 58 trang là ~80 MB chuỗi nhồi một lượt,
-// app nuốt không nổi nên bỏ qua im lặng, không báo lỗi.
+// Trong dex của app có 6 kiểu đường dẫn ảnh nằm cạnh nhau:
+//   file · content · android.resource · asset · data · base64
+// Chữ "base64" đứng riêng như một kiểu độc lập => nhiều khả năng app có bộ đọc
+// riêng cho nó, và đó mới là chỗ capture() sinh ra để dùng.
 //
-// Bản này trả về ĐÚNG 3 TRANG ĐẦU để tách bạch hai câu hỏi:
-//   - App có hiện được ảnh dạng data: hay không?
-//   - Nếu có thì trần chịu đựng nằm ở đâu?
-// Ba trang ~4 MB, chắc chắn nằm trong sức chứa.
+// Bản này lấy ĐÚNG MỘT trang rồi trả về BA lần, mỗi lần một kiểu:
+//   trang 1: base64:<chuỗi>
+//   trang 2: <chuỗi> trần, không tiền tố
+//   trang 3: data:image/png;base64,<chuỗi>   (kiểu đã biết là hỏng, để đối chứng)
+//
+// Trang nào hiện được thì đó là kiểu đúng. Không trang nào hiện thì đường ghép
+// ảnh trong plugin là ngõ cụt, chuyển nguồn sang chỉ duyệt + đọc bằng Trang nguồn.
 // ============================================================
 
-var MAX_PAGES = 3;
-
-function buildPage(p) {
+function rawCapture(p) {
     var raw = imgUrl(p.image_url);
     if (!raw) return null;
-
     var bands = drmDecode(p.drm_data);
-    if (bands && drmIsIdentity(bands)) return raw;
     if (!bands) return null;
     if (typeof Graphics === "undefined" || !Graphics.createImage) return null;
 
@@ -39,7 +38,6 @@ function buildPage(p) {
     }
     if (!b64) return null;
 
-    var out = null;
     try {
         var img = Graphics.createImage(b64);
         b64 = null;
@@ -51,15 +49,11 @@ function buildPage(p) {
             canvas.drawImage(img, 0, sy, w, bands[i].h, 0, bands[i].sy, w, bands[i].h);
             sy += bands[i].h;
         }
-        out = canvas.capture();
+        var out = canvas.capture();
+        return out ? String(out) : null;
     } catch (eDraw) {
         return null;
     }
-    if (!out) return null;
-
-    out = String(out);
-    if (out.indexOf("http") === 0 || out.indexOf("data:") === 0) return out;
-    return "data:image/png;base64," + out;
 }
 
 function execute(url) {
@@ -72,16 +66,12 @@ function execute(url) {
     var pages = json.data.pages || [];
     if (!pages.length) return Response.error("Chương này chưa có trang nào.");
 
-    var images = [];
-    var limit = pages.length < MAX_PAGES ? pages.length : MAX_PAGES;
-    for (var i = 0; i < limit; i++) {
-        var u = buildPage(pages[i]);
-        if (u) images.push(u);
-    }
+    var b64 = rawCapture(pages[0]);
+    if (!b64) return Response.error("PHÉP THỬ: không ghép được trang đầu.");
 
-    if (!images.length) {
-        return Response.error("THỬ SỨC CHỨA: dựng được 0/" + limit
-            + " trang đầu (chương có " + pages.length + " trang).");
-    }
-    return Response.success(images);
+    return Response.success([
+        "base64:" + b64,
+        b64,
+        "data:image/png;base64," + b64
+    ]);
 }
