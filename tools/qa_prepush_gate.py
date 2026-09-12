@@ -32,6 +32,7 @@ RHINO_TRAPS = [
     (r'\b(async|await|Promise)\b', "Bẫy 9: Không dùng async/await/Promise. Rhino là đơn luồng đồng bộ."),
     (r'doc\.outerHtml\(\)', "Bẫy 11: doc.outerHtml() trên trang nặng gây tràn RAM. Dùng doc.select('title').text()."),
     (r'\bconsole\.log\b', "Chốt 1: Còn sót console.log debug."),
+    (r'replace\([^)]*gtt-bk\.pro[^)]*SITE_URL', "Bẫy 34: CẤM rewrite URL CDN gtt-bk.pro về SITE_URL. Giữ nguyên URL CDN để tránh Cloudflare WAF trên domain site!"),
 ]
 
 FORBIDDEN_FILES = [
@@ -76,6 +77,17 @@ class QAGateKeeper:
                 for pattern, desc in RHINO_TRAPS:
                     if re.search(pattern, clean_line):
                         self.log_fail("GATE-1", f"{plugin_dir.name}/{js_file.relative_to(plugin_dir)}:{line_idx} - {desc}")
+
+        # Bẫy 34: Kiểm tra metadata riêng cho các nguồn sau Cloudflare
+        local_json_path = plugin_dir / "plugin.json"
+        if local_json_path.exists():
+            try:
+                meta = json.loads(local_json_path.read_text(encoding="utf-8")).get("metadata", {})
+                if plugin_dir.name == "goctruyentranh":
+                    if "thread" in meta or "delay" in meta:
+                        self.log_fail("GATE-1", "Bẫy 34: CẤM khai 'thread' hoặc 'delay' trong goctruyentranh/plugin.json! Origin nằm sau Cloudflare WAF sẽ kích hoạt Error 1015 chặn IP di động.")
+            except Exception as eMeta:
+                self.log_fail("GATE-1", f"Lỗi đọc plugin.json: {eMeta}")
 
         if not any("GATE-1" in e for e in self.errors):
             self.log_pass("GATE-1", f"{plugin_dir.name}: Toàn bộ mã JS tuân thủ ES5 thuần và vượt qua 18 bẫy Rhino.")

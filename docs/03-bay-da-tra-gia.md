@@ -6,7 +6,7 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 
 | Người dùng báo | Đọc mục |
 |---|---|
-| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy), [23](#23-wordpress-photon-chỉ-có-3-node-sharding-i0-i1-i2--không-có-i3) |
+| "Không tải được ảnh" / ảnh vỡ | [1](#1-url-ảnh--đã-sai-2-lần), [2](#2-referer-nối-vào-url-ảnh), [12](#12-ảnh-avif-không-decode-được), [17](#17-fetch-trả-response-không-phải-document), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy), [23](#23-wordpress-photon-chỉ-có-3-node-sharding-i0-i1-i2--không-có-i3), [34](#34-goctruyentranh--origin-cdn-cấm-ép-url-ảnh-về-domain-site-và-cấm-khai-threaddelay-vào-origin-cloudflare) |
 | Ảnh tải cực chậm / đơ nghẽn | [18](#18-selector-img-quét-trúng-ảnh-rác-làm-nghẽn-connection-pool), [19](#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy), [25](#25-tối-ưu-dung-lượng-webtoon-qua-photon-w600quality65stripall) |
 | Lỗi crash Unexpected char / Unicode | [20](#20-url-chứa-ký-tự-unicode-tiếng-việt-làm-okhttp-crash), [22](#22-okhttp-crash-khi-header-referer-chứa-unicode--ký-tự-tiếng-việt) |
 | Bấm vào mục lục rất lâu / delay 10-15s mới hiện hoặc trắng trơn | [22](#22-okhttp-crash-khi-header-referer-chứa-unicode--ký-tự-tiếng-việt) |
@@ -28,6 +28,7 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 | Ảnh 404 sau khi thêm `safeEncodeUrl` | [31](#31-encodeuri-nhân-đôi-mã-hoá-url-đã-có-25) |
 | Chương tải được 1–3 ảnh đầu rồi đứt hẳn | [32](#32-cloudflare-workers-gói-miễn-phí-không-xử-lý-nổi-ảnh) |
 | "Không thể tải hình ảnh" với ảnh plugin tự dựng | [33](#33-trình-đọc-chỉ-nhận-url-http--ảnh-tự-dựng-phải-đi-qua-máy-chủ) |
+| "Không thể tải hình ảnh" nhưng không hiện nút Trang nguồn | [34](#34-goctruyentranh--origin-cdn-cấm-ép-url-ảnh-về-domain-site-và-cấm-khai-threaddelay-vào-origin-cloudflare) |
 
 ---
 
@@ -612,3 +613,22 @@ chỉ trả URL http trỏ tới đó. Đừng viết lại nhánh `Graphics` l�
 
 Đừng suy rộng thành "không đọc được trong vBook": **đọc được**, miễn là URL trả về ảnh thật —
 cuutruyen v22 chạy đúng như vậy.
+
+---
+
+## 34. GocTruyenTranh & Origin CDN: Cấm ép URL ảnh về domain site và cấm khai thread/delay vào origin Cloudflare
+
+### Triệu chứng
+- Người dùng mở chương mới trong app vBook $\rightarrow$ app hiện **"Không thể tải hình ảnh"** (`error_load_image` của vBook), toàn bộ ảnh trong chương hỏng cùng lúc.
+- **Không hiện nút "Trang nguồn":** Vì `chap.js` đã chạy thành công và trả về `Response.success(imgs)`, vBook lập tức chuyển sang Reader UI để nạp ảnh. Ở Reader UI **không có nút "Trang nguồn"** (nút này chỉ hiện khi `Response.error`).
+
+### Hai sai lầm chí mạng liên tiếp (v44 - v48, ngày 12-13/09/2026)
+1. **Sai lầm 1 (Khai thread/delay làm nghẽn/WAF):** Khai `"thread": 5, "delay": 10` trong `goctruyentranh/plugin.json`. Nguồn này ảnh nằm sau Cloudflare. Bắn dồn dập 5 kết nối song song cách nhau 10ms từ IP 3G/4G di động (CGNAT) kích hoạt ngay Cloudflare Rate Limiting (Error 1015 / Turnstile Challenge), khiến 100% request ảnh nhận HTTP 403 / HTML challenge.
+2. **Sai lầm 2 (Ép URL ảnh về domain web frontend):** Trong `chap.js`, thay vì trả URL CDN gốc do site cấp (`https://vn*.gtt-bk.pro/image/...`), code lại dùng `replace(/^https?:\/\/vn\d*\.gtt-bk\.pro/i, SITE_URL)`. Việc này ép toàn bộ request ảnh đi qua domain web frontend (`goctruyentranhvui41.com`), nơi có WAF / bot-protection cực gắt của Cloudflare chặn IP mạng di động. Trong khi đó, CDN gốc `vn*.gtt-bk.pro` là máy chủ ảnh chuyên dụng, khi app gửi `Referer: https://goctruyentranhvui41.com/` (từ trường `host` trong `toc.js`) thì CDN chấp nhận và trả về ảnh HTTP 200 đầy đủ.
+
+### Luật cứng
+1. **Tuyệt đối không khai `"thread"` và `"delay"` trong `goctruyentranh/plugin.json`** để app dùng cấu hình an toàn mặc định (1-2 luồng tuần tự).
+2. **Giữ nguyên URL ảnh CDN gốc `vn*.gtt-bk.pro` trong `chap.js`**, chỉ chuẩn hóa URL giao thức tương đối (`//`) và đường dẫn tương đối (`/`). CẤM dùng regex replace ép CDN về `SITE_URL`.
+3. Trường `host` trong `toc.js` phải luôn là `SITE_URL` (`https://goctruyentranhvui41.com`) để ImageLoader của vBook đính kèm đúng `Referer` mà CDN yêu cầu.
+4. **Không cần xin Token hay UID mới:** Token cá nhân trong `config.js` (`GTT_TOKEN`) dùng để đọc các chương khoá (TRIPLE). Chương thường không cần token. Token không bao giờ hết hạn tự động nếu không chủ động đổi mật khẩu.
+
