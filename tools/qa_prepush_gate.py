@@ -220,25 +220,6 @@ class QAGateKeeper:
             except Exception as e:
                 self.log_fail("GATE-4", f"Lỗi gọi ComicService NhatTruyen: {e}")
             test_images = []
-        elif plugin_name == "cuutruyen":
-            for attempt in range(3):
-                try:
-                    manga_id = "0c3d2ca2-0857-4a6c-be97-59ffa3e29873"
-                    api_url = f"https://api.mangadex.org/manga/{manga_id}/feed?translatedLanguage%5B%5D=vi&limit=500&order%5Bchapter%5D=asc"
-                    req = urllib.request.Request(api_url, headers={
-                        "User-Agent": "vBook-QA/1.0"
-                    })
-                    with urllib.request.urlopen(req, timeout=15) as resp:
-                        data = json.loads(resp.read().decode('utf-8'))
-                        total_chaps = len(data.get("data", []))
-                        if total_chaps > 100:
-                            self.log_pass("GATE-4", f"CuuTruyen MangaDex feed mở khóa thành công {total_chaps} chương (>100 giới hạn cũ).")
-                        else:
-                            self.log_fail("GATE-4", f"CuuTruyen MangaDex feed chỉ trả về {total_chaps} chương.")
-                    break
-                except Exception as e:
-                    if attempt == 2:
-                        self.log_fail("GATE-4", f"Lỗi gọi MangaDex feed CuuTruyen: {e}")
         elif plugin_name == "luottruyennew":
             try:
                 story_url = "https://luottruyen.net/hardcore-leveling-warrior-season-3"
@@ -380,7 +361,7 @@ if __name__ == "__main__":
     plugins_to_check = [
         "goctruyentranh", "luottruyen", "luottruyennew", "toptruyen",
         "zettruyen", "2ten", "truyenqq", "nettruyen",
-        "doctruyen3q", "mimimoe", "cuutruyen", "tcomic",
+        "doctruyen3q", "mimimoe", "tcomic",
         "minotruyen", "minomanga", "minohen", "vinahentai"
     ] if target == "all" else [target]
     
@@ -390,7 +371,7 @@ if __name__ == "__main__":
             keeper.run_gate_1_static_audit(p_dir)
             keeper.run_gate_2_zip_audit(p_dir)
             keeper.run_gate_3_version_consistency(p, p_dir)
-            if p in ["goctruyentranh", "luottruyen", "nettruyen", "cuutruyen", "luottruyennew", "toptruyen", "zettruyen", "vinahentai"]:
+            if p in ["goctruyentranh", "luottruyen", "nettruyen", "luottruyennew", "toptruyen", "zettruyen", "vinahentai"]:
                 keeper.run_gate_4_live_runtime(p)
                 
     keeper.run_gate_5_git_audit()

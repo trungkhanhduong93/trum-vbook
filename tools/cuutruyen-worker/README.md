@@ -90,3 +90,15 @@ Lõi dùng `sharp` (libvips, mã máy) nếu cài được, không thì tự rơ
 2. Kết quả có dạng `#v4|300-150|1050-150|750-150|…`.
 3. Dải thứ *i* **đếm từ trên xuống của ảnh tải về** đặt vào toạ độ `y = dy_i` của ảnh đúng. Chiều ngược lại ra ảnh vỡ khung — đã dựng thử cả hai chiều bằng PIL rồi nhìn tận mắt, đừng đoán.
 4. Dải cao 150 px, dải cuối lẻ (95 hoặc 120 px). 150 không chia hết cho 8 hay 16 nên **không thể** hoán vị ở mức khối JPEG để khỏi giải nén; bắt buộc giải nén ra pixel thô.
+
+---
+
+## 8. Trạng thái: nguồn cuutruyen đã gỡ khỏi repo (12/09/2026)
+
+Trum chọn gỡ nguồn thay vì dựng máy chủ. Thư mục này giữ lại vì hai lý do:
+
+1. Nó là bản mẫu chạy được cho **mọi nguồn xáo trộn ảnh** sau này, không riêng Cứu Truyện.
+   `descramble.js` tách riêng phần giải DRM nên chỉ cần thay hàm đó là dùng cho site khác.
+2. Nó là bằng chứng đo được cho hai bẫy đã ghi trong `docs/03-bay-da-tra-gia.md` mục 32 và 33.
+
+Muốn bật lại nguồn: `git show fcfb6f9:cuutruyen` có toàn bộ mã ở v23.

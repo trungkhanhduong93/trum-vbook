@@ -122,7 +122,7 @@ Rồi gắn vào **mọi** request: `Http.get(u).headers(H).timeout(REQ_TIMEOUT)
 `fetch(u, { headers: H, timeout: REQ_TIMEOUT })`. Bỏ qua bước này thì mỗi host chết ăn 10–11 giây
 của người đọc — xem [03 bẫy 27](03-bay-da-tra-gia.md#27-không-đặt-timeout--mỗi-host-chết-ăn-1011-giây).
 
-Khung tối thiểu — chép từ [`cuutruyen/src/config.js`](../cuutruyen/src/config.js) rồi sửa selector.
+Khung tối thiểu — chép từ [`truyenqq/src/config.js`](../truyenqq/src/config.js) rồi sửa selector.
 Chi tiết từng hàm và vì sao viết như vậy: [02-api-va-gioi-han.md](02-api-va-gioi-han.md).
 
 ---

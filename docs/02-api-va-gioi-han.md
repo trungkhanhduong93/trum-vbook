@@ -332,7 +332,7 @@ Script phụ (không bắt buộc): `suggests.js` — `execute(input)` nhận **
 
 ## 8. Khung `config.js` chuẩn
 
-Chép nguyên từ [`cuutruyen/src/config.js`](../cuutruyen/src/config.js) — nó có đủ và đã qua
+Chép nguyên từ [`truyenqq/src/config.js`](../truyenqq/src/config.js) — nó có đủ và đã qua
 kiểm tra thật:
 
 - `SITE_URL`, `HOST`, `HEADERS` (UA Android Chrome + `Referer` = trang chủ)
