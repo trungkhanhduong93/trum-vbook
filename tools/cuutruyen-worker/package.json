@@ -1,0 +1,16 @@
+{
+  "name": "cuutruyen-descrambler",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker & Node server to descramble CuuTruyen DRM v4 images for vBook",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node server.js",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "jpeg-js": "^0.4.4"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

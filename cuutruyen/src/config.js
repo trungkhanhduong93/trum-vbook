@@ -52,6 +52,10 @@ var IMG_MIRRORS = [
     'https://storage-ct-riften.site'
 ];
 
+// Endpoint của Worker / Serverless giải mã ảnh DRM Cứu Truyện.
+// Thay đổi thành URL Cloudflare Worker / Vercel của bạn nếu đã triển khai riêng.
+var DESCRAMBLER_WORKER = 'https://cuutruyen-descrambler.trum.workers.dev';
+
 function stripHost(url) {
     return String(url || '').trim().replace(/^https?:\/\/[^\/]+/, '');
 }
@@ -70,6 +74,27 @@ function imgCandidates(url) {
     var out = [];
     for (var i = 0; i < IMG_MIRRORS.length; i++) out.push(IMG_MIRRORS[i] + path);
     return out;
+}
+
+// Tạo URL hoàn chỉnh cho trang truyện để app tải qua Worker descrambler
+function chapterImageUrl(p) {
+    if (!p) return null;
+    var raw = imgUrl(p.image_url);
+    if (!raw) return null;
+
+    // Nếu trang không có DRM hoặc dải ảnh đã đúng thứ tự: trả thẳng URL CDN
+    if (!p.drm_data) return raw;
+    var bands = drmDecode(p.drm_data);
+    if (bands && drmIsIdentity(bands)) return raw;
+
+    // Nếu có Worker giải mã: bọc qua Worker
+    if (DESCRAMBLER_WORKER) {
+        var sep = (DESCRAMBLER_WORKER.indexOf('?') >= 0) ? '&' : '?';
+        return DESCRAMBLER_WORKER + sep + 'url=' + encodeURIComponent(raw)
+            + '&drm=' + encodeURIComponent(p.drm_data || '');
+    }
+
+    return raw;
 }
 
 // Rhino-Jsoup của Vbook KHÔNG có selectFirst() — giữ helper cho script nào cần.

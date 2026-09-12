@@ -165,12 +165,12 @@
     {
       "name": "CuuTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip?v=18",
-      "version": 18,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip?v=19",
+      "version": 19,
       "source": "https://www.cuutruyen.net",
       "regexp": "(www\\.)?cuutruyen\\.net\\/mangas\\/\\d+",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",
-      "description": "Cứu Truyện — duyệt & theo dõi truyện; đọc chương bằng nút Trang nguồn",
+      "description": "Cứu Truyện — đọc truyện tranh bản dịch chất lượng cao từ cuutruyen.net",
       "type": "comic",
       "locale": "vi_VN"
     },
