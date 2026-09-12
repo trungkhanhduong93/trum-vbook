@@ -117,6 +117,47 @@ Hai ngoại lệ cần nhớ để không hứa nhầm với người dùng:
 - **Có CDN bóp băng thông theo IP.** `i178.truyenvua.com` (truyenqq) có lượt 4 luồng còn chậm hơn
   1 luồng; lượt khác 12 ảnh chỉ mất 0,8 s. Nguồn này dao động rất mạnh, đo một lần là không đủ.
 
+### Số nền phần ảnh, đo lại 12/09/2026 sau khi gỡ cuutruyen (15 nguồn)
+
+Cùng máy, cùng mạng, một lượt mỗi nguồn. Cột cuối là con số sau khi đã tối ưu.
+
+| Nguồn | KB/ảnh | MB/chương | Host ảnh | Ghi chú |
+|---|---|---|---|---|
+| truyenqq | 489 | 20,5 | i178.truyenvua.com | CDN không nhận tham số nào |
+| vinahentai | 851 | 18,3 | vnht.vinahentai.click | CDN không nhận tham số nào |
+| minotruyen | 569 → **302** | 16,1 → **8,6** | ibyteimg | WebP, v32 |
+| nettruyen | 72 | 11,0 | cdn4.cloud-zzz.com | ảnh vốn đã nhỏ, chương 158 trang |
+| minohen | 735 → **408** | 10,8 → **6,0** | ibyteimg | WebP, v32 |
+| zettruyen | 68 | 10,4 | cdn4.zetimage.com | ảnh vốn đã nhỏ |
+| doctruyen3q | 158 | 9,0 | s10.anhvip.xyz | CDN tự trả WebP theo `Accept` |
+| minomanga | 253 | 7,7 | phinf.pstatic.net | ảnh chương không đổi được, bìa đã WebP |
+| goctruyentranh | 148 | 4,8 | gtt-bk.pro | |
+| tcomic | 198 | 4,7 | wasabisys.com | |
+| toptruyen | 150 | 4,6 | img.topcdnv1.art | |
+| luottruyennew | 226 | 3,5 | s76.cc3t.net | |
+| mimimoe | 75 | 2,1 | moe-cdn.net | |
+| 2ten | 49 | 0,67 | i0.wp.com → wsrvnl | đã qua Photon `w=600&quality=65` |
+| luottruyen | — | — | s34.cc3t.net | chương khoá sau đăng nhập Google |
+
+Ảnh bìa một trang danh sách, đo 10 bìa rồi suy ra cả trang:
+
+| Nguồn | Thẻ/trang | KB/bìa | MB/trang |
+|---|---|---|---|
+| mimimoe | 24 | 73 | 1,72 |
+| toptruyen | 36 | 41 | 1,45 |
+| doctruyen3q | 36 | 38 | 1,35 |
+| luottruyen | 54 | 23 | 1,20 |
+| truyenqq | 42 | 29 | 1,20 |
+| 2ten | 24 | 48 | 1,12 |
+| nettruyen | 36 | 29 | 1,03 |
+| zettruyen | 44 | 22 | 0,95 |
+
+Không nguồn nào vượt 1,8 MB cho một trang danh sách — **phần bìa đã hết chỗ tối ưu**.
+
+⚠️ Độ trễ từng ảnh trên máy dev **không dùng được**: cùng một file 18 KB của truyenqq đo 3 lần
+liên tiếp ra 850 ms — 14 882 ms — 1 360 ms. Chỉ tin số **dung lượng**, đừng tin số **thời gian**
+của phần ảnh.
+
 ### Điều duy nhất plugin làm được cho tốc độ ảnh
 
 Khai `"thread": 5` và `"delay": 10` trong `metadata` của `plugin.json`. Đã kiểm trên máy thật ở
@@ -125,17 +166,61 @@ plugin không điều khiển được gì thêm ở phần ảnh.
 
 ---
 
-## 4. Đừng đụng URL ảnh để "giảm MB"
+## 4. Giảm MB ảnh: chỉ trên CHÍNH CDN nguồn, và phải nghiệm thu bằng mắt
 
-Đã thử tham số resize trên **chính CDN của nguồn** — `moe-cdn.net`, `p21-ad-sg.ibyteimg.com`,
-`phinf.pstatic.net`, `vnht.vinahentai.click` — với `?w=600`, `?width=600`, `?type=w600`,
-`~tplv-*`, `?x-tos-process=image/resize,w_600`. **Không cái nào đổi kích thước**, đều trả file
-gốc hoặc 404.
-
-Nghĩa là muốn nhẹ hơn thì buộc phải kéo host lạ vào, và đó đúng là chỗ repo này đã gãy ảnh 3 lần.
-Luật giữ nguyên: **không thêm, không gỡ, không đổi proxy ảnh chỉ vì số đo trên máy dev**. Xem
+Luật gốc không đổi: **không thêm, không gỡ, không đổi proxy ảnh chỉ vì số đo trên máy dev** —
+repo này đã gãy ảnh 3 lần vì đúng việc đó. Xem
 [03 mục 1](03-bay-da-tra-gia.md#1-url-ảnh--đã-sai-2-lần) và
 [03 mục 19](03-bay-da-tra-gia.md#19-cdn-ảnh-có-token-hmac--không-được-bọc-photon-proxy).
+
+Nhưng "cùng host" thì khác hẳn "host lạ". Đo lại toàn bộ 12/09/2026:
+
+| CDN | Nguồn | Kết quả |
+|---|---|---|
+| `p*.ibyteimg.com` | minohen, minotruyen, minomanga (bìa) | **✅ trả WebP, nhẹ 45-47%** |
+| `s*.anhvip.xyz` | doctruyen3q, toptruyen | tự trả WebP theo header `Accept`, plugin khỏi làm gì |
+| `img*.dichvucdn.com` | luottruyen | ✅ có `/cdn-cgi/image/` — bìa 9,38 → 1,09 MB/trang (v30) |
+| `i178.truyenvua.com` | truyenqq | ❌ mọi tham số 404 |
+| `vnht.vinahentai.click` | vinahentai | ❌ kể cả `/_next/image` |
+| `img.topcdnv1.art` | toptruyen | ❌ |
+| `s*.cc3t.net` | luottruyennew | ❌ không có `/cdn-cgi/image/` |
+| `s3...wasabisys.com` | tcomic | ❌ S3 thuần |
+| `phinf.pstatic.net` | minomanga (ảnh chương) | ❌ `?type=` trả 404 |
+
+### Cú pháp ibyteimg — cái duy nhất còn khai thác được
+
+`p*.ibyteimg.com` là CDN ảnh của ByteDance. Cùng một file phục vụ được qua nhánh `/img/` kèm
+hậu tố `~tplv`:
+
+```
+/obj/tos-alisg-i-<sid>-sg/<hash>
+-> /img/tos-alisg-i-<sid>-sg/<hash>~tplv-<sid>-image.webp
+```
+
+`<sid>` nằm ngay trong đường dẫn (`tos-alisg-i-**375lmtcpo0**-sg`) nên bóc bằng regex, đừng ghi cứng.
+
+Đo trọn một chương 15 trang của minotruyen: **10,98 MB JPEG → 6,22 MB WebP, 0 lỗi, không cần
+`Referer`**.
+
+Hai biến thể KHÔNG dùng được:
+
+- `~tplv-<sid>-resize:1080:0.image` — ảnh gốc chỉ rộng 720-729 px nên nó **phóng to lên** rồi nén
+  lại: 857 KB thành 1 378 KB. Nặng hơn.
+- `~tplv-<sid>-image.image` — vẫn JPEG, 841 KB so với 857 KB. Không đáng.
+
+`shrink:` và `size:` trả 400.
+
+### Chốt chặn bắt buộc trước khi áp bất kỳ biến đổi ảnh nào
+
+1. **Cùng host** với URL site đang dùng. Khác host là quay lại đúng cái bẫy cũ.
+2. **Kích thước pixel khớp tuyệt đối** từng ảnh — đọc header ảnh mà so, đừng tin content-length.
+3. **So pixel một vùng giữa ảnh.** Lệch trung bình dưới ~3/255 là mức tái nén bình thường; cao hơn
+   là nó đã đổi nội dung.
+4. **Dựng 2 ảnh cạnh nhau rồi nhìn bằng mắt.** Bước này đã cứu một lần rồi, đừng bỏ.
+5. **Thử cả khi KHÔNG gửi `Referer`** — app không phải lúc nào cũng gắn.
+6. **Ngưỡng an toàn của định dạng.** WebP không mã hoá nổi cạnh quá 16383 px, mà ảnh webtoon cao
+   tới 10.554 px. API cloudkk trả sẵn `width`/`height` nên `cdnWebp()` chặn ở 16000 — nguồn nào
+   không biết kích thước thì đừng đổi sang WebP.
 
 ---
 
