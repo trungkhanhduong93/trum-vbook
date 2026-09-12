@@ -13,10 +13,8 @@ load("config.js");
 // Chưa khai thì chương báo hướng dẫn chứ không trả ảnh cắt nát.
 // ============================================================
 
-var HUONG_DAN = "Chương này cần máy chủ giải ảnh mới đọc được trong app. "
-    + "Mở tools/cuutruyen-worker/README.md để dựng (miễn phí, 5 phút), rồi dán "
-    + "địa chỉ vào DESCRAMBLER trong config.js. Trong lúc chờ, bấm \"Trang nguồn\" "
-    + "để đọc chương này trên web.";
+var HUONG_DAN = "Cứu Truyện xáo trộn ảnh từng trang nên app cần một máy chủ giải ảnh, "
+    + "và máy chủ đó chưa được dựng. Bấm \"Trang nguồn\" để đọc chương này trên web.";
 
 function execute(url) {
     var cid = lastId(url);
