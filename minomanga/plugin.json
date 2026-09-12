@@ -2,13 +2,15 @@
   "metadata": {
     "name": "Mino Manga",
     "author": "tkd1793",
-    "version": 30,
+    "version": 31,
     "source": "https://minotruyenv7.xyz",
     "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
     "description": "Đọc truyện trên trang Mino Manga",
     "locale": "vi_VN",
     "language": "javascript",
-    "type": "comic"
+    "type": "comic",
+    "thread": 5,
+    "delay": 10
   },
   "script": {
     "home": "home.js",

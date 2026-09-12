@@ -64,15 +64,15 @@ Bộ lọc của 6 nguồn chứa chuỗi `"ads"` trần — khớp luôn `"uplo
 100 %, cùng cả CDN. Giữ nettruyen và truyenqq — hai nguồn này chỉ chồng lấn 69–81 %, gỡ thêm là
 mất truyện thật.
 
-## 3. Một thử nghiệm CHƯA có kết luận
+## 3. `thread` / `delay` trong plugin.json — ĐÃ XÁC MINH, đã áp cho cả 16 nguồn
 
-`tcomic/plugin.json` v6 được thêm `"thread": 5` và `"delay": 10` vào `metadata`. Khoá `thread`
-và `delay` **có trong dex** của app, và app có màn hình "Kết nối tối đa N luồng, thời gian chờ
-tối thiểu M ms" cho từng tiện ích — nhưng **chưa xác minh** được `plugin.json` khai báo được.
+Thử trước ở `tcomic` v6: thêm `"thread": 5` và `"delay": 10` vào `metadata`. Trum kiểm trên máy
+thật, nguồn nạp và chạy bình thường → đã áp cho **toàn bộ 16 nguồn** (commit sau), bump version
+mỗi nguồn 1 bậc và repack zip.
 
-- Nếu tcomic nạp bình thường **và** màn hình đó hiện "tối đa 5 luồng / tối thiểu 10 ms" → áp cho
-  cả 16 nguồn, đây sẽ là mức tăng tốc ảnh lớn nhất còn lại.
-- Nếu tcomic **không nạp được** sau bản này → gỡ hai khoá đó khỏi `tcomic/plugin.json`, repack, bump.
+`thread` tối đa 5, đúng bằng trần của cài đặt "Kết nối song song" trong app. `delay` tính bằng
+mili giây, 10 là mức thấp nhất app cho chọn. Đây là **chỗ duy nhất plugin can thiệp được vào tốc
+độ tải ảnh** — nguồn mới phải có hai khoá này ngay từ v1.
 
 ## 4. Việc còn treo
 

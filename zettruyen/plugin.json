@@ -2,13 +2,15 @@
   "metadata": {
     "name": "ZetTruyen",
     "author": "tkd1793",
-    "version": 20,
+    "version": 21,
     "source": "https://www.zettruyen1.com",
     "regexp": "(www.)?zettruyen\\d*\\.(work|com)\\/truyen-tranh\\/[a-zA-Z0-9-]+$",
     "description": "Đọc truyện trên trang ZetTruyen",
     "local": "vi_VN",
     "language": "javascript",
-    "type": "comic"
+    "type": "comic",
+    "thread": 5,
+    "delay": 10
   },
   "script": {
     "home": "home.js",

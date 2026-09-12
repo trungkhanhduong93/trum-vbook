@@ -2,13 +2,15 @@
   "metadata": {
     "name": "NetTruyen",
     "author": "tkd1793",
-    "version": 7,
+    "version": 8,
     "source": "https://nettruyenar.com",
     "regexp": "nettruyen[a-z0-9-]*\\.[a-z]+\\/truyen-tranh\\/[a-z0-9-]+(-?\\d+)?\\/?$",
     "description": "Đọc truyện tranh trên trang NetTruyen",
     "locale": "vi_VN",
     "language": "javascript",
-    "type": "comic"
+    "type": "comic",
+    "thread": 5,
+    "delay": 10
   },
   "script": {
     "home": "home.js",

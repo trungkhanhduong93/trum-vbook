@@ -393,8 +393,25 @@ và plugin **không** điều khiển được (trừ khi khai báo được `th
 | Kết nối bằng Cronet | bật/tắt | bật HTTP/3 + QUIC; 6/12 host ảnh của repo có `alt-svc: h3` |
 | DNS qua HTTPS | Google / Cloudflare / … | đường thoát khi ISP chặn DNS (xem bẫy 13) |
 
-Mỗi tiện ích còn có mục **Kết nối** riêng, hiện dòng "Kết nối tối đa N luồng, thời gian chờ tối
-thiểu M ms". Khoá `thread` và `delay` **có trong dex** của app nhưng **chưa xác minh** là
-`plugin.json` khai báo được — đang thử ở `tcomic/plugin.json` v6. Nếu tcomic nạp bình thường và
-màn hình đó hiện "tối đa 5 luồng / tối thiểu 10 ms" thì áp cho mọi nguồn; nếu tcomic không nạp
-được thì gỡ hai khoá đó ra.
+### `thread` và `delay` khai được trong `plugin.json` — đã kiểm trên máy thật
+
+Mỗi tiện ích có mục **Kết nối** riêng, hiện dòng "Kết nối tối đa N luồng, thời gian chờ tối thiểu
+M ms". Hai giá trị đó khai ngay trong `metadata` của `plugin.json`:
+
+```json
+{
+  "metadata": {
+    "name": "Tcomic",
+    "version": 6,
+    "thread": 5,
+    "delay": 10
+  }
+}
+```
+
+Thử trước ở `tcomic` v6 (12/09/2026), Trum xác nhận nguồn nạp và chạy bình thường → đã áp cho
+toàn bộ 16 nguồn. `thread` tối đa là **5**, đúng bằng trần của cài đặt "Kết nối song song" trong
+app; `delay` tính bằng mili giây, 10 là mức thấp nhất app cho chọn.
+
+Đây là **cách duy nhất plugin can thiệp được vào tốc độ tải ảnh** — mọi thứ còn lại (số byte ảnh,
+CDN) đều nằm ngoài tầm với. Nguồn mới phải có hai khoá này ngay từ v1.

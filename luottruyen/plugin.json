@@ -2,13 +2,15 @@
   "metadata": {
     "name": "LuotTruyen",
     "author": "tkd1793",
-    "version": 35,
+    "version": 36,
     "source": "https://luottruyen17.com",
     "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
     "description": "Lượt Truyện - Đọc truyện tranh online",
     "locale": "vi_VN",
     "type": "comic",
-    "language": "javascript"
+    "language": "javascript",
+    "thread": 5,
+    "delay": 10
   },
   "script": {
     "home": "home.js",

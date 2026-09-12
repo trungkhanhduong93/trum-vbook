@@ -117,6 +117,12 @@ Hai ngoại lệ cần nhớ để không hứa nhầm với người dùng:
 - **Có CDN bóp băng thông theo IP.** `i178.truyenvua.com` (truyenqq) có lượt 4 luồng còn chậm hơn
   1 luồng; lượt khác 12 ảnh chỉ mất 0,8 s. Nguồn này dao động rất mạnh, đo một lần là không đủ.
 
+### Điều duy nhất plugin làm được cho tốc độ ảnh
+
+Khai `"thread": 5` và `"delay": 10` trong `metadata` của `plugin.json`. Đã kiểm trên máy thật ở
+tcomic v6 rồi áp cho cả 16 nguồn. Xem [02 mục 10](02-api-va-gioi-han.md). Ngoài khoá này ra,
+plugin không điều khiển được gì thêm ở phần ảnh.
+
 ---
 
 ## 4. Đừng đụng URL ảnh để "giảm MB"

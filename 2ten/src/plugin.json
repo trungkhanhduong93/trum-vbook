@@ -2,13 +2,15 @@
   "metadata": {
     "name": "2tenVN",
     "author": "tkd1793",
-    "version": 6,
+    "version": 7,
     "source": "https://www.2tenvn.com",
     "regexp": "2tenvn\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
     "description": "2tenVN - Kho truyện tranh online",
     "locale": "vi_VN",
     "type": "comic",
-    "language": "javascript"
+    "language": "javascript",
+    "thread": 5,
+    "delay": 10
   },
   "script": {
     "home": "home.js",

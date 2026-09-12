@@ -2,13 +2,15 @@
   "metadata": {
     "name": "TopTruyen",
     "author": "tkd1793",
-    "version": 20,
+    "version": 21,
     "source": "https://www.toptruyenzone11.com",
     "regexp": "toptruyenzone\\d*\\.com\\/truyen-tranh\\/[a-z0-9-]+-?\\d*\\/?$",
     "description": "Đọc truyện trên trang TopTruyen",
     "locale": "vi_VN",
     "language": "javascript",
-    "type": "comic"
+    "type": "comic",
+    "thread": 5,
+    "delay": 10
   },
   "script": {
     "home": "home.js",
