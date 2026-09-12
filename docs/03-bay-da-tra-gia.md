@@ -26,6 +26,8 @@ Mỗi mục ở đây tương ứng với ít nhất một bản phát hành đ�
 | Chương thiếu ảnh sau khi "siết bộ lọc rác" | [29](#29-lọc-ảnh-rác-bằng-chuỗi-con-ads-khớp-luôn-uploads) |
 | Ảnh đầu chương là banner / watermark của site | [30](#30-ảnh-watermark-của-site-nằm-ở-đầu-và-cuối-chương) |
 | Ảnh 404 sau khi thêm `safeEncodeUrl` | [31](#31-encodeuri-nhân-đôi-mã-hoá-url-đã-có-25) |
+| Chương tải được 1–3 ảnh đầu rồi đứt hẳn | [32](#32-cloudflare-workers-gói-miễn-phí-không-xử-lý-nổi-ảnh) |
+| "Không thể tải hình ảnh" với ảnh plugin tự dựng | [33](#33-trình-đọc-chỉ-nhận-url-http--ảnh-tự-dựng-phải-đi-qua-máy-chủ) |
 
 ---
 
@@ -561,3 +563,52 @@ qua proxy (`?url=` + `encodeURIComponent`) và tên file tiếng Việt trên Wo
 
 **Luật:** chỉ encode khi chuỗi **chưa** được encode. Nếu URL đã chứa `%` theo sau 2 ký tự hex thì
 trả nguyên, đừng đụng vào.
+
+
+---
+
+## 32. Cloudflare Workers gói miễn phí không xử lý nổi ảnh
+
+Nguồn cuutruyen cần một máy chủ đứng giữa để ghép lại ảnh bị xáo trộn. Bản đầu đặt trên
+Cloudflare Workers gói miễn phí. Người dùng báo: **"tải được 1–2 ảnh đầu rồi đứt hoàn toàn"**.
+
+Đo trên chính worker đã deploy (12/09/2026):
+
+| Cách gọi | Kết quả |
+|---|---|
+| 5 luồng song song, 12 ảnh mới | 8 qua, 4 trả `error code: 1102` |
+| **1 luồng tuần tự**, 10 ảnh mới | **3 qua, 7 trả `error code: 1102`** |
+
+`1102` = "Worker exceeded CPU time limit". Giải nén rồi nén lại một ảnh JPEG 2048×1470 tốn
+**1,5–3 giây CPU**; hạn mức gói free tính bằng **chục mili giây**.
+
+Hai kết luận sai mà ai cũng dễ mắc:
+
+- **"Giảm luồng xuống 1 là qua."** Không. Hạn mức tính theo **mỗi lần gọi**, không phải theo mức
+  đồng thời. Chạy tuần tự còn tệ hơn: 3/10.
+- **"Đổi sang WebAssembly là qua."** Không. WASM nhanh hơn `jpeg-js` vài lần, trong khi khoảng
+  cách cần bù là **trăm lần**.
+
+**Luật:** Cloudflare Workers hợp với việc sửa header, đổi hướng, ghép JSON. Đụng tới **giải nén
+hoặc nén lại ảnh** thì phải là nền chạy có CPU thật: Vercel / Netlify serverless, hoặc container
+Node. Bản dùng được nằm ở `tools/cuutruyen-worker/` (Vercel + `sharp`, đo 53/53 trang trong 13 giây).
+
+---
+
+## 33. Trình đọc chỉ nhận URL http — ảnh tự dựng phải đi qua máy chủ
+
+`Graphics` của vBook ghép ảnh được thật: `createImage` nhận base64, `drawImage` vẽ đúng,
+`capture()` trả base64 PNG. Nhưng **không có cách nào giao ảnh đó cho trình đọc**. Đã thử cả ba
+kiểu cho cùng một trang (cuutruyen v14→v17): `data:image/png;base64,…`, `base64:…`, và chuỗi
+base64 trần. App đều báo đúng một câu "Không thể tải hình ảnh" (chuỗi `error_load_image`).
+
+Trình đọc là Coil ZoomImage, chỉ mở được stream **http/https**.
+
+Thêm nữa PNG từ `capture()` phình 3,7 lần so với JPEG gốc: 365 KB → 1,4 MB mỗi trang, một chương
+58 trang thành ~80 MB.
+
+**Luật:** nguồn nào phải xử lý pixel mới ra được ảnh đúng thì việc xử lý nằm ở **máy chủ**, plugin
+chỉ trả URL http trỏ tới đó. Đừng viết lại nhánh `Graphics` lần thứ năm.
+
+Đừng suy rộng thành "không đọc được trong vBook": **đọc được**, miễn là URL trả về ảnh thật —
+cuutruyen v22 chạy đúng như vậy.

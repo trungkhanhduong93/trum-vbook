@@ -52,9 +52,28 @@ var IMG_MIRRORS = [
     'https://storage-ct-riften.site'
 ];
 
-// Endpoint của Worker / Serverless giải mã ảnh DRM Cứu Truyện.
-// Đã triển khai và hoạt động trực tiếp trên Cloudflare Workers Edge Network.
-var DESCRAMBLER_WORKER = 'https://cuutruyen-descrambler.warp-side.workers.dev';
+// ─── Máy chủ giải xáo trộn ảnh ─────────────────────────────────────────
+// Ảnh chương của cuutruyen.net bị cắt dải ngang rồi đảo thứ tự. App KHÔNG tự
+// ghép lại được: trình đọc chỉ nhận URL http để tự tải, không nhận ảnh do plugin
+// tự dựng (đã trả giá 4 phiên bản v14→v17). Nên phải có một máy chủ đứng giữa:
+// nó tải ảnh gốc, hoán vị dải, trả về ảnh JPEG hoàn chỉnh.
+//
+// ⛔ ĐỪNG dùng Cloudflare Workers gói MIỄN PHÍ. Đo 12/09/2026 trên đúng worker
+//    đã deploy: ảnh thứ 4 trở đi trả "error code: 1102 — exceeded CPU time
+//    limit", kể cả khi tải TUẦN TỰ từng ảnh một. Giải nén + nén lại một ảnh
+//    2048x1470 tốn 1,5-3 giây CPU, vượt xa hạn mức gói free. WASM cũng không
+//    cứu được vì hạn mức tính bằng chục mili giây.
+//
+// ✅ Cách dựng: tools/cuutruyen-worker/README.md (Vercel miễn phí, 5 phút).
+//    Deploy xong dán tên miền vào đây, KHÔNG có dấu / ở cuối.
+//    Để rỗng thì nguồn vẫn duyệt / tìm / theo dõi bình thường, chỉ không đọc
+//    được chương — bấm "Trang nguồn" để đọc trên web.
+var DESCRAMBLER = '';
+
+// Thu nhỏ ảnh về tối đa bao nhiêu pixel chiều ngang trước khi trả về.
+// 0 = giữ nguyên kích thước gốc (2048px, nét nhất, nặng nhất).
+// 1080 = vừa khít màn hình điện thoại, nhẹ khoảng một nửa.
+var IMG_MAX_WIDTH = 0;
 
 function stripHost(url) {
     return String(url || '').trim().replace(/^https?:\/\/[^\/]+/, '');
@@ -76,25 +95,26 @@ function imgCandidates(url) {
     return out;
 }
 
-// Tạo URL hoàn chỉnh cho trang truyện để app tải qua Worker descrambler
+// URL ảnh một trang chương.
+// Trả null khi trang bị xáo trộn mà chưa khai máy chủ giải ảnh — KHÔNG bao giờ
+// trả URL xáo trộn, vì người đọc sẽ thấy ảnh cắt nát mà không hiểu vì sao.
 function chapterImageUrl(p) {
     if (!p) return null;
-    var raw = imgUrl(p.image_url);
-    if (!raw) return null;
+    var path = stripHost(p.image_url);
+    if (!path) return null;
 
-    // Nếu trang không có DRM hoặc dải ảnh đã đúng thứ tự: trả thẳng URL CDN
-    if (!p.drm_data) return raw;
     var bands = drmDecode(p.drm_data);
-    if (bands && drmIsIdentity(bands)) return raw;
 
-    // Nếu có Worker giải mã: bọc qua Worker
-    if (DESCRAMBLER_WORKER) {
-        var sep = (DESCRAMBLER_WORKER.indexOf('?') >= 0) ? '&' : '?';
-        return DESCRAMBLER_WORKER + sep + 'url=' + encodeURIComponent(raw)
-            + '&drm=' + encodeURIComponent(p.drm_data || '');
-    }
+    // Không xáo trộn, hoặc dải vốn đã đúng thứ tự: app tải thẳng CDN, nhanh nhất.
+    if (!bands || drmIsIdentity(bands)) return IMG_PRIMARY + path;
 
-    return raw;
+    if (!DESCRAMBLER) return null;
+
+    var sep = (DESCRAMBLER.indexOf('?') >= 0) ? '&' : '?';
+    var u = DESCRAMBLER + sep + 'p=' + encodeURIComponent(path)
+        + '&d=' + encodeURIComponent(String(p.drm_data).replace(/\s+/g, ''));
+    if (IMG_MAX_WIDTH > 0) u += '&w=' + IMG_MAX_WIDTH;
+    return u;
 }
 
 // Rhino-Jsoup của Vbook KHÔNG có selectFirst() — giữ helper cho script nào cần.

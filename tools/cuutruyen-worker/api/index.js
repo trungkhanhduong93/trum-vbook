@@ -1,97 +1,49 @@
-const https = require('https');
-const url = require('url');
-const jpeg = require('jpeg-js');
+// ============================================================
+// Vercel Serverless Function — giải xáo trộn ảnh Cứu Truyện.
+//
+// Đây là bản ĐANG KHUYẾN NGHỊ. Cloudflare Workers gói miễn phí không chạy nổi:
+// đo 12/09/2026 thì đến ảnh thứ 4 là dính "error code: 1102 — exceeded CPU
+// time limit", kể cả khi tải tuần tự từng ảnh một. Chi tiết trong README.
+//
+// GET /?p=<duong-dan-anh>&d=<drm_data>[&q=85][&w=0]
+// ============================================================
 
-const DRM_KEY = '3141592653589793';
+'use strict';
 
-function decodeDrm(drmBase64) {
-  if (!drmBase64) return null;
-  const clean = drmBase64.replace(/[\r\n\s]/g, '');
-  const rawStr = Buffer.from(clean, 'base64').toString('binary');
-  let layout = '';
-  for (let i = 0; i < rawStr.length; i++) {
-    const b = rawStr.charCodeAt(i);
-    const k = DRM_KEY.charCodeAt(i % DRM_KEY.length);
-    layout += String.fromCharCode(b ^ k);
-  }
-  if (!layout.startsWith('#v4|')) return null;
-  return layout;
-}
-
-function fetchBuffer(imgUrl) {
-  return new Promise((resolve, reject) => {
-    https.get(imgUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Referer': 'https://www.cuutruyen.net/'
-      }
-    }, (res) => {
-      if (res.statusCode !== 200) {
-        return reject(new Error('Failed to fetch image: status ' + res.statusCode));
-      }
-      const chunks = [];
-      res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-    }).on('error', reject);
-  });
-}
+const { handle } = require('../descramble.js');
 
 module.exports = async (req, res) => {
-  const parsed = url.parse(req.url, true);
-  const targetUrl = parsed.query.url;
-  const drmData = parsed.query.drm;
+    const q = {};
+    try {
+        const u = new URL(req.url, 'http://x');
+        u.searchParams.forEach((v, k) => { q[k] = v; });
+    } catch (e) { /* để rỗng, handle() sẽ báo thiếu tham số */ }
 
-  if (!targetUrl) {
-    res.setHeader('Content-Type', 'text/plain');
-    return res.status(200).send('CuuTruyen Descrambler Vercel Endpoint is active!');
-  }
-
-  try {
-    const imgBuffer = await fetchBuffer(targetUrl);
-    if (!drmData) {
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-      return res.status(200).send(imgBuffer);
+    // Không tham số nào: trang kiểm tra sống, tiện dán vào trình duyệt.
+    if (!q.p && !q.url && !q.u) {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store');
+        res.statusCode = 200;
+        return res.end('CuuTruyen descrambler dang chay.\n'
+            + 'Cach goi: /?p=/file/cuutruyen/uploads/page/<id>/image/scrambled-<hash>.jpg&d=<drm_data>\n');
     }
 
-    const layout = decodeDrm(drmData);
-    if (!layout) {
-      return res.status(400).send('Invalid DRM data');
+    try {
+        const out = await handle(q);
+        res.setHeader('Content-Type', out.contentType);
+        res.setHeader('Content-Length', String(out.buf.length));
+        // Ảnh đã giải không bao giờ đổi -> cache vĩnh viễn ở CDN.
+        // Lần đọc thứ hai của cùng một chương không đụng tới hàm nữa.
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('CDN-Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Descrambler', out.engine);
+        res.statusCode = 200;
+        return res.end(out.buf);
+    } catch (err) {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store');
+        res.statusCode = err.status || 500;
+        return res.end('Loi: ' + (err.message || String(err)));
     }
-
-    const decoded = jpeg.decode(imgBuffer, { useTArray: true });
-    const w = decoded.width;
-    const h = decoded.height;
-    const rowSize = w * 4;
-    const srcBuffer = decoded.data;
-    const dstBuffer = new Uint8Array(w * h * 4);
-
-    let sy = 0;
-    const segments = layout.split('|').slice(1);
-    for (const seg of segments) {
-      const parts = seg.split('-');
-      if (parts.length !== 2) continue;
-      const dy = parseInt(parts[0], 10);
-      const partH = parseInt(parts[1], 10);
-      if (isNaN(dy) || isNaN(partH) || partH <= 0) continue;
-
-      const srcStart = sy * rowSize;
-      const dstStart = dy * rowSize;
-      const copyLen = partH * rowSize;
-
-      if (srcStart + copyLen <= srcBuffer.length && dstStart + copyLen <= dstBuffer.length) {
-        dstBuffer.set(srcBuffer.subarray(srcStart, srcStart + copyLen), dstStart);
-      }
-      sy += partH;
-    }
-
-    const encoded = jpeg.encode({ data: dstBuffer, width: w, height: h }, 75);
-
-    res.setHeader('Content-Type', 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=2592000, s-maxage=2592000, immutable');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).send(Buffer.from(encoded.data));
-  } catch (err) {
-    return res.status(500).send('Error: ' + (err.message || err));
-  }
 };

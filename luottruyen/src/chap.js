@@ -1,31 +1,21 @@
 load("config.js");
 
+// Gộp 8 lần quét toàn trang thành tối đa 2. Trang chương của site nặng ~180 KB;
+// khi tường đăng nhập chặn thì cả 8 lần quét cũ đều trả rỗng rồi mới chịu bật
+// WebView — mất trắng 8 lượt duyệt cây DOM trước khi làm việc có ích.
+// Jsoup trả kết quả nhóm phẩy theo đúng thứ tự tài liệu và không lặp phần tử,
+// còn trùng URL đã có seen{} chặn.
+var IMG_FALLBACK_SEL = ".reading-detail .page-chapter img, .chapter-content img, "
+    + ".reading-content img, .content-chapter img, .page-chapter img, "
+    + ".box_doc img, .reading-detail img";
+
 function extractImagesFromDoc(doc) {
     var images = [];
     var seen = {};
 
     var imgEls = doc.select("#view-chapter img");
-
     if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".reading-detail .page-chapter img");
-    }
-    if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".chapter-content img");
-    }
-    if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".reading-content img");
-    }
-    if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".content-chapter img");
-    }
-    if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".page-chapter img");
-    }
-    if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".box_doc img");
-    }
-    if (!imgEls || imgEls.size() === 0) {
-        imgEls = doc.select(".reading-detail img");
+        imgEls = doc.select(IMG_FALLBACK_SEL);
     }
 
     for (var i = 0; i < imgEls.size(); i++) {
@@ -101,16 +91,18 @@ function fetchChapterDoc(url) {
     }
 
     // 1. Ưu tiên Http.get (đồng bộ OkHttp trong vBook, tốc độ cực nhanh ~200ms)
+    //    BẮT BUỘC có .timeout(): không đặt thì domain chết mà DNS còn sống sẽ
+    //    treo 10-15 giây trước khi chịu nhả sang WebView.
     try {
         if (typeof Http !== "undefined" && Http.get) {
-            doc = Http.get(url).headers(headers).html();
+            doc = Http.get(url).headers(headers).timeout(REQ_TIMEOUT).html();
         }
     } catch (eHttp) {}
 
     // 2. Dự phòng qua fetch nếu Http.get không trả về doc
     if (!doc) {
         try {
-            var res = fetch(url, { headers: headers });
+            var res = fetch(url, { headers: headers, timeout: REQ_TIMEOUT });
             if (res) doc = res.html();
         } catch (eFetch) {}
     }

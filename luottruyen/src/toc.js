@@ -49,17 +49,25 @@ function execute(url) {
 // Trả về mảng chương (newest-first), hoặc null khi chính request hỏng.
 function tocViaApi(refererUrl, storyId) {
     var apiUrl = BASE_URL + "/Story/ListChapterByStoryID";
-    var res = fetch(apiUrl, {
-        method: "POST",
-        headers: {
-            "User-Agent": FETCH_HEADERS["User-Agent"],
-            "Referer": refererUrl,
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "Accept": "text/html, */*; q=0.01"
-        },
-        body: "StoryID=" + storyId
-    });
+    // fetch ném exception khi lỗi mạng: không bọc try/catch thì cả toc.js chết
+    // câm và app quay mãi. Và không đặt timeout thì host chết ăn trọn 10-11 giây.
+    var res = null;
+    try {
+        res = fetch(apiUrl, {
+            method: "POST",
+            timeout: REQ_TIMEOUT,
+            headers: {
+                "User-Agent": FETCH_HEADERS["User-Agent"],
+                "Referer": refererUrl,
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "Accept": "text/html, */*; q=0.01"
+            },
+            body: "StoryID=" + storyId
+        });
+    } catch (e) {
+        return null;
+    }
     if (!res || !res.ok) return null;
     var doc = res.html();
     if (!doc) return null;

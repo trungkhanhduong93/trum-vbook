@@ -43,8 +43,8 @@
     {
       "name": "LuotTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=36",
-      "version": 36,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=37",
+      "version": 37,
       "source": "https://luottruyen17.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",
@@ -165,12 +165,12 @@
     {
       "name": "CuuTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip?v=21",
-      "version": 21,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip?v=22",
+      "version": 22,
       "source": "https://www.cuutruyen.net",
       "regexp": "(www\\.)?cuutruyen\\.net\\/mangas\\/\\d+",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",
-      "description": "Cứu Truyện — đọc truyện tranh bản dịch chất lượng cao từ cuutruyen.net",
+      "description": "Cứu Truyện — duyệt, tìm, theo dõi; đọc chương cần máy chủ giải ảnh (xem tools/cuutruyen-worker)",
       "type": "comic",
       "locale": "vi_VN"
     },

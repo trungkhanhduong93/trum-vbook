@@ -2,10 +2,10 @@
   "metadata": {
     "name": "CuuTruyen",
     "author": "tkd1793",
-    "version": 21,
+    "version": 22,
     "source": "https://www.cuutruyen.net",
     "regexp": "(www\\.)?cuutruyen\\.net\\/mangas\\/\\d+",
-    "description": "Cứu Truyện — đọc truyện tranh bản dịch chất lượng cao từ cuutruyen.net",
+    "description": "Cứu Truyện — duyệt, tìm, theo dõi; đọc chương cần máy chủ giải ảnh (xem tools/cuutruyen-worker)",
     "locale": "vi_VN",
     "language": "javascript",
     "type": "comic",

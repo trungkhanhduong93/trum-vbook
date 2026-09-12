@@ -1,11 +1,18 @@
 /**
- * Cloudflare Worker / Edge Function: CuuTruyen DRM v4 Image Descrambler
- * 
+ * Cloudflare Worker: giải xáo trộn ảnh Cứu Truyện (DRM v4).
+ *
+ * ⛔ CHỈ CHẠY ĐƯỢC TRÊN GÓI TRẢ PHÍ. Đo 12/09/2026 trên worker đã deploy thật:
+ *    - 5 luồng song song, 12 ảnh mới:      8 qua, 4 trả "error code: 1102"
+ *    - 1 luồng TUẦN TỰ, 10 ảnh mới:        3 qua, 7 trả "error code: 1102"
+ *    1102 = "Worker exceeded CPU time limit". Giải nén rồi nén lại một ảnh
+ *    2048x1470 tốn 1,5-3 giây CPU; hạn mức gói free tính bằng chục mili giây.
+ *    Giảm luồng KHÔNG cứu được vì đây là hạn mức mỗi lần gọi. WASM cũng không:
+ *    nó nhanh hơn vài lần chứ không nhanh hơn trăm lần.
+ *
+ * ✅ Muốn miễn phí thì dùng bản Vercel: api/index.js. Xem README.md.
+ *
  * Nhận request:
- *   GET /?url=<scrambled_image_url>&drm=<drm_data>&w=<width>&h=<height>
- * 
- * Tải ảnh từ storage-bravo.cuutruyen.net, giải mã DRM v4, hoán vị dải ngang và
- * trả về ảnh JPEG hoàn chỉnh kèm Cache-Control lâu dài trên CDN Cloudflare.
+ *   GET /?url=<scrambled_image_url>&drm=<drm_data>
  */
 
 import { Buffer } from 'node:buffer';

@@ -75,7 +75,8 @@ function resolveBaseUrl(force) {
     var doc = null;
     var finalUrl = null;
     try {
-        var res = fetch(REDIRECTOR + "/", FETCH_OPTIONS);
+        // Đây là request DÒ, không phải request chính -> hạn 4s chứ không 8s.
+        var res = fetch(REDIRECTOR + "/", { headers: FETCH_HEADERS, timeout: PROBE_TIMEOUT });
         if (res) {
             finalUrl = res.url;
             doc = res.html();
@@ -248,31 +249,40 @@ function parseItems(doc) {
         if (!name || !href) continue;
         var link = resolveUrl(href);
 
-        // Cover image
+        // Cover image. Trang danh sách trả src thật (không lazy-load), nên đọc
+        // src TRƯỚC — hỏi data-original/data-src trước là 108 lượt gọi cầu
+        // Rhino↔Jsoup thừa cho mỗi trang 54 thẻ.
         var img = selFirst(card, "div.image a img");
         var cover = "";
         if (img) {
-            cover = img.attr("data-original") || img.attr("data-src") || img.attr("src") || "";
+            cover = img.attr("src") || "";
+            if (!cover || cover.indexOf("data:image") >= 0 || cover.indexOf("blank.") >= 0) {
+                cover = img.attr("data-original") || img.attr("data-src") || cover;
+            }
             if (cover && cover.indexOf("http") !== 0) {
                 cover = resolveUrl(cover);
             }
             cover = thumbUrl(cover);
         }
 
-        // Status (Full badge or default "Đang Ra")
+        // Không dò nhãn "Full" ở đây nữa: đo 12/09/2026 trên trang 54 thẻ thì
+        // span.label-full / span.full / i.icon-full đều khớp 0 lần — site không
+        // gắn nhãn đó ở trang danh sách. Giữ lại chỉ tốn thêm 54 lượt select
+        // mỗi trang mà không bao giờ đổi kết quả. Tình trạng thật đã có ở
+        // trang chi tiết (li.status).
         var status = "Đang Ra";
-        var fullLabel = selFirst(card, "span.label-full, span.full, i.icon-full");
-        if (fullLabel) {
-            status = "Full";
+
+        // Chương mới nhất + thời gian. Lấy li.chapter một lần rồi bóc trong nó,
+        // thay vì quét lại từ đầu thẻ hai lượt.
+        var chapLi = selFirst(card, "figcaption ul li.chapter");
+        var chapText = "";
+        var timeText = "";
+        if (chapLi) {
+            var chapA = selFirst(chapLi, "a");
+            if (chapA) chapText = chapA.text().trim();
+            var timeEl = selFirst(chapLi, "i.time");
+            if (timeEl) timeText = timeEl.text().trim();
         }
-
-        // Latest chapter
-        var chapA = selFirst(card, "figcaption ul li.chapter a");
-        var chapText = chapA ? chapA.text().trim() : "";
-
-        // Time
-        var timeEl = selFirst(card, "figcaption ul li.chapter i.time");
-        var timeText = timeEl ? timeEl.text().trim() : "";
 
         // Build description: Tình trạng • Chapter • Thời gian
         var desc = status;
