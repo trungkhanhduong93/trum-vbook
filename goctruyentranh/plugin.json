@@ -2,15 +2,13 @@
   "metadata": {
     "name": "GocTruyenTranh",
     "author": "tkd1793",
-    "version": 46,
+    "version": 47,
     "source": "https://goctruyentranhvui41.com",
     "regexp": "goctruyentranhvui\\d+\\.com\\/truyen\\/[a-z0-9-]+\\/?$",
     "description": "Đọc truyện trên trang Góc Truyện Tranh",
     "locale": "vi_VN",
     "language": "javascript",
-    "type": "comic",
-    "thread": 5,
-    "delay": 10
+    "type": "comic"
   },
   "script": {
     "home": "home.js",
