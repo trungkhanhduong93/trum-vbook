@@ -53,8 +53,8 @@ var IMG_MIRRORS = [
 ];
 
 // Endpoint của Worker / Serverless giải mã ảnh DRM Cứu Truyện.
-// Thay đổi thành URL Cloudflare Worker / Vercel của bạn nếu đã triển khai riêng.
-var DESCRAMBLER_WORKER = 'https://cuutruyen-descrambler.trum.workers.dev';
+// Đã triển khai và hoạt động trực tiếp trên Cloudflare Workers Edge Network.
+var DESCRAMBLER_WORKER = 'https://cuutruyen-descrambler.warp-side.workers.dev';
 
 function stripHost(url) {
     return String(url || '').trim().replace(/^https?:\/\/[^\/]+/, '');

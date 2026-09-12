@@ -165,8 +165,8 @@
     {
       "name": "CuuTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip?v=19",
-      "version": 19,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/plugin.zip?v=20",
+      "version": 20,
       "source": "https://www.cuutruyen.net",
       "regexp": "(www\\.)?cuutruyen\\.net\\/mangas\\/\\d+",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/cuutruyen/icon.png",

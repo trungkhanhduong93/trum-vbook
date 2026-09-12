@@ -8,6 +8,10 @@
  * trả về ảnh JPEG hoàn chỉnh kèm Cache-Control lâu dài trên CDN Cloudflare.
  */
 
+import { Buffer } from 'node:buffer';
+if (typeof globalThis.Buffer === 'undefined') {
+  globalThis.Buffer = Buffer;
+}
 import jpeg from 'jpeg-js';
 
 const DRM_KEY = '3141592653589793';
