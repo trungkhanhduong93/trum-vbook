@@ -216,8 +216,22 @@ curl -sI https://nguon.com/duong-dan | grep -i "x-frame-options\|content-securit
 | cuutruyen.cc | *không có* | chạy được |
 | goctruyentranhvui41/42 — **mọi** path, kể cả `/api`, ảnh tĩnh, trang 404 | `DENY` + `frame-ancestors 'self'` | **luôn `about:blank`** |
 
-**Không có cách lách từ phía plugin** — không thể gỡ header của site, và không có đường dẫn nào
-trên nguồn đó thoát header. Gặp ca này thì **báo thẳng cho người dùng và chỉ sang nút "Trang nguồn"**
+⚠️ **Bảng trên là kết quả `curl`, KHÔNG phải kết quả trên máy thật — đừng dùng nó để xoá code.**
+Ngày 12/09/2026 tui tin dòng goctruyentranh trong bảng này, thêm một chốt thoát sớm cho nhánh
+WebView của `chap.js` để "khỏi phí 16 giây", và **làm gãy nguồn ngay** (v44 → phải revert ở v45).
+Trum báo: "goctruyentranh đang bình thường thành lỗi không thể tải ảnh". Nhánh đó vẫn đang chạy
+hàng ngày trên máy Trum.
+
+`X-Frame-Options` chỉ có hiệu lực khi trang bị nhúng trong **khung con**, mà chưa ai xác minh
+`Engine.newBrowser()` của vBook nhúng theo kiểu đó. Nên header này là **dấu hiệu để nghi ngờ**,
+không phải bằng chứng để cắt code.
+
+**Dùng bảng này thế nào cho đúng:** thấy `DENY` thì đừng CHỌN nhánh browser làm đường chính khi
+viết nguồn mới. Nhánh browser đã có sẵn và đang chạy thì **không đụng vào** nếu chưa chạy thử trên
+máy Trum.
+
+**Không có cách lách từ phía plugin** — không thể gỡ header của site. Nếu đo trên máy thật mà nhánh
+browser thật sự không mở được, thì **báo thẳng cho người dùng và chỉ sang nút "Trang nguồn"**
 (WebView top-level, XFO không áp dụng), đừng đẻ thêm bản vá đoán mò.
 
 ⚠️ Đừng nhầm với chặn theo User-Agent: goctruyentranh trả **200 cho cả 6 UA** đã thử (Chrome,
