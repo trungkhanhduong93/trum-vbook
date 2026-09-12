@@ -60,7 +60,7 @@ function execute(url) {
                 "Accept": "application/json, text/javascript, */*; q=0.01",
                 "X-Requested-With": "XMLHttpRequest",
                 "Referer": url
-            }).string();
+            }).timeout(REQ_TIMEOUT).string();
         } catch (eApi) {}
 
         if (rawJson) {

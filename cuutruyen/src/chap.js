@@ -24,7 +24,7 @@ function imagesFromApi(url) {
 
     var json = null;
     try {
-        var s = Http.get(MDX_AT_HOME + id).headers(HEADERS).string();
+        var s = Http.get(MDX_AT_HOME + id).headers(HEADERS).timeout(REQ_TIMEOUT).string();
         if (s) json = JSON.parse(s);
     } catch (e) {
         return [];

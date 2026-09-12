@@ -15,7 +15,7 @@ function execute(url) {
         imgEls = doc.select(".chapter_content img");
     }
 
-    var junkWords = ["logo", "avatar", "icon", "banner", "button", "ads", "pepe", "follow", "facebook", "thumb", "placeholder", "loading"];
+    var junkWords = ["logo", "avatar", "icon", "banner", "button", "/ads", "pepe", "follow", "facebook", "thumb", "placeholder", "loading"];
 
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);

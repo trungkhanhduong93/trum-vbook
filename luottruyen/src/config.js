@@ -14,7 +14,9 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS };
+var REQ_TIMEOUT = 8000;    // do 12/09/2026: host chet an 10-11s neu khong dat
+var PROBE_TIMEOUT = 4000;
+var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: REQ_TIMEOUT };
 
 // Cờ chống dò lại nhiều lần trong cùng 1 lần chạy script
 var __LT_RESOLVED = false;
@@ -83,7 +85,7 @@ function resolveBaseUrl(force) {
     if (!doc) {
         try {
             if (typeof Http !== "undefined" && Http.get) {
-                doc = Http.get(REDIRECTOR + "/").headers(FETCH_HEADERS).html();
+                doc = Http.get(REDIRECTOR + "/").headers(FETCH_HEADERS).timeout(PROBE_TIMEOUT).html();
             }
         } catch (e2) {}
     }
@@ -134,6 +136,7 @@ function autoProbeDomains(url) {
         var testUrl = swapDomainTo(url, targetDomain);
         try {
             var opts = {
+                timeout: PROBE_TIMEOUT,
                 headers: {
                     "User-Agent": FETCH_HEADERS["User-Agent"],
                     "Accept": FETCH_HEADERS["Accept"],
@@ -195,7 +198,11 @@ function swapDomain(url) {
 }
 
 function fetchRetry(url) {
-    var res = fetch(url, FETCH_OPTIONS);
+    // fetch nem exception khi loi mang; khong bat thi ca script chet cam.
+    var res = null;
+    try {
+        res = fetch(url, FETCH_OPTIONS);
+    } catch (e) {}
     if (res && res.ok) return res;
 
     // Link không truy cập được / lỗi → rà soát domain kế tiếp rồi tới redirector

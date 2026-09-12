@@ -13,6 +13,7 @@ function execute(keyword, page) {
     if (p === 1) {
         var res = fetch(BASE_URL + "/frontend/search/search", {
             method: "POST",
+            timeout: REQ_TIMEOUT,
             headers: {
                 "User-Agent": FETCH_HEADERS["User-Agent"],
                 "Referer": BASE_URL + "/",

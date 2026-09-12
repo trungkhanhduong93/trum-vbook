@@ -16,7 +16,7 @@ function execute(url) {
 
         var images = [];
         var seen = {};
-        var junkRegex = /^(?:data:)|placeholder|loading|logo|\/icon|banner|avatar|button|follow|ads/i;
+        var junkRegex = /^(?:data:)|placeholder|loading|logo|\/icon|banner|avatar|button|follow|\/ads/i;
 
         for (var i = 0; i < imgEls.size(); i++) {
             var el = imgEls.get(i);

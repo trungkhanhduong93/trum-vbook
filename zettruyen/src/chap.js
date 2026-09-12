@@ -19,7 +19,8 @@ function execute(url) {
     var data = [];
     var seen = {};
     var n = (imgs.size ? imgs.size() : imgs.length);
-    var junkWords = ["logo", "/icons/", "icon", "thumb-default", "/thumb/", "banner", "avatar", "ads", "button", "pepe", "placeholder", "loading", "follow"];
+    // "zettruyen-wp" la watermark cua site, do 12/09/2026 no la ANH DAU moi chuong.
+    var junkWords = ["logo", "/icons/", "icon", "thumb-default", "/thumb/", "banner", "avatar", "/ads", "button", "pepe", "placeholder", "loading", "follow", "zettruyen-wp"];
 
     for (var i = 0; i < n; i++) {
         var e = (imgs.get ? imgs.get(i) : imgs[i]);

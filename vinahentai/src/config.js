@@ -91,7 +91,7 @@ function fetchDoc(url) {
 
     try {
         if (typeof Http !== "undefined" && typeof Http.get === "function") {
-            var doc2 = Http.get(cleanUrl).headers(FETCH_HEADERS).html();
+            var doc2 = Http.get(cleanUrl).headers(FETCH_HEADERS).timeout(8000).html();
             if (doc2) return doc2;
         }
     } catch (e2) {}

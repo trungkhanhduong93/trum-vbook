@@ -21,10 +21,23 @@ function execute(url) {
     var images = json.data.images;
     var data = [];
     var seen = {};
+    // API tra kem 2 anh quang cao cua site: banner-introduce.webp o dau va
+    // banner_last_introduce.webp o cuoi (do 12/09/2026). Anh dau tien nguoi doc
+    // nhin thay dang la banner, khong phai trang truyen.
+    var junkWords = ["banner", "introduce", "/ads", "logo", "watermark"];
     for (var i = 0; i < images.length; i++) {
         var img = images[i];
         var link = img && img.src ? String(img.src).trim() : "";
         if (!link) continue;
+        var lower = link.toLowerCase();
+        var isJunk = false;
+        for (var j = 0; j < junkWords.length; j++) {
+            if (lower.indexOf(junkWords[j]) >= 0) {
+                isJunk = true;
+                break;
+            }
+        }
+        if (isJunk) continue;
         var finalUrl = resolveUrl(link);
         if (!finalUrl || seen[finalUrl]) continue;
         seen[finalUrl] = true;

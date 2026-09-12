@@ -1,4 +1,8 @@
 var SITE_URL = "https://cuutruyen.cc";
+// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+var REQ_TIMEOUT = 8000;
+var PROBE_TIMEOUT = 4000;
+
 var HOST = SITE_URL;
 
 var HEADERS = {
@@ -66,7 +70,7 @@ function isChallenge(doc) {
 function fetchDoc(url) {
     var doc = null;
     try {
-        doc = Http.get(url).headers(HEADERS).html();
+        doc = Http.get(url).headers(HEADERS).timeout(REQ_TIMEOUT).html();
     } catch (e) {}
 
     if (doc && !isChallenge(doc)) return doc;

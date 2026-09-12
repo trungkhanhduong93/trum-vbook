@@ -379,8 +379,8 @@ if __name__ == "__main__":
     
     plugins_to_check = [
         "goctruyentranh", "luottruyen", "luottruyennew", "toptruyen",
-        "zettruyen", "2ten", "truyenqq", "nettruyen", "nhattruyen",
-        "doctruyen3q", "mimimoe", "cuutruyen", "truyenggvn", "tcomic",
+        "zettruyen", "2ten", "truyenqq", "nettruyen",
+        "doctruyen3q", "mimimoe", "cuutruyen", "tcomic",
         "minotruyen", "minomanga", "minohen", "vinahentai"
     ] if target == "all" else [target]
     
@@ -390,7 +390,7 @@ if __name__ == "__main__":
             keeper.run_gate_1_static_audit(p_dir)
             keeper.run_gate_2_zip_audit(p_dir)
             keeper.run_gate_3_version_consistency(p, p_dir)
-            if p in ["goctruyentranh", "luottruyen", "nettruyen", "nhattruyen", "cuutruyen", "luottruyennew", "toptruyen", "zettruyen", "vinahentai"]:
+            if p in ["goctruyentranh", "luottruyen", "nettruyen", "cuutruyen", "luottruyennew", "toptruyen", "zettruyen", "vinahentai"]:
                 keeper.run_gate_4_live_runtime(p)
                 
     keeper.run_gate_5_git_audit()

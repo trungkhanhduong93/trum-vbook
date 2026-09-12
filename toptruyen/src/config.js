@@ -1,4 +1,7 @@
 // ─── Domain (tự dò khi TopTruyen đổi link) ─────────────────────────
+// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+var REQ_TIMEOUT = 8000;    // request chinh
+var PROBE_TIMEOUT = 4000;  // mirror / do domain
 // www.toptruyenzone11.com là domain mặc định mới (zone10 đã chết).
 // Khi link bị đổi/không truy cập được, autoProbeDomains() sẽ tự động rà soát tăng dần từ zone11 -> zone12...
 var DEFAULT_BASE = "https://www.toptruyenzone11.com";
@@ -55,7 +58,7 @@ function swapDomainTo(url, targetDomain) {
 function autoProbeDomains(url) {
     var startNum = extractDomainNumber(BASE_URL);
     if (startNum < 11) startNum = 11;
-    var maxNum = startNum + 3; // Rà soát tối đa 3 số kế cận, tránh nghẽn luồng
+    var maxNum = startNum + 1; // Chi 2 so ke tiep: do 12/09/2026 moi host chet an 10,6s
 
     for (var n = startNum; n <= maxNum; n++) {
         var targetDomain = "https://www.toptruyenzone" + n + ".com";
@@ -69,7 +72,7 @@ function autoProbeDomains(url) {
                     "Referer": targetDomain + "/"
                 }
             };
-            var res = Http.get(testUrl).headers(opts.headers);
+            var res = Http.get(testUrl).headers(opts.headers).timeout(PROBE_TIMEOUT);
             if (res) {
                 var doc = res.html();
                 if (doc) {
@@ -95,7 +98,7 @@ function fetchRetry(url) {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
             "Referer": BASE_URL + "/"
-        }).html();
+        }).timeout(REQ_TIMEOUT).html();
     } catch (e) {}
 
     if (doc) {

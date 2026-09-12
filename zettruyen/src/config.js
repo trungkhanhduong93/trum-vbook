@@ -1,4 +1,7 @@
 var BASE_URL = 'https://www.zettruyen1.com';
+// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+var REQ_TIMEOUT = 8000;    // request chinh
+var PROBE_TIMEOUT = 4000;  // mirror / do domain
 var REFERER = BASE_URL + '/';
 
 var HTML_HEADERS = {
@@ -18,10 +21,10 @@ var JSON_HEADERS = {
 function fetchRetry(url) {
     try {
         if (typeof fetch !== "undefined") {
-            var res = fetch(url, { headers: HTML_HEADERS });
+            var res = fetch(url, { headers: HTML_HEADERS, timeout: REQ_TIMEOUT });
             if (res && res.ok) return res.html();
         }
-        return Http.get(url).headers(HTML_HEADERS).html();
+        return Http.get(url).headers(HTML_HEADERS).timeout(REQ_TIMEOUT).html();
     } catch (e) {
         return null;
     }
@@ -30,10 +33,10 @@ function fetchRetry(url) {
 function fetchJson(url) {
     try {
         if (typeof fetch !== "undefined") {
-            var res = fetch(url, { headers: JSON_HEADERS });
+            var res = fetch(url, { headers: JSON_HEADERS, timeout: REQ_TIMEOUT });
             if (res && res.ok) return res.text();
         }
-        return Http.get(url).headers(JSON_HEADERS).string();
+        return Http.get(url).headers(JSON_HEADERS).timeout(REQ_TIMEOUT).string();
     } catch (e) {
         return null;
     }

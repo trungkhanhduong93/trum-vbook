@@ -8,7 +8,8 @@ function execute(url) {
     var seen = {};
 
     var imgEls = doc.select(".reading-detail img, .page-chapter img, .chapter-content img");
-    var junkWords = ["logo", "favicon", "avatar", "icon", "banner", "button", "ads", "pepe", "placeholder", "loading", "follow"];
+    // "3qhub" la anh watermark cua site, do 12/09/2026 no nam o ca ANH DAU va ANH CUOI moi chuong.
+    var junkWords = ["logo", "favicon", "avatar", "icon", "banner", "button", "/ads", "pepe", "placeholder", "loading", "follow", "3qhub"];
 
     for (var i = 0; i < imgEls.size(); i++) {
         var img = imgEls.get(i);

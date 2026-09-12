@@ -1,4 +1,8 @@
 var BASE_URL = 'https://minotruyenv7.xyz';
+// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+var REQ_TIMEOUT = 8000;
+var PROBE_TIMEOUT = 4000;
+
 var API = 'https://api.cloudkk-v2.xyz/api';
 var TYPE = 'hentai';
 try {
@@ -24,13 +28,13 @@ var LIMIT = 24;
 
 function jsonGet(url) {
     try {
-        var res = Http.get(url).headers(HEADERS).string();
+        var res = Http.get(url).headers(HEADERS).timeout(REQ_TIMEOUT).string();
         if (res && res.indexOf("{") >= 0) return JSON.parse(res);
     } catch (e) {}
     if (url.indexOf("api.cloudkk-v2.xyz") >= 0) {
         try {
             var v1Url = url.replace("api.cloudkk-v2.xyz", "api.cloudkk-v1.xyz");
-            var res2 = Http.get(v1Url).headers(HEADERS).string();
+            var res2 = Http.get(v1Url).headers(HEADERS).timeout(REQ_TIMEOUT).string();
             if (res2 && res2.indexOf("{") >= 0) return JSON.parse(res2);
         } catch (e2) {}
     }
@@ -142,13 +146,13 @@ function fetchChapterImagesApi(chapterId, bookId) {
     var apiUrl = API + "/books/" + bookId + "/chapters/" + chapterId;
     var json = null;
     try {
-        var res = Http.get(apiUrl).headers(HEADERS).string();
+        var res = Http.get(apiUrl).headers(HEADERS).timeout(REQ_TIMEOUT).string();
         if (res && res.indexOf("{") >= 0) json = JSON.parse(res);
     } catch (e) {}
     if (!json && apiUrl.indexOf("api.cloudkk-v2.xyz") >= 0) {
         try {
             var v1Url = "https://api.cloudkk-v1.xyz/api/books/" + bookId + "/chapters/" + chapterId;
-            var res2 = Http.get(v1Url).headers(HEADERS).string();
+            var res2 = Http.get(v1Url).headers(HEADERS).timeout(REQ_TIMEOUT).string();
             if (res2 && res2.indexOf("{") >= 0) json = JSON.parse(res2);
         } catch (e2) {}
     }

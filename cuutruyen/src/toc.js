@@ -51,7 +51,7 @@ function execute(url) {
             var mdxUrl = "https://api.mangadex.org/manga/" + mangaId + "/feed?translatedLanguage[]=vi&limit=500&order[chapter]=asc";
             var rawMdx = null;
             try {
-                rawMdx = Http.get(mdxUrl).headers(HEADERS).string();
+                rawMdx = Http.get(mdxUrl).headers(HEADERS).timeout(REQ_TIMEOUT).string();
             } catch (eMdx) {}
 
             if (rawMdx) {

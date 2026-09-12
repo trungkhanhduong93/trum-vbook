@@ -1,4 +1,7 @@
 var DEFAULT_BASE = "https://doctruyen3qhub.vip";
+// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+var REQ_TIMEOUT = 8000;    // request chinh
+var PROBE_TIMEOUT = 4000;  // mirror / do domain
 var BASE_URL = DEFAULT_BASE;
 var HOST = DEFAULT_BASE;
 
@@ -51,7 +54,7 @@ function fetchRetry(url) {
             "Accept": FETCH_HEADERS["Accept"],
             "Accept-Language": FETCH_HEADERS["Accept-Language"],
             "Referer": BASE_URL + "/"
-        }).html();
+        }).timeout(REQ_TIMEOUT).html();
     } catch (e) {}
 
     var title = doc ? doc.select("title").text() : "";
@@ -69,7 +72,7 @@ function fetchRetry(url) {
                 "Accept": FETCH_HEADERS["Accept"],
                 "Accept-Language": FETCH_HEADERS["Accept-Language"],
                 "Referer": mirror + "/"
-            }).html();
+            }).timeout(PROBE_TIMEOUT).html();
             if (res) {
                 var t = res.select("title").text();
                 if (t && t.indexOf("Just a moment") === -1 && t.indexOf("Cloudflare") === -1 && t.indexOf("404") === -1) {

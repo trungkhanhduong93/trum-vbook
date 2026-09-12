@@ -1,4 +1,7 @@
 var BASE_URL = "https://truyenqqko.com";
+// Khong dat timeout thi host chet an tron 10-11 giay (do 12/09/2026).
+var REQ_TIMEOUT = 8000;    // request chinh
+var PROBE_TIMEOUT = 4000;  // mirror / do domain
 var HOST = "https://truyenqqko.com";
 
 var FETCH_HEADERS = {
@@ -7,7 +10,7 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS };
+var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: REQ_TIMEOUT };
 
 function selFirst(el, css) {
     var items = el.select(css);
@@ -42,7 +45,7 @@ function fetchRetry(url) {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
             "Referer": BASE_URL + "/"
-        }).html();
+        }).timeout(REQ_TIMEOUT).html();
     } catch (e) {
         // Ignore and fallback
     }

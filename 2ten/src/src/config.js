@@ -14,7 +14,7 @@ var FETCH_HEADERS = {
     "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5",
     "Referer": BASE_URL + "/"
 };
-var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 10000 };
+var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 8000 };
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function selFirst(el, css) {
@@ -54,14 +54,21 @@ function imgSrc(img) {
     return s.trim();
 }
 
+// Ten ham hua retry nhung ban cu goi dung 1 lan. Do 12/09/2026: 2tenvn.com
+// hong khoang 50% so lan goi (ECONNRESET / connect timeout) roi lan sau lai 200,
+// nen 1 lan goi la mat trang danh sach. Thu lai 2 lan.
 function fetchRetry(url) {
-    try {
-        var res = fetch(url, FETCH_OPTIONS);
-        if (res && res.ok) return res;
-        return res;
-    } catch (e) {
-        return null;
+    var last = null;
+    for (var i = 0; i < 2; i++) {
+        try {
+            var res = fetch(url, FETCH_OPTIONS);
+            if (res && res.ok) return res;
+            last = res;
+        } catch (e) {
+            last = null;
+        }
     }
+    return last;
 }
 
 // Madara phân trang: chèn /page/N/ trước query string
