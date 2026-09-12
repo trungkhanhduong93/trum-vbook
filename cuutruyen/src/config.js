@@ -141,10 +141,42 @@ function mangaIdFromUrl(url) {
 
 // Card danh sách. API trả cover_mobile_url nhẹ hơn cover_url rõ rệt — dùng bản
 // mobile cho trang danh sách, giữ bản đầy đủ cho trang chi tiết.
+// "2026-09-12T19:23:18.912+07:00" -> "8 phút trước". Tự tách bằng regex, không
+// tin Date.parse của Rhino với chuỗi có múi giờ.
+function agoText(iso) {
+    if (!iso) return '';
+    var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:([+-])(\d{2}):(\d{2})|Z)?/);
+    if (!m) return '';
+    var t = Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10),
+                     parseInt(m[4], 10), parseInt(m[5], 10), parseInt(m[6], 10));
+    if (m[7]) {
+        var off = (parseInt(m[8], 10) * 60 + parseInt(m[9], 10)) * 60000;
+        t += (m[7] === '+') ? -off : off;
+    }
+    var diff = new Date().getTime() - t;
+    if (isNaN(diff)) return '';
+    if (diff < 0) diff = 0;
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'vừa xong';
+    if (mins < 60) return mins + ' phút trước';
+    var hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' giờ trước';
+    var days = Math.floor(hours / 24);
+    if (days < 30) return days + ' ngày trước';
+    var months = Math.floor(days / 30);
+    if (months < 12) return months + ' tháng trước';
+    return Math.floor(months / 12) + ' năm trước';
+}
+
+// API /mangas/recently_updated đã trả sẵn mới nhất trước — giữ nguyên thứ tự đó.
+// Ghi kèm thời gian cập nhật vào description để nhìn phát biết ngay có đúng thứ
+// tự không, giống cách web hiển thị "C. 2 - 8 PHÚT TRƯỚC".
 function mapCard(m) {
     if (!m || !m.id || !m.name) return null;
     var desc = '';
     if (m.newest_chapter_number) desc = 'Chương ' + m.newest_chapter_number;
+    var ago = agoText(m.newest_chapter_created_at);
+    if (ago) desc = desc ? (desc + ' · ' + ago) : ago;
     if (m.author_name) desc = desc ? (desc + ' · ' + m.author_name) : String(m.author_name);
     return {
         name: String(m.name),
@@ -197,18 +229,37 @@ function tagPath(tag) {
 //          tức là dải thứ i của ảnh ĐÚNG lấy từ toạ độ y=300 cao 150 của ảnh gốc.
 var DRM_KEY = '3141592653589793';
 
+// Giải base64 BẰNG TAY, không dùng Crypto.base64Decode. Crypto không nằm trong
+// core.js (nó ở crypto.js riêng) và không rõ nó trả chuỗi theo bảng mã nào —
+// v13 nghi đúng chỗ này: drmDecode trả null nên chương rơi về URL ảnh xáo trộn
+// và người đọc thấy ảnh "cắt nát". Chuỗi sau khi giải toàn ký tự < 0x80 nên
+// bảng mã không còn là biến số nữa.
+var B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+function b64Bytes(str) {
+    var s = String(str).replace(/[^A-Za-z0-9+/=]/g, '');
+    var out = [];
+    var i = 0;
+    while (i < s.length) {
+        var c1 = B64_CHARS.indexOf(s.charAt(i++));
+        var c2 = B64_CHARS.indexOf(s.charAt(i++));
+        var c3 = B64_CHARS.indexOf(s.charAt(i++));
+        var c4 = B64_CHARS.indexOf(s.charAt(i++));
+        if (c1 < 0 || c2 < 0) break;
+        out.push(((c1 << 2) | (c2 >> 4)) & 0xFF);
+        if (c3 >= 0) out.push(((c2 << 4) | (c3 >> 2)) & 0xFF);
+        if (c4 >= 0) out.push(((c3 << 6) | c4) & 0xFF);
+    }
+    return out;
+}
+
 function drmDecode(drm) {
     if (!drm) return null;
-    var raw;
-    try {
-        raw = Crypto.base64Decode(String(drm).replace(/\s+/g, ''));
-    } catch (e) {
-        return null;
-    }
-    if (!raw) return null;
+    var bytes = b64Bytes(drm);
+    if (!bytes.length) return null;
     var out = '';
-    for (var i = 0; i < raw.length; i++) {
-        out += String.fromCharCode(raw.charCodeAt(i) ^ DRM_KEY.charCodeAt(i % DRM_KEY.length));
+    for (var i = 0; i < bytes.length; i++) {
+        out += String.fromCharCode(bytes[i] ^ DRM_KEY.charCodeAt(i % DRM_KEY.length));
     }
     if (out.indexOf('#v4|') !== 0) return null;
 

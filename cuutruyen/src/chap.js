@@ -1,16 +1,28 @@
 load("config.js");
 
-// Mọi trang của cuutruyen.net là ảnh bị xáo trộn theo dải ngang (xem drmDecode
-// trong config.js). App chỉ nhận URL ảnh nên việc ghép lại phải làm ngay trong
-// plugin bằng Graphics của Vbook: tải ảnh -> vẽ từng dải vào đúng chỗ -> xuất ra.
+// Ảnh trang của cuutruyen.net bị xáo trộn theo dải ngang (xem drmDecode trong
+// config.js). App chỉ nhận URL nên phải ghép lại ngay trong plugin bằng Graphics.
 //
-// Hai điều đã đo và cần nhớ:
+// Ba điều đã đo và cần nhớ:
 //  - Đăng nhập KHÔNG gỡ được xáo trộn: tài khoản thật vẫn nhận 21/21 trang scrambled.
 //  - API ghi URL ảnh trỏ storage-ct.lrclib.net (đã chết). Gương sống là
 //    storage-bravo.cuutruyen.net — xem IMG_MIRRORS trong config.js.
+//  - Không có bản chưa xáo trộn: thử processed- / original- / raw- đều 404.
+//
+// ⚠️ TUYỆT ĐỐI KHÔNG trả URL ảnh còn xáo trộn cho app. v13 làm đúng lỗi đó: khi
+// drmDecode trả null thì rơi về URL trần, người đọc thấy ảnh "cắt nát" mà không
+// biết vì sao. Thà báo lỗi có mã để lần sau biết hỏng ở khâu nào.
 
-var DRM_MSG = "Cứu Truyện xáo trộn ảnh theo dải ngang. Bản Vbook này chưa ghép lại được "
-    + "(thiếu Graphics hoặc tải ảnh hỏng). Tạm thời đọc chương bằng nút Trang nguồn.";
+// Đếm lý do hỏng để câu báo lỗi chỉ đúng chỗ cần sửa.
+var failDrm = 0;   // giải drm_data không ra
+var failGfx = 0;   // không có Graphics
+var failDl = 0;    // tải ảnh hỏng ở cả 3 gương
+var failCap = 0;   // vẽ xong nhưng capture() không trả gì
+
+function isScrambled(p) {
+    if (p && p.drm_data) return true;
+    return String((p && p.image_url) || '').indexOf('scrambled') >= 0;
+}
 
 function pageImage(p) {
     if (!p) return null;
@@ -20,11 +32,19 @@ function pageImage(p) {
 
     var bands = drmDecode(p.drm_data);
 
-    // Không có drm_data, hoặc các dải vốn đã đúng thứ tự -> trả URL trần,
+    // Trang không xáo trộn, hoặc các dải vốn đã đúng thứ tự -> trả URL trần,
     // app tự tải, nhanh nhất và nhẹ nhất.
-    if (!bands || drmIsIdentity(bands)) return raw;
+    if (bands && drmIsIdentity(bands)) return raw;
+    if (!bands) {
+        if (!isScrambled(p)) return raw;
+        failDrm++;
+        return null;
+    }
 
-    if (typeof Graphics === "undefined" || !Graphics.createImage) return null;
+    if (typeof Graphics === "undefined" || !Graphics.createImage) {
+        failGfx++;
+        return null;
+    }
 
     // Thử lần lượt từng gương kho ảnh; gương nào tải được thì dùng.
     var b64 = null;
@@ -35,17 +55,23 @@ function pageImage(p) {
             if (blob && blob.base64) b64 = blob.base64();
         } catch (eDl) {}
     }
-    if (!b64) return null;
+    if (!b64) {
+        failDl++;
+        return null;
+    }
 
     var out = null;
     try {
         var img = Graphics.createImage(b64);
         b64 = null; // nhả sớm, ảnh gốc ~800 KB nên chuỗi base64 rất nặng
-        if (!img) return null;
+        if (!img) {
+            failCap++;
+            return null;
+        }
 
         // CHIỀU GHÉP: dải thứ i của ảnh TẢI VỀ (lấy tuần tự từ trên xuống) phải
-        // đặt vào toạ độ y = bands[i].sy của ảnh ĐÚNG. Đã dựng thử cả hai chiều
-        // trên trang thật rồi nhìn bằng mắt: chiều ngược lại ra ảnh vẫn vỡ khung.
+        // đặt vào toạ độ y = bands[i].sy của ảnh đúng. Đã dựng thử cả hai chiều
+        // trên trang thật rồi nhìn bằng mắt: chiều ngược lại ra ảnh vỡ khung.
         var w = img.width;
         var canvas = Graphics.createCanvas(w, img.height);
         var sy = 0;
@@ -55,16 +81,42 @@ function pageImage(p) {
         }
         out = canvas.capture();
     } catch (eDraw) {
+        failCap++;
         return null;
     }
 
-    if (!out) return null;
+    if (!out) {
+        failCap++;
+        return null;
+    }
     out = String(out);
     if (out.indexOf("http") === 0 || out.indexOf("data:") === 0) return out;
     return "data:image/png;base64," + out;
 }
 
+function failMessage(total) {
+    if (failGfx > 0) {
+        return "[CT-GFX] Bản Vbook này không dùng được Graphics nên không ghép lại được "
+            + "ảnh đã xáo trộn của Cứu Truyện. Đọc chương bằng nút Trang nguồn.";
+    }
+    if (failDrm > 0) {
+        return "[CT-DRM] Không giải được dữ liệu xáo trộn của " + failDrm + "/" + total
+            + " trang. Nguồn cần cập nhật lại cách giải.";
+    }
+    if (failDl > 0) {
+        return "[CT-DL] Không tải được ảnh gốc của " + failDl + "/" + total
+            + " trang từ kho ảnh của Cứu Truyện.";
+    }
+    if (failCap > 0) {
+        return "[CT-CAP] Ghép được ảnh nhưng Graphics không xuất ra được ("
+            + failCap + "/" + total + " trang).";
+    }
+    return "[CT] Không dựng được trang nào của chương này.";
+}
+
 function execute(url) {
+    failDrm = 0; failGfx = 0; failDl = 0; failCap = 0;
+
     var cid = lastId(url);
     if (!cid) return Response.error("Không đọc được mã chương từ đường dẫn.");
 
@@ -75,20 +127,19 @@ function execute(url) {
     if (!pages.length) return Response.error("Chương này chưa có trang nào trên Cứu Truyện.");
 
     var images = [];
-    var failed = 0;
     for (var i = 0; i < pages.length; i++) {
         var u = pageImage(pages[i]);
         if (u) images.push(u);
-        else failed++;
     }
 
-    if (!images.length) return Response.error(DRM_MSG);
+    if (!images.length) return Response.error(failMessage(pages.length));
 
     // Thiếu vài trang giữa chương còn tệ hơn báo lỗi: người đọc không biết mình
     // đang đọc thiếu. Thiếu quá 1/4 thì báo thẳng.
-    if (failed > 0 && failed * 4 > pages.length) {
-        return Response.error("Chỉ ghép được " + images.length + "/" + pages.length
-            + " trang. " + DRM_MSG);
+    var missing = pages.length - images.length;
+    if (missing > 0 && missing * 4 > pages.length) {
+        return Response.error("Chỉ dựng được " + images.length + "/" + pages.length
+            + " trang. " + failMessage(pages.length));
     }
 
     return Response.success(images);
