@@ -38,7 +38,7 @@ pack_plugin('truyenqq')
 pack_plugin('mimimoe')
 pack_plugin('truyenggvn')
 pack_plugin('tcomic')
-pack_plugin('damconuong')
+pack_plugin('minohen')
 pack_plugin('vinahentai')
 
 def pack_2ten():

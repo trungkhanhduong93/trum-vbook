@@ -88,7 +88,19 @@
       "type": "comic",
       "locale": "vi_VN"
     },
-
+    {
+      "name": "Mino Hentai",
+      "author": "tkd1793",
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/plugin.zip?v=28",
+      "version": 28,
+      "source": "https://minotruyenv7.xyz",
+      "regexp": "(www.)?minotruyen[0-9a-z-]+.*?/[0-9a-z-]+/books/[0-9a-z-]+/?$",
+      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/minohen/icon.png",
+      "description": "Đọc truyện trên trang Mino Hentai",
+      "type": "comic",
+      "locale": "vi_VN",
+      "tag": "nsfw"
+    },
     {
       "name": "TopTruyen",
       "author": "tkd1793",
@@ -197,19 +209,6 @@
       "description": "Đọc truyện trên trang Góc Truyện Tranh",
       "type": "comic",
       "locale": "vi_VN"
-    },
-    {
-      "name": "DamCoNuong",
-      "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/plugin.zip?v=6",
-      "version": 6,
-      "source": "https://www.damconuong.xyz",
-      "regexp": "(www\\.)?damconuong\\.xyz\\/truyen\\/[a-zA-Z0-9-]+\\/?$",
-      "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/damconuong/icon.png",
-      "description": "DamCoNuong - Đọc truyện Hentai, Manhwa 18+ online",
-      "type": "comic",
-      "locale": "vi_VN",
-      "tag": "nsfw"
     },
     {
       "name": "VinaHentai",
