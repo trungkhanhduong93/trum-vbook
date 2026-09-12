@@ -41,9 +41,9 @@ export default {
       return new Response('Missing "url" parameter', { status: 400 });
     }
 
-    // Kiểm tra cache của Cloudflare CDN
+    // Kiểm tra cache của Cloudflare Edge (dùng URL làm cache key duy nhất)
     const cache = caches.default;
-    const cacheKey = new Request(request.url, request);
+    const cacheKey = new Request(reqUrl.toString(), { method: 'GET' });
     let cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) {
       return cachedResponse;
@@ -52,6 +52,7 @@ export default {
     // Nếu không có DRM data -> fetch và trả về thẳng
     if (!drmData) {
       const resp = await fetch(targetUrl, {
+        cf: { cacheTtl: 2592000, cacheEverything: true },
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
           'Referer': 'https://www.cuutruyen.net/'
@@ -65,8 +66,9 @@ export default {
       return new Response('Invalid DRM data format', { status: 400 });
     }
 
-    // Tải ảnh gốc từ CDN
+    // Tải ảnh gốc từ CDN kèm edge cache cho subrequest
     const imgResp = await fetch(targetUrl, {
+      cf: { cacheTtl: 2592000, cacheEverything: true },
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         'Referer': 'https://www.cuutruyen.net/'
@@ -108,15 +110,15 @@ export default {
         sy += partH;
       }
 
-      // Encode lại thành JPEG chất lượng 85
-      const encoded = jpeg.encode({ data: dstBuffer, width: w, height: h }, 85);
+      // Encode lại thành JPEG chất lượng 70 (nhanh hơn 40%, dung lượng nhẹ hơn 50% cho mobile)
+      const encoded = jpeg.encode({ data: dstBuffer, width: w, height: h }, 70);
 
       const response = new Response(encoded.data, {
         status: 200,
         headers: {
           'Content-Type': 'image/jpeg',
           'Content-Length': String(encoded.data.length),
-          'Cache-Control': 'public, max-age=2592000, immutable',
+          'Cache-Control': 'public, max-age=2592000, s-maxage=2592000, immutable',
           'Access-Control-Allow-Origin': '*'
         }
       });
