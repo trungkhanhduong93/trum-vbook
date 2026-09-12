@@ -75,25 +75,35 @@ function absUrl(url) {
 }
 
 // Gọi API JSON. Trả object đã parse, hoặc null nếu hỏng.
+//
+// THỬ LẠI 2 LẦN là bắt buộc ở nguồn này. Đo 12/09/2026, cùng một endpoint gọi
+// 3 lần liên tiếp: 13,9s — 1,5s — 1,5s. Máy chủ thỉnh thoảng "nguội" và mất hơn
+// 13 giây cho request đầu. Timeout 8s cắt đúng vào đó, nên nếu chỉ gọi một lần
+// thì người dùng thấy lỗi ngẫu nhiên; gọi lại thì lần hai gần như luôn nhanh.
 function apiGet(path) {
-    var s = null;
-    try {
-        s = Http.get(API + path).headers(HEADERS).timeout(REQ_TIMEOUT).string();
-    } catch (eHttp) {}
-
-    if (!s) {
+    var url = API + path;
+    for (var attempt = 0; attempt < 2; attempt++) {
+        var s = null;
         try {
-            var res = fetch(API + path, { headers: HEADERS, timeout: REQ_TIMEOUT });
-            if (res && res.ok) s = res.text();
-        } catch (eFetch) {}
-    }
+            s = Http.get(url).headers(HEADERS).timeout(REQ_TIMEOUT).string();
+        } catch (eHttp) {}
 
-    if (!s) return null;
-    try {
-        return JSON.parse(s);
-    } catch (eJson) {
-        return null;
+        if (!s) {
+            try {
+                var res = fetch(url, { headers: HEADERS, timeout: REQ_TIMEOUT });
+                if (res && res.ok) s = res.text();
+            } catch (eFetch) {}
+        }
+
+        if (s) {
+            try {
+                return JSON.parse(s);
+            } catch (eJson) {
+                return null;
+            }
+        }
     }
+    return null;
 }
 
 // Đường dẫn trang chi tiết mà app dùng làm link truyện, khớp regexp trong plugin.json.
