@@ -13,9 +13,14 @@ var SITE_URL = 'https://goctruyentranhvui41.com';
 var HOST = SITE_URL;
 var UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
-// Không đặt timeout thì host chết ăn trọn 10-11 giây (đo 12/09/2026).
-var REQ_TIMEOUT = 8000;    // request chính
-var PROBE_TIMEOUT = 4000;  // dò domain dự phòng
+// CHỈ đặt hạn cho request DÒ tên miền dự phòng — đó là chỗ đã đo thấy treo
+// thật: vui40 chết nhưng DNS còn sống nên mỗi lần probeDomain chạy mất 11,07s.
+//
+// ⛔ KHÔNG đặt hạn cho request chính (siteGet / sitePost / primeSession).
+// Đã thử đặt 8 giây ngày 12/09/2026 và Trum báo hỏng ngay: "tất cả ảnh đều
+// không tải được". Máy dev chạy dưới 1 giây nên không tái hiện nổi, còn trên
+// 4G thì /api/chapter/loadAll vượt 8 giây là rơi xuống nhánh WebView, nhánh đó
+// trả URL ảnh lấy từ DOM và app không tải được. Để nguyên mặc định của vBook.
 
 function gttOrigin(url) {
     if (!url) return null;
@@ -48,9 +53,7 @@ function probeDomain() {
     var m = String(SITE_URL).match(/goctruyentranhvui(\d+)\.com/i);
     if (m) cur = parseInt(m[1], 10);
 
-    // CHỈ dò LÊN. Đo 12/09/2026: vui40 đã chết nhưng DNS còn sống nên request
-    // treo 11,07s mới bỏ cuộc — mỗi lần probeDomain chạy là mất 11 giây oan.
-    // Cùng bài học đã ghi ở luottruyen: domain cũ không bao giờ sống lại.
+    // CHỈ dò LÊN. vui40 đã chết nhưng DNS còn sống nên dò xuống là treo 11 giây.
     var order = [cur + 1, cur + 2];
     for (var i = 0; i < order.length; i++) {
         var n = order[i];
@@ -59,7 +62,7 @@ function probeDomain() {
         try {
             var s = Http.get(cand + '/lien-he')
                 .headers({ 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Referer': cand + '/' })
-                .timeout(PROBE_TIMEOUT)
+                .timeout(4000)
                 .string();
             if (s && s.indexOf('Goc Truyen Tranh') >= 0 && s.indexOf('goctruyentranhvui' + n + '.com') >= 0) {
                 setBase(cand);
@@ -166,7 +169,6 @@ function primeSession(force) {
         if (typeof fetch !== 'undefined') {
             var res = fetch(SITE_URL + '/lien-he', {
                 method: 'GET',
-                timeout: REQ_TIMEOUT,
                 headers: {
                     'User-Agent': UA,
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -190,7 +192,6 @@ function primeSession(force) {
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Referer': SITE_URL + '/'
                 })
-                .timeout(REQ_TIMEOUT)
                 .string();
             if (typeof localCookie !== 'undefined' && localCookie.getCookie) {
                 var lc2 = localCookie.getCookie();
@@ -211,7 +212,6 @@ function siteGet(path) {
         if (typeof fetch !== 'undefined') {
             var res = fetch(SITE_URL + path, {
                 method: 'GET',
-                timeout: REQ_TIMEOUT,
                 headers: HEADERS()
             });
             if (res && res.ok) s = res.text();
@@ -220,17 +220,17 @@ function siteGet(path) {
 
     if (!s) {
         try {
-            s = Http.get(SITE_URL + path).headers(HEADERS()).timeout(REQ_TIMEOUT).string();
+            s = Http.get(SITE_URL + path).headers(HEADERS()).string();
         } catch (eHttp) {}
     }
 
     if (!s && probeDomain()) {
         try {
             if (typeof fetch !== 'undefined') {
-                var res2 = fetch(SITE_URL + path, { method: 'GET', timeout: REQ_TIMEOUT, headers: HEADERS() });
+                var res2 = fetch(SITE_URL + path, { method: 'GET', headers: HEADERS() });
                 if (res2 && res2.ok) s = res2.text();
             }
-            if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).timeout(REQ_TIMEOUT).string();
+            if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).string();
         } catch (eProbe) {}
     }
 
@@ -242,10 +242,10 @@ function siteGet(path) {
             primeSession(true);
             try {
                 if (typeof fetch !== 'undefined') {
-                    var rRetry = fetch(SITE_URL + path, { method: 'GET', timeout: REQ_TIMEOUT, headers: HEADERS() });
+                    var rRetry = fetch(SITE_URL + path, { method: 'GET', headers: HEADERS() });
                     if (rRetry && rRetry.ok) s = rRetry.text();
                 }
-                if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).timeout(REQ_TIMEOUT).string();
+                if (!s) s = Http.get(SITE_URL + path).headers(HEADERS()).string();
                 json = JSON.parse(s);
             } catch (eRetry) {}
         }
@@ -262,7 +262,6 @@ function sitePost(path, bodyStr, referer) {
         if (typeof fetch !== 'undefined') {
             var res = fetch(SITE_URL + path, {
                 method: 'POST',
-                timeout: REQ_TIMEOUT,
                 headers: FORM_HEADERS(referer),
                 body: bodyStr
             });
@@ -275,7 +274,6 @@ function sitePost(path, bodyStr, referer) {
             s = Http.post(SITE_URL + path)
                 .headers(FORM_HEADERS(referer))
                 .body(bodyStr)
-                .timeout(REQ_TIMEOUT)
                 .string();
         } catch (eHttp) {}
     }
@@ -285,7 +283,6 @@ function sitePost(path, bodyStr, referer) {
             if (typeof fetch !== 'undefined') {
                 var res2 = fetch(SITE_URL + path, {
                     method: 'POST',
-                    timeout: REQ_TIMEOUT,
                     headers: FORM_HEADERS(referer),
                     body: bodyStr
                 });
@@ -295,7 +292,6 @@ function sitePost(path, bodyStr, referer) {
                 s = Http.post(SITE_URL + path)
                     .headers(FORM_HEADERS(referer))
                     .body(bodyStr)
-                    .timeout(REQ_TIMEOUT)
                     .string();
             }
         } catch (eProbe) {}
@@ -311,7 +307,6 @@ function sitePost(path, bodyStr, referer) {
                 if (typeof fetch !== 'undefined') {
                     var rRetry2 = fetch(SITE_URL + path, {
                         method: 'POST',
-                        timeout: REQ_TIMEOUT,
                         headers: FORM_HEADERS(referer),
                         body: bodyStr
                     });
@@ -321,7 +316,6 @@ function sitePost(path, bodyStr, referer) {
                     s = Http.post(SITE_URL + path)
                         .headers(FORM_HEADERS(referer))
                         .body(bodyStr)
-                        .timeout(REQ_TIMEOUT)
                         .string();
                 }
                 json = JSON.parse(s);
