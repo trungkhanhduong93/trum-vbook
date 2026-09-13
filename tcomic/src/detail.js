@@ -47,35 +47,9 @@ function execute(url) {
     var description = d.description || "";
     if (description === "No description available") description = "";
 
-    // 13/422 truyện có thumbnail rỗng từ API (đo 13/09/2026). Fallback:
-    // lấy ảnh đầu tiên không phải banner/quảng cáo từ chương cũ nhất.
-    var cover = d.thumbnail ? resolveUrl(d.thumbnail) : "";
-    if (!cover && d.chapters && d.chapters.length) {
-        var oldest = d.chapters[d.chapters.length - 1];
-        if (oldest && oldest.id !== undefined) {
-            try {
-                var cj = apiGet("/api/web/comic/chapters/" + oldest.id, {comicId: id});
-                if (cj && cj.code === 0 && cj.data && cj.data.images) {
-                    var imgs = cj.data.images;
-                    var junkWords = ["banner", "introduce", "/ads", "logo", "watermark"];
-                    for (var k = 0; k < imgs.length; k++) {
-                        var src = imgs[k] && imgs[k].src ? String(imgs[k].src).trim() : "";
-                        if (!src) continue;
-                        var lower = src.toLowerCase();
-                        var isJunk = false;
-                        for (var jj = 0; jj < junkWords.length; jj++) {
-                            if (lower.indexOf(junkWords[jj]) >= 0) { isJunk = true; break; }
-                        }
-                        if (!isJunk) { cover = resolveUrl(src); break; }
-                    }
-                }
-            } catch (eCover) {}
-        }
-    }
-
     return Response.success({
         name: d.title || "",
-        cover: cover,
+        cover: d.thumbnail || "",
         host: SITE_URL,
         author: author,
         description: description,
