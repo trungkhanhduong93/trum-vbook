@@ -389,7 +389,7 @@ function mapComicCard(c) {
     } else if (c.updated_at) {
         desc = c.updated_at;
     }
-    var thumb = c.thumbnail ? resolveUrl(c.thumbnail) : "";
+    var thumb = c.thumbnail ? resolveUrl(c.thumbnail) : (SITE_URL + "/img-error.webp");
     return {
         name: c.title || "",
         link: comicLink(slug, id),
