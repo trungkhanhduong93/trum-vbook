@@ -43,8 +43,8 @@
     {
       "name": "LuotTruyen",
       "author": "tkd1793",
-      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=37",
-      "version": 37,
+      "path": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/plugin.zip?v=38",
+      "version": 38,
       "source": "https://luottruyen17.com",
       "regexp": "luottruyen\\d*\\.com\\/truyen-tranh\\/[^\\/]+\\/?$",
       "icon": "https://raw.githubusercontent.com/trungkhanhduong93/trum-vbook/main/luottruyen/icon.png",

@@ -220,7 +220,7 @@ function fetchRetry(url) {
 // (≈1,09 MB/trang). Cùng host là điểm mấu chốt: proxy weserv/Photon từng làm
 // gãy ảnh nguồn này 2 lần vì kéo host lạ vào — xem docs/06 mục 8.
 // Cloudflare KHÔNG phóng to ảnh nhỏ hơn 240px (đã đo: bìa 190px trả nguyên).
-var THUMB_OPTS = "width=240,quality=72";
+var THUMB_OPTS = "width=450,quality=85";
 
 function thumbUrl(url) {
     if (!url) return url;
