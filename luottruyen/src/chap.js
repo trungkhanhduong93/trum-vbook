@@ -155,6 +155,7 @@ function chapDocViaBrowser(url) {
 }
 
 function execute(url) {
+    resolveFromRemoteConfig();
     syncBaseFromUrl(url);
     url = swapDomain(url);
 

@@ -1,8 +1,8 @@
 // ─── Domain (tự dò khi luottruyen đổi link) ─────────────────────────
-// luottruyen17.com là domain mặc định mới (30/08/2026 — luottruyen16.com
-// đã chết nhưng DNS vẫn phân giải nên fetch treo ~15s). Khi link bị đổi/
-// không truy cập được, autoProbeDomains() rà tăng dần 18->19->20...
-var DEFAULT_BASE = "https://luottruyen17.com";
+// luottruyen18.com là domain mặc định mới (20/09/2026 — luottruyen17.com
+// đã chết). Khi link bị đổi/không truy cập được, autoProbeDomains()
+// rà tăng dần 19->20->21...
+var DEFAULT_BASE = "https://luottruyen18.com";
 var REDIRECTOR = "https://luottruyen.com";
 
 var BASE_URL = DEFAULT_BASE;
@@ -20,6 +20,35 @@ var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: REQ_TIMEOUT };
 
 // Cờ chống dò lại nhiều lần trong cùng 1 lần chạy script
 var __LT_RESOLVED = false;
+
+// ─── Remote config: đổi domain từ xa, không cần build lại plugin ────
+// Khi luottruyen đổi số domain, chỉ cần sửa file domain.txt trên GitHub.
+// Plugin tự đọc qua CDN jsdelivr (~200ms). Cache CDN ~24h, trong khi chờ
+// thì redirector + probe vẫn hoạt động bình thường.
+var __REMOTE_CHECKED = false;
+var REMOTE_CONFIG_URL = "https://cdn.jsdelivr.net/gh/trungkhanhduong93/trum-vbook@main/luottruyen/domain.txt";
+
+function resolveFromRemoteConfig() {
+    if (__REMOTE_CHECKED) return;
+    __REMOTE_CHECKED = true;
+    try {
+        var res = fetch(REMOTE_CONFIG_URL, { timeout: PROBE_TIMEOUT });
+        if (res && res.ok) {
+            var doc = res.html();
+            if (doc) {
+                var text = doc.text().trim();
+                var dm = text.match(/luottruyen(\d+)\.com/i);
+                if (dm) {
+                    var remoteNum = parseInt(dm[1], 10);
+                    var currentNum = extractDomainNumber(BASE_URL);
+                    if (remoteNum >= currentNum) {
+                        setBase("https://luottruyen" + dm[1] + ".com");
+                    }
+                }
+            }
+        }
+    } catch (e) {}
+}
 
 // Lấy origin "https://host" từ 1 URL luottruyen bất kỳ
 function luotOrigin(url) {
@@ -53,9 +82,9 @@ function syncBaseFromUrl(url) {
 
 // Trích xuất số domain từ URL hoặc origin (vd luottruyen16.com -> 16)
 function extractDomainNumber(originOrUrl) {
-    if (!originOrUrl) return 17;
+    if (!originOrUrl) return 18;
     var m = String(originOrUrl).match(/luottruyen(\d+)\.com/i);
-    return m ? parseInt(m[1], 10) : 17;
+    return m ? parseInt(m[1], 10) : 18;
 }
 
 // Thay thế domain luottruyenXX.com trong URL thành targetDomain
@@ -128,7 +157,7 @@ function autoProbeDomains(url) {
 
     // 2. Fallback: rà soát lũy tiến số kế tiếp nếu redirector không phân giải được
     var failedNum = extractDomainNumber(BASE_URL);
-    if (failedNum < 17) failedNum = 17;
+    if (failedNum < 18) failedNum = 18;
     var startNum = failedNum + 1;
     var maxNum = startNum + 1; // Chỉ thử tối đa 1 số kế tiếp, tránh DNS freeze 45s
 
@@ -199,6 +228,10 @@ function swapDomain(url) {
 }
 
 function fetchRetry(url) {
+    // Đọc domain mới từ GitHub CDN (chỉ chạy 1 lần, ~200ms)
+    resolveFromRemoteConfig();
+    url = swapDomain(url);
+
     // fetch nem exception khi loi mang; khong bat thi ca script chet cam.
     var res = null;
     try {

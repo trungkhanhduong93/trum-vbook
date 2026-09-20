@@ -15,10 +15,10 @@ trước là đủ cho 90% ca sửa lỗi. Phần còn lại đọc khi cần.
 |---|---|
 | Thư mục | `luottruyen/` (đừng nhầm `luottruyennew/` — **site khác hẳn**, `luottruyen.net`) |
 | Stack site | ASP.NET MVC 5 + WebForms, sau Cloudflare (`X-AspNetMvc-Version: 5.2`) |
-| Domain | `luottruyen16.com` (tính tới 12/08/2026), đổi số liên tục |
+| Domain | `luottruyen18.com` (tính tới 20/09/2026), đổi số liên tục |
 | Redirector | `luottruyen.com` — không số, luôn về mirror mới nhất (đo: ~5,1s, chậm gấp 9 lần domain thẳng) |
 | Kiểu parse | Scrape HTML, **trừ mục lục** dùng API POST trả HTML fragment |
-| Bản mới nhất | v28 |
+| Bản mới nhất | v40 |
 
 **Cloudflare ở đây chưa bao giờ là vấn đề.** Không có challenge, không cần mồi cookie. Nếu ai đó
 định thêm browser "để vượt Cloudflare" ở nguồn này thì đó là chẩn đoán sai — xem `03` mục 8.
