@@ -1,6 +1,8 @@
 load("config.js");
 
 function execute(url) {
+    resolveFromRemoteConfig();
+    syncBaseFromUrl(url);
     var fullUrl = resolveUrl(url);
     var html = "";
 

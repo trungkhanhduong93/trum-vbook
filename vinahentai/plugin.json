@@ -2,9 +2,9 @@
   "metadata": {
     "name": "VinaHentai",
     "author": "tkd1793",
-    "version": 10,
-    "source": "https://vinahentai.click",
-    "regexp": "(www\\.)?vinahentai\\.(click|net|com|org)\\/truyen-hentai\\/[^\\/]+",
+    "version": 11,
+    "source": "https://vinahentai.help",
+    "regexp": "(www\\.)?vinahentai\\.[a-z0-9-]+\\/truyen-hentai\\/[^\\/]+",
     "description": "VinaHentai - Đọc truyện tranh Hentai Manga & Manhwa 18+ vietsub",
     "locale": "vi_VN",
     "type": "comic",

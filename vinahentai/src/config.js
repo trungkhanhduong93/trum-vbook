@@ -1,5 +1,6 @@
-var BASE_URL = "https://vinahentai.click";
-var HOST = "https://vinahentai.click";
+var DEFAULT_BASE = "https://vinahentai.help";
+var BASE_URL = DEFAULT_BASE;
+var HOST = DEFAULT_BASE;
 
 try {
     if (typeof CONFIG_URL !== "undefined" && CONFIG_URL) {
@@ -15,6 +16,62 @@ var FETCH_HEADERS = {
     "Referer": BASE_URL + "/"
 };
 var FETCH_OPTIONS = { headers: FETCH_HEADERS, timeout: 10000 };
+
+// ─── Remote config & Auto Domain Sync ──────────────────────────────
+// Khi vinahentai đổi domain, chỉ cần sửa file domain.txt trên GitHub.
+// Plugin tự đọc qua CDN jsdelivr (~200ms).
+var __REMOTE_CHECKED = false;
+var REMOTE_CONFIG_URL = "https://cdn.jsdelivr.net/gh/trungkhanhduong93/trum-vbook@main/vinahentai/domain.txt";
+
+function setBase(origin) {
+    if (!origin) return;
+    origin = String(origin).replace(/\/+$/, "");
+    BASE_URL = origin;
+    HOST = origin;
+    FETCH_HEADERS["Referer"] = origin + "/";
+}
+
+function extractOrigin(url) {
+    if (!url) return null;
+    var m = String(url).match(/^https?:\/\/(?:www\.)?(vinahentai\.[a-z0-9-]+)/i);
+    return m ? "https://" + m[1].toLowerCase() : null;
+}
+
+function syncBaseFromUrl(url) {
+    var origin = extractOrigin(url);
+    if (origin && origin !== BASE_URL) {
+        setBase(origin);
+    }
+}
+
+function swapDomain(url) {
+    if (!url) return BASE_URL;
+    if (url.indexOf("http") !== 0) {
+        return BASE_URL + (url.charAt(0) === "/" ? url : "/" + url);
+    }
+    return String(url).replace(/^(https?:\/\/)(?:www\.)?vinahentai\.[a-z0-9-]+/i, BASE_URL);
+}
+
+function resolveFromRemoteConfig() {
+    if (__REMOTE_CHECKED) return;
+    __REMOTE_CHECKED = true;
+    try {
+        var res = fetch(REMOTE_CONFIG_URL, { timeout: 4000 });
+        if (res && res.ok) {
+            var doc = res.html();
+            if (doc) {
+                var text = doc.text().trim();
+                var dm = text.match(/(?:https?:\/\/)?(?:www\.)?(vinahentai\.[a-z0-9-]+)/i);
+                if (dm) {
+                    var newDomain = "https://" + dm[1].toLowerCase();
+                    if (newDomain !== BASE_URL) {
+                        setBase(newDomain);
+                    }
+                }
+            }
+        }
+    } catch (e) {}
+}
 
 function selFirst(el, css) {
     if (!el) return null;
@@ -40,7 +97,13 @@ function resolveUrl(u) {
     u = String(u).trim();
     if (!u) return "";
     var full = u;
-    if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) full = u;
+    if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) {
+        if (/https?:\/\/(?:www\.)?vinahentai\.[a-z0-9-]+/i.test(u)) {
+            full = swapDomain(u);
+        } else {
+            full = u;
+        }
+    }
     else if (u.indexOf("//") === 0) full = "https:" + u;
     else if (u.indexOf("/") === 0) full = BASE_URL + u;
     else full = BASE_URL + "/" + u;
@@ -68,6 +131,7 @@ function imgSrc(el) {
 }
 
 function fetchRetry(url, maxRetries) {
+    resolveFromRemoteConfig();
     if (typeof maxRetries === "undefined") maxRetries = 1;
     var cleanUrl = resolveUrl(url);
     for (var i = 0; i <= maxRetries; i++) {
@@ -80,23 +144,35 @@ function fetchRetry(url, maxRetries) {
 }
 
 function fetchDoc(url) {
+    resolveFromRemoteConfig();
     var cleanUrl = resolveUrl(url);
+    var doc = null;
     try {
         var resp = fetchRetry(cleanUrl);
         if (resp && resp.ok) {
-            var doc = resp.html();
-            if (doc) return doc;
+            doc = resp.html();
         }
     } catch (e1) {}
 
-    try {
-        if (typeof Http !== "undefined" && typeof Http.get === "function") {
-            var doc2 = Http.get(cleanUrl).headers(FETCH_HEADERS).timeout(8000).html();
-            if (doc2) return doc2;
-        }
-    } catch (e2) {}
+    if (!doc) {
+        try {
+            if (typeof Http !== "undefined" && typeof Http.get === "function") {
+                doc = Http.get(cleanUrl).headers(FETCH_HEADERS).timeout(8000).html();
+            }
+        } catch (e2) {}
+    }
 
-    return null;
+    if (doc) {
+        try {
+            var cano = selFirst(doc, "link[rel='canonical']");
+            if (cano) {
+                var cHref = cano.attr("href");
+                if (cHref) syncBaseFromUrl(cHref);
+            }
+        } catch (eCano) {}
+    }
+
+    return doc;
 }
 
 function parseItems(doc) {

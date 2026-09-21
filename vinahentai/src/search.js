@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute(key, page) {
+    resolveFromRemoteConfig();
     if (!page) page = "1";
     var searchUrl = BASE_URL + "/search?q=" + encodeURIComponent(key) + "&page=" + page;
 

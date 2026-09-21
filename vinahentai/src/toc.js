@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute(url) {
+    syncBaseFromUrl(url);
     var doc = fetchDoc(url);
     if (!doc) {
         return Response.error("Không thể tải danh sách chương");

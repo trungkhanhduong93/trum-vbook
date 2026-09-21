@@ -292,10 +292,13 @@ class QAGateKeeper:
             test_images = []
         elif plugin_name == "vinahentai":
             try:
-                chap_url = "https://vinahentai.click/truyen-hentai/cho-di-nha-cua-co-ban-thuo-nho-hanh-nghe-mai-dam/chap-1"
+                domain_file = REPO_ROOT / "vinahentai" / "domain.txt"
+                domain = domain_file.read_text(encoding='utf-8').strip() if domain_file.exists() else "vinahentai.help"
+                base_domain = f"https://{domain}" if not domain.startswith("http") else domain
+                chap_url = f"{base_domain}/truyen-hentai/cho-di-nha-cua-co-ban-thuo-nho-hanh-nghe-mai-dam/chap-1"
                 req = urllib.request.Request(chap_url, headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                    "Referer": "https://vinahentai.click/"
+                    "Referer": f"{base_domain}/"
                 })
                 with urllib.request.urlopen(req, timeout=15) as resp:
                     html_content = resp.read().decode('utf-8', errors='ignore')
@@ -303,7 +306,7 @@ class QAGateKeeper:
                     if len(imgs) >= 10:
                         self.log_pass("GATE-4", f"VinaHentai trích xuất thành công {len(imgs)} ảnh chương (>10 ảnh).")
                         clean_img = imgs[0].replace(r'\/', '/').replace('\\', '').strip()
-                        test_images = [("https://vinahentai.click", clean_img)]
+                        test_images = [(base_domain, clean_img)]
                     else:
                         self.log_fail("GATE-4", f"VinaHentai chỉ tìm thấy {len(imgs)} ảnh chương.")
             except Exception as e:

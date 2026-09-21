@@ -1,6 +1,7 @@
 load("config.js");
 
 function execute(url, page) {
+    syncBaseFromUrl(url);
     if (!page) page = "1";
     if (!url || url === "/" || url === "") {
         url = "/danh-sach";
