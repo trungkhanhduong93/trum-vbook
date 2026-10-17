@@ -1,8 +1,8 @@
 // ─── Domain (tự dò khi luottruyen đổi link) ─────────────────────────
-// luottruyen19.com là domain mặc định mới (02/10/2026 — luottruyen18.com
-// đã chuyển sang 19). Khi link bị đổi/không truy cập được, autoProbeDomains()
-// rà tăng dần 20->21->22...
-var DEFAULT_BASE = "https://luottruyen19.com";
+// luottruyen20.com là domain mặc định mới (17/10/2026 — luottruyen19.com
+// đã chuyển sang 20). Khi link bị đổi/không truy cập được, autoProbeDomains()
+// rà tăng dần 21->22->23...
+var DEFAULT_BASE = "https://luottruyen20.com";
 var REDIRECTOR = "https://luottruyen.com";
 
 var BASE_URL = DEFAULT_BASE;
@@ -82,9 +82,9 @@ function syncBaseFromUrl(url) {
 
 // Trích xuất số domain từ URL hoặc origin (vd luottruyen16.com -> 16)
 function extractDomainNumber(originOrUrl) {
-    if (!originOrUrl) return 19;
+    if (!originOrUrl) return 20;
     var m = String(originOrUrl).match(/luottruyen(\d+)\.com/i);
-    return m ? parseInt(m[1], 10) : 19;
+    return m ? parseInt(m[1], 10) : 20;
 }
 
 // Thay thế domain luottruyenXX.com trong URL thành targetDomain
@@ -157,7 +157,7 @@ function autoProbeDomains(url) {
 
     // 2. Fallback: rà soát lũy tiến số kế tiếp nếu redirector không phân giải được
     var failedNum = extractDomainNumber(BASE_URL);
-    if (failedNum < 19) failedNum = 19;
+    if (failedNum < 20) failedNum = 20;
     var startNum = failedNum + 1;
     var maxNum = startNum + 1; // Chỉ thử tối đa 1 số kế tiếp, tránh DNS freeze 45s
 
