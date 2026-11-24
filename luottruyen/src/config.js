@@ -298,13 +298,6 @@ function parseItems(doc) {
             cover = thumbUrl(cover);
         }
 
-        // Không dò nhãn "Full" ở đây nữa: đo 12/09/2026 trên trang 54 thẻ thì
-        // span.label-full / span.full / i.icon-full đều khớp 0 lần — site không
-        // gắn nhãn đó ở trang danh sách. Giữ lại chỉ tốn thêm 54 lượt select
-        // mỗi trang mà không bao giờ đổi kết quả. Tình trạng thật đã có ở
-        // trang chi tiết (li.status).
-        var status = "Đang Ra";
-
         // Chương mới nhất + thời gian. Lấy li.chapter một lần rồi bóc trong nó,
         // thay vì quét lại từ đầu thẻ hai lượt.
         var chapLi = selFirst(card, "figcaption ul li.chapter");
@@ -317,10 +310,15 @@ function parseItems(doc) {
             if (timeEl) timeText = timeEl.text().trim();
         }
 
-        // Build description: Tình trạng • Chapter • Thời gian
-        var desc = status;
-        if (chapText) desc += " • " + chapText;
-        if (timeText) desc += " • " + timeText;
+        // Build description: Chapter • Thời gian
+        var desc = "";
+        if (chapText && timeText) {
+            desc = chapText + " • " + timeText;
+        } else if (chapText) {
+            desc = chapText;
+        } else if (timeText) {
+            desc = timeText;
+        }
 
         items.push({
             name: name,
